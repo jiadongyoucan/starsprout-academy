@@ -38,9 +38,31 @@ async function main() {
   await send('Page.reload', { ignoreCache: true }); await sleep(2200);
   check(await evaluate("!!document.querySelector('.home-hero')"), 'parent home renders');
   check(await evaluate("!!document.querySelector('.warm-card')"), 'warmth card renders');
-  check((await evaluate("document.querySelectorAll('.stat-card-v2').length")) === 3, 'three calm stats');
+  check((await evaluate("document.querySelectorAll('.stat-strip,.stat-card-v2').length")) === 0, 'home has no duplicate stat strip');
+  check((await evaluate("document.querySelectorAll('.hero-actions .btn:not(.ghost)').length")) === 1, 'home has one primary action');
   check(await evaluate("!document.querySelector('#quickFeed')"), 'no duplicate quick-feed button');
   check(parseFloat(await evaluate("getComputedStyle(document.querySelector('.warm-foot')).fontSize")) >= 14, 'parent captions >=14px');
+  await evaluate("location.hash = '#/creation'"); await sleep(1200);
+  check(await evaluate("!!document.querySelector('.agent-shell')"), 'creation center renders');
+  check((await evaluate("document.body.innerText.includes('智能体')")) === false, 'no legacy agent label');
+  check((await evaluate("document.querySelectorAll('.side-nav .nav-link').length")) === 8, 'eight primary nav items');
+  await evaluate("location.hash = '#/pet'"); await sleep(2600);
+  check(await evaluate("!!document.querySelector('.pet-layout')"), 'pet page renders');
+  check(await evaluate("!!document.querySelector('#pet3dStage canvas, .pet2d-room')"), 'pet stage has 3D canvas or lightweight room');
+  check((await evaluate("document.querySelectorAll('.pet-tab').length")) === 3, 'pet tabs simplified');
+  await evaluate("[...document.querySelectorAll('[data-action]')].find(b=>b.dataset.action==='feed')?.click()"); await sleep(500);
+  check(await evaluate("!!document.querySelector('#freeFeed')"), 'feed chooser opens');
+  await evaluate("document.querySelector('#freeFeed')?.click()"); await sleep(1200);
+  check((await evaluate("document.querySelector('#petSpeech')?.innerText || ''")) !== '', 'pet action produces a reaction');
+  check((await evaluate("typeof window.__petCleanup")) === 'function', 'pet cleanup hook registered');
+  await evaluate("location.hash = '#/home'"); await sleep(800);
+  check((await evaluate("window.__petCleanup")) === null, 'pet is disposed on route change');
+  check((await evaluate("window.__petLive")) === 0, 'pet live counter returns to zero');
+  for (let i = 0; i < 4; i++) {
+    await evaluate("location.hash = '#/pet'"); await sleep(450);
+    await evaluate("location.hash = '#/home'"); await sleep(300);
+  }
+  check((await evaluate("window.__petLive")) === 0, 'pet mount/unmount soak has no orphans');
   await evaluate("location.hash = '#/child'"); await sleep(1600);
   check(await evaluate("document.body.classList.contains('kid-mode')"), 'child mode isolates parent chrome');
   check((await evaluate("document.querySelectorAll('.kid-stop').length")) >= 1, 'child adventure path renders');

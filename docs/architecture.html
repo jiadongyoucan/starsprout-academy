@@ -133,7 +133,7 @@
         <rect x="20" y="180" width="170" height="90" rx="16" fill="#fff7df" stroke="#fde68a"/><text x="105" y="216" text-anchor="middle" font-size="13" font-weight="700" fill="#8a5a00">孩子 · 平板</text><text x="105" y="238" text-anchor="middle" font-size="10" fill="#8a5a00">收件箱 / 课时 / 拍照</text>
         <rect x="20" y="320" width="170" height="70" rx="16" fill="#f1f1f4" stroke="#ddd"/><text x="105" y="350" text-anchor="middle" font-size="12.5" font-weight="700">教师 / 管理员</text><text x="105" y="370" text-anchor="middle" font-size="10" fill="#6f7280">审核 / 运营 / 模型</text>
         <rect x="330" y="110" width="250" height="210" rx="22" fill="#4f46e5"/><text x="455" y="150" text-anchor="middle" font-size="16" font-weight="800" fill="#fff">星芽学堂</text><text x="455" y="172" text-anchor="middle" font-size="10.5" fill="#c7d2fe">Node 24 单体 · API + SPA</text>
-        <text x="455" y="205" text-anchor="middle" font-size="10.5" fill="#e0e7ff">认证 / 课程 / 计划 / 智能体</text><text x="455" y="222" text-anchor="middle" font-size="10.5" fill="#e0e7ff">生态 / 社区 / 设备 / 看板</text>
+        <text x="455" y="205" text-anchor="middle" font-size="10.5" fill="#e0e7ff">认证 / 课程 / 计划 / 创作中心</text><text x="455" y="222" text-anchor="middle" font-size="10.5" fill="#e0e7ff">生态 / 社区 / 设备 / 看板</text>
         <rect x="455" y="245" width="100" height="52" rx="10" fill="#4338ca"/><text x="505" y="266" text-anchor="middle" font-size="10" fill="#fff">SQLite</text><text x="505" y="282" text-anchor="middle" font-size="9" fill="#c7d2fe">WAL + 文件</text>
         <rect x="680" y="50" width="190" height="80" rx="16" fill="#eafaf4" stroke="#a7f3d0"/><text x="775" y="82" text-anchor="middle" font-size="12.5" font-weight="700" fill="#065f46">大模型（可选）</text><text x="775" y="102" text-anchor="middle" font-size="10" fill="#0f766e">DeepSeek / OpenAI 兼容</text>
         <rect x="680" y="165" width="190" height="80" rx="16" fill="#fff5e8" stroke="#fed7aa"/><text x="775" y="197" text-anchor="middle" font-size="12.5" font-weight="700" fill="#8a4b08">连接器 / 公开课源</text><text x="775" y="217" text-anchor="middle" font-size="10" fill="#9a5b12">白名单 · 审计 · 许可</text>
@@ -178,7 +178,7 @@
         <tr><td>Privacy &amp; Governance</td><td>监护授权、导出/删除、审计</td><td><code>modules/privacy.ts</code>、<code>shared.ts</code></td></tr>
       </tbody>
     </table>
-    <p>上下文之间只通过应用服务或明确的 repo 查询交互；例如计划模块调用课程 repo 获取候选课时，不直接操作课时 UI 结构；智能体通过工具白名单调用计划 / 课程 / 社区，不绕过审核。</p>
+    <p>上下文之间只通过应用服务或明确的 repo 查询交互；例如计划模块调用课程 repo 获取候选课时，不直接操作课时 UI 结构；创作中心通过工具白名单调用计划 / 课程 / 社区，不绕过审核。</p>
 
     <h2 id="layers"><span class="num">06 / LAYERS</span>分层与依赖规则</h2>
     <div class="diagram">
@@ -193,7 +193,7 @@
     </div>
     <ul>
       <li><strong>路由</strong>只做 <code>ctx → service</code>；错误由 <code>AppError</code> 统一序列化为 <code>{ok:false,error:{code,message,details}}</code>。</li>
-      <li><strong>服务</strong>负责用例事务、家庭校验、审计；不依赖 <code>req/res</code>，便于测试与复用（如智能体工具直接调用 <code>generatePlan</code>）。</li>
+      <li><strong>服务</strong>负责用例事务、家庭校验、审计；不依赖 <code>req/res</code>，便于测试与复用（如创作中心工具直接调用 <code>generatePlan</code>）。</li>
       <li><strong>repo/SQL</strong> 集中在模块底部；表名与索引随迁移管理；不使用 ORM。</li>
       <li><strong>前端</strong>按 view 模块拆分，<code>api.js</code> 统一 token / 错误，<code>ui.js</code> 统一转义 / 模态 / 图表；<code>esc()</code> 是硬规则。</li>
     </ul>
@@ -264,7 +264,7 @@
         <tr><td>计划</td><td class="api">GET/POST /api/plans<br>POST /api/plans/generate<br>POST /api/plans/manual<br>GET /api/plans/:id<br>PATCH /api/plans/:id<br>POST /api/plans/:id/activate<br>POST /api/plans/:id/correct<br>PATCH /api/plans/:id/items/:itemId</td><td>生成即落草稿；纠正策略 shift / skip；提醒自动生成</td></tr>
         <tr><td>提醒</td><td class="api">GET /api/reminders/upcoming · due</td><td>due 读取即标记 sent，幂等消费</td></tr>
         <tr><td>看板 / 报告</td><td class="api">GET /api/analytics/dashboard<br>GET/POST /api/analytics/reports</td><td>真实聚合；报告按 child + period + period_key 唯一</td></tr>
-        <tr><td>智能体</td><td class="api">GET/POST /api/agent/sessions<br>GET/DELETE /api/agent/sessions/:id<br>POST /api/agent/sessions/:id/messages<br>GET/PUT/DELETE .../files<br>GET /api/agent/memory · DELETE /:id<br>GET /api/agent/models<br>POST /api/agent/sandbox</td><td>工具最多 3 轮；会话 / 记忆 / 文件均按家庭隔离</td></tr>
+        <tr><td>创作中心</td><td class="api">GET/POST /api/agent/sessions<br>GET/DELETE /api/agent/sessions/:id<br>POST /api/agent/sessions/:id/messages<br>GET/PUT/DELETE .../files<br>GET /api/agent/memory · DELETE /:id<br>GET /api/agent/models<br>POST /api/agent/sandbox</td><td>工具最多 3 轮；会话 / 记忆 / 文件均按家庭隔离</td></tr>
         <tr><td>生态</td><td class="api">GET/POST /api/registry/experts · skills · connectors<br>POST /api/registry/:type/:id/install<br>POST /api/registry/connectors/:id/invoke<br>GET /api/registry/connectors/invocations</td><td>公开资源审核；连接器白名单 + 审计</td></tr>
         <tr><td>社区</td><td class="api">GET /api/community/feed · mine<br>POST /api/community/posts<br>GET/PATCH/DELETE /api/community/posts/:id<br>POST .../like · comments · report</td><td>feed 仅 approved；编辑回到 pending</td></tr>
         <tr><td>温度文案</td><td class="api">GET /api/warmth?audience=parent|child&amp;context=home|lesson|plan|child&amp;fresh=1&amp;exclude=...<br>GET /api/device/warmth</td><td>每日稳定语气；fresh 只换句不换 kind；exclude 避免短期重复；家长接口校验孩子归属</td></tr>
@@ -355,7 +355,7 @@
     <h2 id="companion"><span class="num">14 / COMPANION</span>伙伴与奖励运行时</h2>
     <div class="grid g2">
       <div class="card"><h4>模型与不变量</h4><p><code>src/modules/pet.ts</code> 负责伙伴、钱包、小铺、互动与奖励；<code>scoring.ts</code> 只根据课时 blocks 的答案键判分。奖励事件以 <code>(child_id, source_type, source_id)</code> 唯一约束保证首通/单元/计划只发一次；金币加总与宠物经验在同一事务内完成。</p></div>
-      <div class="card"><h4>反刷与防越权</h4><p>客户端 <code>score</code> 仅做范围校验，不参与发币；课时完成用 <code>answers[]</code> 服务端判分，无答案按中性 80。计划金币要求 ≥3 项且跨 ≥3 天；小铺购买用条件 UPDATE 防止并发透支；衣服唯一；所有孩子/家庭二次校验。</p></div>
+      <div class="card"><h4>反刷与防越权</h4><p>伙伴 3D 引擎仅在伙伴页动态加载，WebGL 探测失败回退 2.5D；服务端 gzip + ETag + vendor immutable。<br>客户端 <code>score</code> 仅做范围校验，不参与发币；课时完成用 <code>answers[]</code> 服务端判分，无答案按中性 80。计划金币要求 ≥3 项且跨 ≥3 天；小铺购买用条件 UPDATE 防止并发透支；衣服唯一；所有孩子/家庭二次校验。</p></div>
     </div>
     <div class="flow">
       <div class="step"><span class="n">01</span><strong>完成课时</strong><small>answers → scoreLesson → stars / coins / exp；写入 reward_events（幂等）</small></div>
@@ -369,7 +369,7 @@
         <tr><td>伪造分数 / 刷金币</td><td>服务端按题目答案判分；客户端 score 不采信；首通唯一约束；计划最低 3 项 3 天；重学提示「复习完成」</td></tr>
         <tr><td>并发重复购买 / 负余额</td><td>事务内 <code>UPDATE ... WHERE coins &gt;= ?</code>，变更 0 行即 422；衣服唯一；SQLite 写串行</td></tr>
         <tr><td>离线愧疚 / 宠物死亡</td><td>衰减最多 18/14/12 点、下限 35/38/30，≥24h 进入「想你」状态；基础食物免费；无排行榜、无死亡、无学习权限惩罚</td></tr>
-        <tr><td>XSS / SVG 注入</td><td>伙伴 SVG 由内部 species / mood / equipped 白名单生成；用户名字与文案走 <code>esc()</code>；CSP 无内联脚本；庆祝层焦点陷阱</td></tr>
+        <tr><td>XSS / SVG 注入</td><td>伙伴 2.5D SVG 由内部 species / mood / equipped 白名单生成；3D 小窝由本地 Three.js 程序化几何生成，不加载外部模型；用户名字与文案走 <code>esc()</code>；CSP 无内联脚本；庆祝层焦点陷阱</td></tr>
         <tr><td>数据删除 / 导出</td><td>宠物、钱包、背包、奖励纳入孩子 JSON 导出；删除孩子/家庭由 FK 级联清理；名称为社区同一套规范化检测</td></tr>
         <tr><td>可访问性 / 动效</td><td>庆祝层 role=dialog、焦点陷阱、Esc、关闭恢复焦点；<code>prefers-reduced-motion</code> 跳过彩纸；移动端 390/320px 无横向滚动</td></tr>
       </tbody>
@@ -383,7 +383,7 @@
     <div class="flow">
       <div class="step"><span class="n">01</span><strong>场景决定语气</strong><small>home / child / lesson / report / device；lesson 按分数选 praise 或 retry</small></div>
       <div class="step"><span class="n">02</span><strong>每日稳定</strong><small>同一孩子同一天返回同一 kind；刷新仅换同 kind 的句子</small></div>
-      <div class="step"><span class="n">03</span><strong>安全注入</strong><small>所有文案经 esc()；儿童空间使用内部 SVG；CSP 不放开内联脚本</small></div>
+      <div class="step"><span class="n">03</span><strong>安全注入</strong><small>所有文案经 esc()；儿童空间使用内部 SVG；3D 仅本地 Three.js；CSP 不放开内联脚本</small></div>
       <div class="step"><span class="n">04</span><strong>不打断</strong><small>卡片/气泡/庆祝层内的一行；无自动弹窗、无自动轮播、无声音</small></div>
     </div>
     <table>
@@ -421,7 +421,7 @@
     <div class="grid g3">
       <div class="card"><h4>90 / 90 通过</h4><p>10 个测试套件（含 pet/warmth/seed）；真实 HTTP + 临时 SQLite + 随机端口；并行执行约 2s。</p></div>
       <div class="card"><h4>严格类型</h4><p><code>tsc --noEmit</code> 开启 strict + erasableSyntaxOnly；CI 可同时跑测试与类型检查。</p></div>
-      <div class="card"><h4>浏览器验收</h4><p><code>npm run e2e</code> 可选运行 Chrome CDP 的 19 项断言（家长首页、温度卡、儿童空间、390/320 无溢出、无异常）；另配 <a href="/docs/e2e/manual-checklist.md">人工清单</a>。E2E 依赖本机 Chrome，不作为 CI 必跑。</p></div>
+      <div class="card"><h4>浏览器验收</h4><p><code>npm run e2e</code> 可选运行 Chrome CDP 的 30 项断言（家长首页、温度卡、儿童空间、390/320 无溢出、无异常）；另配 <a href="/docs/e2e/manual-checklist.md">人工清单</a>。E2E 依赖本机 Chrome，不作为 CI 必跑。</p></div>
     </div>
     <table>
       <thead><tr><th>层</th><th>策略</th><th>例子</th></tr></thead>
@@ -506,11 +506,14 @@ cp /backups/2026-11-25/starsprout.db data/</code></pre>
         <tr><td>G14 Family UX</td><td>common-family-ux 六轴：受众/可访问性/安全/舒适/一致性/人味</td><td><a href="/docs/reviews/15-family-ux-audit.md">15-family-ux-audit.md</a></td></tr>
         <tr><td>G15 Family UX 复核</td><td>设备家长密码门、静音、交还卡、本地化</td><td><a href="/docs/reviews/16-family-ux-review.md">16-family-ux-review.md</a></td></tr>
         <tr><td>G16 残余差距</td><td><strong>PASS</strong>；14px、AX/ VoiceOver 清单、平板 rail、404、连接器</td><td><a href="/docs/reviews/17-residual-closure.md">17-residual-closure.md</a></td></tr>
+        <tr><td>G17 v1.5 方案</td><td>REVISE → 已按导航/性能/生命周期修正</td><td><a href="/docs/reviews/18-redesign-plan-review.md">18</a></td></tr>
+        <tr><td>G18 v1.5 代码</td><td>CONDITIONAL → 8 项 blocker 已修</td><td><a href="/docs/reviews/19-v15-code-review.md">19</a></td></tr>
+        <tr><td>G19 v1.5 终验</td><td><strong>CONDITIONAL</strong>：3D 真机矩阵待 GPU 浏览器</td><td><a href="/docs/reviews/21-v15-final-recheck.md">21</a></td></tr>
       </tbody>
     </table>
     <div class="callout mint"><strong>工程结论：</strong>在“零依赖 + 单机 + 低 token 成本”的约束下，用清晰的限界上下文、可验证的测试与显式的安全取舍，交付了完整可运行的产品，而不是演示页面。</div>
 
-    <h2 id="gapclosure"><span class="num">22 / GAP CLOSURE</span>v1.4 差距修复的技术落点</h2>
+    <h2 id="gapclosure"><span class="num">22 / GAP CLOSURE</span>v1.5 差距修复的技术落点</h2>
     <div class="grid g2">
       <div class="card"><h4>迁移 v6</h4><p>lessons 增加 key_points / hard_points / home_extension / prereq_lesson_id；comments 增加审核字段；lesson_versions 保存待审版本；product_events 采集 5 类事件；shop_items 增加 available。</p></div>
       <div class="card"><h4>治理</h4><p>moderation 删除所有 Unicode 格式字符并压缩所有标点/符号；评论默认 pending，管理员评论队列可 approve/reject/hide；审核通过率与平均时长进入后台。</p></div>
@@ -519,7 +522,15 @@ cp /backups/2026-11-25/starsprout.db data/</code></pre>
     </div>
     <p>完整逐项处置：<a href="/docs/gap-disposition.md">gap-disposition.md</a>。浏览器证据改为 <a href="/docs/e2e/manual-checklist.md">人工验收清单</a>；不宣称自动化 E2E。</p>
 
-    <div class="footer"><span>星芽学堂 · Architecture &amp; Engineering v1.4 · 2026</span><span>Source: src/, test/, docs/. All data in screenshots is demo data.</span></div>
+    <h2 id="v15"><span class="num">23 / V1.5 EXPERIENCE</span>创作中心、3D 伙伴与静态资源优化</h2>
+    <p class="lede">v1.5 的改动集中在信息架构、首屏层级与伙伴运行时，不改变课程/计划/奖励的服务端契约。</p>
+    <div class="grid g2">
+      <div class="card"><h4>路由与导航</h4><p><code>#/creation</code> 为新入口，<code>#/agent</code> 保留 301 式前端重定向并保留 <code>?s=</code>；<code>#/registry</code> 不再占一级导航，从创作中心进入；儿童锁下 <code>#/creation</code> 仍被重定向到儿童空间。移动底栏 5 项、桌面 8 项。</p></div>
+      <div class="card"><h4>3D 运行时</h4><p><code>pet3d.js</code> 仅在伙伴页动态 import；WebGLRenderer 失败时走 2.5D CSS 房间。场景全部程序化几何，无外部 GLB/贴图；动作状态机只允许一个动作，<code>idle → action → idle</code> 由 3.4s 时间线收口；页面切换 dispose、IntersectionObserver 暂停、<code>webglcontextlost</code> 回退。</p></div>
+      <div class="card"><h4>静态资源</h4><p><code>serveStatic</code> 增加 gzip、ETag/304 与 <code>/js/vendor/</code> immutable；<code>three.module.min.js</code> 655KB，gzip 167KB；SW 不预缓存 vendor，首次访问后运行时缓存，避免安装时下载大包。</p></div>
+      <div class="card"><h4>降级与安全</h4><p>WebGL 探测在动态 import 前；无 WebGL 不下载 Three.js；2.5D 仍可喂食/摸摸/玩耍/睡觉/整理。CSP 仍 <code>script-src 'self'</code>，Three.js 本地打包，无 CDN/内联脚本；伙伴 SVG/3D 参数均来自白名单。</p></div>
+    </div>
+    <div class="footer"><span>星芽学堂 · Architecture &amp; Engineering v1.5 · 2026</span><span>Source: src/, test/, docs/. All data in screenshots is demo data.</span></div>
   </main>
 </div>
 </body>

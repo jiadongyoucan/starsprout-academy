@@ -49,7 +49,7 @@
 | E8 | delete-claim | 改为庆祝层纪念卡，删除独立证书宣称 |
 | E9 | code | 重复学习给伙伴心情反应 |
 | E10 | code | 儿童顶栏改「🏅 贴纸数」 |
-| F1 | code + doc | 新增可选 `scripts/e2e.mjs`（19 项 CDP 断言）+ 人工清单；不再宣称 CI 必跑 |
+| F1 | code + doc | 新增可选 `scripts/e2e.mjs`（30 项 CDP 断言）+ 人工清单；不再宣称 CI 必跑 |
 | F2 | code | SW precache 视图/资产/device；网络优先 |
 | F3 | code | device.js 注册 SW；独立设备壳可缓存 |
 | F4 | delete-claim | 文档改为居中模态，不再宣称抽屉 |

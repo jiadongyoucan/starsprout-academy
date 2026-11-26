@@ -3,11 +3,11 @@ import {
   badge, emptyState, esc, fmtDateTime, loading, mdLite, openModal, relativeTime, toast,
 } from '../ui.js';
 
-const KIND_LABEL = { planner: '计划规划师', tutor: '陪学导师', expert: '专家智能体' };
+const KIND_LABEL = { planner: '计划助手', tutor: '陪学助手', expert: '专家' };
 const KIND_ICON = { planner: '🗓️', tutor: '🌱', expert: '🧑‍🏫' };
 
 export async function renderAgent(root, ctx) {
-  root.innerHTML = loading('正在打开工作室…');
+  root.innerHTML = loading('正在打开创作中心…');
   let sessions = [];
   let models = [];
   let experts = [];
@@ -46,18 +46,18 @@ export async function renderAgent(root, ctx) {
     <div class="agent-shell">
       <aside class="agent-panel agent-panel-side">
         <div class="agent-panel-head">
-          <h3>会话</h3>
-          <button class="icon-btn" id="newSession" type="button" aria-label="新建会话" style="width:30px;height:30px">＋</button>
+          <h3>创作</h3>
+          <button class="icon-btn" id="newSession" type="button" aria-label="新建创作" style="width:30px;height:30px">＋</button>
         </div>
         <div class="agent-panel-body" id="sessionList">
           ${sessions.length ? sessions.map(item => `
             <button class="agent-session ${item.id === selectedId ? 'active' : ''}" type="button" data-session="${esc(item.id)}">
               <strong>${KIND_ICON[item.agent_kind] || '💬'} ${esc(item.title)}</strong>
-              <small>${KIND_LABEL[item.agent_kind] || '智能体'} · ${item.message_count} 条 · ${esc(relativeTime(item.updated_at))}</small>
-            </button>`).join('') : `<p class="small muted" style="padding:14px 8px">还没有会话。新建一个，从「帮我排两周计划」开始。</p>`}
+              <small>${KIND_LABEL[item.agent_kind] || '创作中心'} · ${item.message_count} 条 · ${esc(relativeTime(item.updated_at))}</small>
+            </button>`).join('') : `<p class="small muted" style="padding:14px 8px">还没有创作。新建一个，从一个想法开始。</p>`}
         </div>
         <div style="padding:10px 12px;border-top:1px solid var(--line)">
-          <p class="tiny muted">智能体可调用课程检索、排课、周报、沙箱与社区草稿工具；所有写入都受家庭边界与审核约束。</p>
+          
         </div>
       </aside>
 
@@ -65,23 +65,20 @@ export async function renderAgent(root, ctx) {
         <header class="chat-head">
           <span class="avatar small">${detail ? KIND_ICON[detail.agent_kind] || '🤖' : '🤖'}</span>
           <div style="flex:1;min-width:0">
-            <strong>${detail ? esc(detail.title) : '新的创作会话'}</strong>
-            <small>${detail ? `${esc(detail.expert?.name || KIND_LABEL[detail.agent_kind] || '智能体')} · ${esc(modelLabel(detail.model))}` : '选择一个会话，或新建'}</small>
+            <strong>${detail ? esc(detail.title) : '新的创作'}</strong>
+            <small>${detail ? `${esc(detail.expert?.name || KIND_LABEL[detail.agent_kind] || '创作中心')} · ${esc(modelLabel(detail.model))}` : '选择已有创作，或新建'}</small>
           </div>
-          <div class="row agent-mobile-tools">
-            <button class="icon-btn" type="button" data-sessions-open aria-label="会话" style="width:32px;height:32px">💬</button>
-            <button class="icon-btn" type="button" data-context-open="memory" aria-label="记忆" style="width:32px;height:32px">🧠</button>
-            <button class="icon-btn" type="button" data-context-open="files" aria-label="工作区" style="width:32px;height:32px">📁</button>
-            <button class="icon-btn" type="button" data-context-open="sandbox" aria-label="沙箱" style="width:32px;height:32px">🧪</button>
-          </div>
+          <button class="icon-btn agent-mobile-sessions" type="button" data-sessions-open aria-label="创作列表" style="width:34px;height:34px">💬</button>
           ${detail ? '<button class="btn small ghost" id="deleteSession" type="button">删除</button>' : ''}
+          <button class="btn small ghost" id="contextToggle" type="button">工具</button>
+          <a class="btn small ghost" href="#/registry">专家与技能</a>
         </header>
         <div class="chat-body" id="chatBody"></div>
         <div class="chat-composer">
           <div class="quick-prompts" id="quickPrompts">
             ${quickPrompts(detail?.agent_kind || 'planner', child).map(prompt => `<button type="button" data-prompt="${esc(prompt)}">${esc(prompt)}</button>`).join('')}
           </div>
-          <textarea id="chatInput" placeholder="${detail ? '说说你想要的课程、计划或想了解的进展…' : '先新建一个会话，再开始对话'}" ${detail ? '' : 'disabled'}></textarea>
+          <textarea id="chatInput" placeholder="${detail ? '说说你想要的课程、计划或想了解的进展…' : '先新建一个创作，再开始对话'}" ${detail ? '' : 'disabled'}></textarea>
           <div class="composer-actions">
             <span class="tiny muted">Enter 发送 · Shift+Enter 换行${models.some(m => m.configured) ? '' : ' · 未配置 AI 时使用本地规则引擎'}</span>
             <button class="btn small" id="sendMessage" type="button" ${detail ? '' : 'disabled'}>发送</button>
@@ -89,7 +86,7 @@ export async function renderAgent(root, ctx) {
         </div>
       </section>
 
-      <aside class="agent-panel agent-panel-side" id="contextPanel">
+      <aside class="agent-panel agent-panel-side" id="contextPanel" role="dialog" aria-modal="true" aria-label="创作工具">
         <div class="context-tabs">
           <button type="button" class="active" data-context="memory">记忆</button>
           <button type="button" data-context="files">工作区</button>
@@ -104,6 +101,11 @@ export async function renderAgent(root, ctx) {
   const chatBody = root.querySelector('#chatBody');
   const contextBody = root.querySelector('#contextBody');
   const contextPanel = root.querySelector('#contextPanel');
+  root.querySelector('#contextToggle')?.addEventListener('click', () => {
+    const open = contextPanel.classList.toggle('context-open');
+    if (open) contextPanel.querySelector('[data-context-close]')?.focus();
+  });
+  root.addEventListener('keydown', (event) => { if (event.key === 'Escape' && contextPanel.classList.contains('context-open')) { contextPanel.classList.remove('context-open'); root.querySelector('#contextToggle')?.focus(); } });
 
   function normalizeMessage(message) {
     const copy = { ...message };
@@ -116,9 +118,9 @@ export async function renderAgent(root, ctx) {
   function renderMessages() {
     if (!detail) {
       chatBody.innerHTML = `<div class="empty" style="margin:auto">
-        <div class="big">🤖</div><strong>开始一次对话式创作</strong>
-        <p>让智能体帮你排计划、写教案、解读进度，或把它当作专家来提问。会话、记忆、工作区与沙箱彼此关联。</p>
-        <button class="btn" type="button" id="emptyNewSession">新建会话</button>
+        <div class="big">🤖</div><strong>开始一次创作</strong>
+        <p>写计划、教案、课程草稿，或一篇可发布的分享。</p>
+        <button class="btn" type="button" id="emptyNewSession">新建创作</button>
       </div>`;
       chatBody.querySelector('#emptyNewSession')?.addEventListener('click', openNewSession);
       return;
@@ -126,7 +128,7 @@ export async function renderAgent(root, ctx) {
     if (!detail.messages.length) {
       chatBody.innerHTML = `<div class="chat-notice">这是一个新会话，已绑定家庭记忆与课程库</div>
         <div class="msg"><span class="avatar small">🌱</span><div><div class="bubble">
-          <p>你好，我是${esc(KIND_LABEL[detail.agent_kind] || '星芽智能体')}。我可以：</p>
+          <p>你好，我是你的${esc(KIND_LABEL[detail.agent_kind] || '创作伙伴')}。我可以：</p>
           <ul><li>按真实进度排一份计划，并保存为草稿；</li><li>检索课程库、写一份可审核的教案；</li><li>解读孩子的学习数据，生成周报；</li><li>把创作存入工作区，或提交社区审核。</li></ul>
           <p>你可以直接说：「给${esc(child?.name || '孩子')}排两周、每周 5 天、每天 25 分钟的计划，英语优先」。</p>
         </div></div></div>`;
@@ -169,7 +171,7 @@ export async function renderAgent(root, ctx) {
           ${memories.length ? memories.map(memory => `<div class="memory-item">
             <strong>${esc(memory.key)}</strong><p>${esc(memory.value)}</p>
             <button type="button" data-memory-del="${esc(memory.id)}">删除</button></div>`).join('')
-            : '<p class="small muted">还没有记忆。对智能体说「记住：周三不排课」试试。</p>'}
+            : '<p class="small muted">还没有记忆。在对话里说「记住：周三不排课」试试。</p>'}
           <p class="tiny muted" style="margin-top:10px">记忆按家庭隔离，不会跨家庭共享。</p>`;
         contextBody.querySelectorAll('[data-memory-del]').forEach(button => button.addEventListener('click', async () => {
           try {
@@ -186,7 +188,7 @@ export async function renderAgent(root, ctx) {
           ${files.length ? files.map(file => `<div class="file-item">
             <span>📄</span><span class="fname" title="${esc(file.path)}">${esc(file.path)}</span>
             <button class="btn small ghost" type="button" data-file-view="${esc(file.id)}">打开</button></div>`).join('')
-            : '<p class="small muted">工作区还是空的。让智能体「写一份小班英语教案」，或自己新建。</p>'}
+            : '<p class="small muted">工作区还是空的。让创作中心写一份小班英语教案。</p>'}
           <p class="tiny muted" style="margin-top:10px">AI 创作的课程会先留在工作区，不会直接进入公开课程库。</p>`;
         contextBody.querySelector('#newFile')?.addEventListener('click', () => openFileEditor(null));
         contextBody.querySelectorAll('[data-file-view]').forEach(button => {
@@ -253,7 +255,7 @@ console.log("两周总时长", days * minutes, "分钟");
   }
 
   async function sendMessage() {
-    if (!detail) { toast('请先新建会话', 'error'); return; }
+    if (!detail) { toast('请先新建创作', 'error'); return; }
     const input = root.querySelector('#chatInput');
     const content = input.value.trim();
     if (!content) return;
@@ -297,23 +299,23 @@ console.log("两周总时长", days * minutes, "分钟");
       container.innerHTML = list.map(item => `
         <button class="agent-session ${item.id === selectedId ? 'active' : ''}" type="button" data-session="${esc(item.id)}">
           <strong>${KIND_ICON[item.agent_kind] || '💬'} ${esc(item.title)}</strong>
-          <small>${KIND_LABEL[item.agent_kind] || '智能体'} · ${item.message_count} 条 · ${esc(relativeTime(item.updated_at))}</small>
+          <small>${KIND_LABEL[item.agent_kind] || '创作中心'} · ${item.message_count} 条 · ${esc(relativeTime(item.updated_at))}</small>
         </button>`).join('');
       container.querySelectorAll('[data-session]').forEach(button => button.addEventListener('click', () => {
-        ctx.navigate(`#/agent?s=${encodeURIComponent(button.dataset.session)}`);
+        ctx.navigate(`#/creation?s=${encodeURIComponent(button.dataset.session)}`);
       }));
     } catch { /* ignore */ }
   }
 
   function openNewSession() {
     openModal({
-      title: '新建智能体会话',
+      title: '新建创作',
       subtitle: '选择角色与模型；专家会注入对应人格与技能',
       body: `<form id="newSessionForm">
         <div class="field"><label>会话标题（可选）</label><input class="input" name="title" maxlength="40" placeholder="例如：米粒的英语周计划"></div>
         <div class="form-row">
-          <div class="field"><label>智能体角色</label><select class="select" name="agentKind">
-            <option value="planner">计划规划师</option><option value="tutor">陪学导师</option><option value="expert">专家智能体</option>
+          <div class="field"><label>创作角色</label><select class="select" name="agentKind">
+            <option value="planner">计划规划师</option><option value="tutor">陪学导师</option><option value="expert">专家</option>
           </select></div>
           <div class="field"><label>模型</label><select class="select" name="model">
             <option value="default">默认模型${models.some(m => m.configured) ? '' : '（本地规则）'}</option>
@@ -346,7 +348,7 @@ console.log("两周总时长", days * minutes, "分钟");
               },
             });
             close();
-            ctx.navigate(`#/agent?s=${encodeURIComponent(created.id)}`);
+            ctx.navigate(`#/creation?s=${encodeURIComponent(created.id)}`);
           } catch (error) {
             toast(error.message, 'error');
             button.disabled = false; button.textContent = '创建会话';
@@ -363,17 +365,17 @@ console.log("两周总时长", days * minutes, "分钟");
       title: '选择会话', subtitle: '会话按家庭隔离',
       body: `<div class="stack">${sessions.length ? sessions.map(item => `<button class="agent-session" type="button" data-mobile-session="${esc(item.id)}" style="border:1px solid var(--line)">
         <strong>${KIND_ICON[item.agent_kind] || '💬'} ${esc(item.title)}</strong><small>${KIND_LABEL[item.agent_kind]} · ${item.message_count} 条</small></button>`).join('') : '<p class="small muted">还没有会话</p>'}</div>`,
-      footer: '<button class="btn" type="button" id="mobileNewSession">＋ 新建会话</button>',
+      footer: '<button class="btn" type="button" id="mobileNewSession">＋ 新建创作</button>',
       onMount(modal, close) {
         modal.querySelector('#mobileNewSession').addEventListener('click', () => { close(); openNewSession(); });
         modal.querySelectorAll('[data-mobile-session]').forEach(button => button.addEventListener('click', () => {
-          close(); ctx.navigate(`#/agent?s=${encodeURIComponent(button.dataset.mobileSession)}`);
+          close(); ctx.navigate(`#/creation?s=${encodeURIComponent(button.dataset.mobileSession)}`);
         }));
       },
     });
   });
   root.querySelectorAll('[data-session]').forEach(button => button.addEventListener('click', () => {
-    ctx.navigate(`#/agent?s=${encodeURIComponent(button.dataset.session)}`);
+    ctx.navigate(`#/creation?s=${encodeURIComponent(button.dataset.session)}`);
   }));
   root.querySelectorAll('[data-prompt]').forEach(button => button.addEventListener('click', () => {
     const input = root.querySelector('#chatInput');
@@ -393,7 +395,7 @@ console.log("两周总时长", days * minutes, "分钟");
   root.querySelector('#deleteSession')?.addEventListener('click', () => {
     if (!confirm('删除这个会话？工作区中的草稿也会一起删除。')) return;
     request(`/api/agent/sessions/${encodeURIComponent(detail.id)}`, { method: 'DELETE' })
-      .then(() => { toast('会话已删除', 'success'); ctx.navigate('#/agent'); })
+      .then(() => { toast('创作已删除', 'success'); ctx.navigate('#/creation'); })
       .catch(error => toast(error.message, 'error'));
   });
   root.querySelectorAll('[data-context]').forEach(button => button.addEventListener('click', () => {

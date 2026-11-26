@@ -26,4 +26,4 @@ Residual closure accepted; web build shippable. Audio and the tablet a11y pass a
 
 ## Post-review addendum (same day)
 
-Tablet-band accessibility is now covered: `npm run a11y` adds `parent-tablet-rail` at 1024×768 and reports **30 interactive nodes, 0 unnamed**. The remaining follow-up is only the device-specific VoiceOver audio pass in `docs/e2e/accessibility.md`; no code gap remains.
+Tablet-band accessibility is now covered: `npm run a11y` adds `parent-tablet-rail` at 1024×768 and reports **22 interactive nodes, 0 unnamed**. The remaining follow-up is only the device-specific VoiceOver audio pass in `docs/e2e/accessibility.md`; no code gap remains.

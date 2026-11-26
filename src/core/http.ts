@@ -1,6 +1,8 @@
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
+import zlib from 'node:zlib';
+import { createHash } from 'node:crypto';
 import { AppError, notFound, tooMany, unauthorized } from './errors.ts';
 import { log } from './logger.ts';
 import { config } from '../config.ts';
@@ -266,10 +268,24 @@ export class Router {
 
     const ext = path.extname(resolved).toLowerCase();
     const type = MIME[ext] || 'application/octet-stream';
-    const cache = ext === '.html' ? 'no-cache' : 'public, max-age=300';
-    res.writeHead(200, { 'Content-Type': type, 'Cache-Control': cache });
+    const immutable = pathname.startsWith('/js/vendor/');
+    const cache = ext === '.html' ? 'no-cache' : immutable ? 'public, max-age=31536000, immutable' : 'public, max-age=300';
+    let body = await fs.promises.readFile(resolved);
+    const etag = `"${createHash('sha1').update(body).digest('hex').slice(0, 16)}"`;
+    if (req.headers['if-none-match'] === etag) {
+      res.writeHead(304, { ETag: etag, 'Cache-Control': cache }); res.end(); return;
+    }
+    const compressible = ['.js', '.css', '.html', '.md', '.svg', '.json', '.webmanifest'].includes(ext);
+    const acceptsGzip = /\bgzip\b/.test(String(req.headers['accept-encoding'] || ''));
+    const headers: Record<string, string | number> = { 'Content-Type': type, 'Cache-Control': cache, ETag: etag, Vary: 'Accept-Encoding' };
+    if (compressible && acceptsGzip && body.length > 1024) {
+      body = zlib.gzipSync(body, { level: 6 });
+      headers['Content-Encoding'] = 'gzip';
+    }
+    headers['Content-Length'] = body.length;
+    res.writeHead(200, headers);
     if (req.method === 'HEAD') { res.end(); return; }
-    res.end(await fs.promises.readFile(resolved));
+    res.end(body);
   }
 }
 

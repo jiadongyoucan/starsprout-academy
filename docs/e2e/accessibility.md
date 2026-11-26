@@ -3,10 +3,10 @@
 ## Automated (Chrome Accessibility Tree, proxy for screen-reader naming)
 `npm run a11y` checks every interactive node (button/link/textbox/combobox/checkbox/switch/tab/menuitem) and image on:
 
-- parent home desktop: 31 interactive nodes
+- parent home desktop: 23 interactive nodes
 - child space: 10 interactive nodes
-- parent home tablet rail 1024px: 30 interactive nodes
-- parent home 390px: 22 interactive nodes
+- parent home tablet rail 1024px: 22 interactive nodes
+- parent home 390px: 18 interactive nodes
 
 Result: **0 unnamed interactive nodes, 0 images without alt/name**. Buttons/links have accessible names; icon-only controls use `aria-label`; status is icon + word; focus ring is visible; reduced-motion removes confetti/looping pet motion. This is an accessibility-tree audit, not an audio VoiceOver session.
 

@@ -95,5 +95,7 @@ export function moodLine(mood, name = '伙伴') {
     missing: [`好久不见，${name}有点想你`, '它没有生气，只是想和你待一会儿'],
   };
   const list = lines[mood] || lines.happy;
-  return list[Math.floor(Math.random() * list.length)];
+  const day = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai' }).format(new Date());
+  let hash = 0; for (const ch of `${name}:${mood}:${day}`) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
+  return list[hash % list.length];
 }

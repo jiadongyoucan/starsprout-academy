@@ -11,7 +11,7 @@
 - **默认安全**：演示账号、沙箱都需显式开启；首次打开会引导创建管理员。
 - **陪伴与奖励**：3 种伙伴、6 种情绪、5 种互动；服务端判分、首通奖励、单元/计划里程碑、金币小铺与衣橱。
 - **有温度的 HMI**：家长首页「照顾自己」小纸条、儿童空间天空/草地/贴纸路径、设备端儿童悄悄话；原创文案每日稳定、可换句不换语气。
-- **测试即验收**：`npm test`，90 个集成测试覆盖认证、隔离、计划、审核、设备、智能体、伙伴奖励与看板。
+- **测试即验收**：`npm test`，90 个集成测试覆盖认证、隔离、计划、审核、设备、创作中心、伙伴奖励与看板。
 
 ---
 
@@ -44,7 +44,7 @@
 
 | 角色 | 邮箱 | 密码 | 能力 |
 |---|---|---|---|
-| 家长 | `parent@demo.com` | `Parent123!` | 课程、计划、智能体、设备、照片、社区 |
+| 家长 | `parent@demo.com` | `Parent123!` | 课程、计划、创作中心、设备、照片、社区 |
 | 教师 | `teacher@demo.com` | `Teacher123!` | 家长能力 + 审核 / 公开专家发布 |
 | 管理员 | `admin@demo.com` | `Admin123!` | 全部 + 模型配置、来源同步、用户与审计 |
 
@@ -90,9 +90,9 @@ services:
 | 1 | 四学段 × 五模块，分级课程，互动听说读写 | 192 个已发布课时；每个课时 6–8 个 block：故事 / 词卡 / 听 / 说 / 描红 / 钢琴 / 节奏 / 配对 / 测验；`src/infra/curriculum-data.ts`、`lesson-blocks.ts` | `test/curriculum.test.ts` |
 | 2 | 对接优质公开课，持续更新，体系化不零散 | 4 个公开来源（OER Commons、StoryWeaver、国家智慧教育平台、MuseScore），带 license/attribution/版本；同步 → 隔离区 → 管理员审核 → 原子替换 | 课程页「公开课程来源」；Admin 同步；`test/curriculum.test.ts` |
 | 3 | Plan 模块 + AI 辅助 + 纠正 / 提醒 | AI 读取真实进度排课；逾期检测、一键顺延 / 跳过、调整留痕、到期提醒；`src/modules/plans.ts` | `test/plans.test.ts` |
-| 4 | 完整智能体（会话 / 记忆 / 沙箱 / 模型 / 工作区） | 会话、消息、长期记忆、工作区文件版本、模型配置（AES 加密）、权限隔离子进程沙箱、9 个工具、OpenAI-compatible 适配 + 本地引擎 | `test/agent.test.ts`、`test/platform.test.ts` |
+| 4 | 创作中心（会话 / 记忆 / 沙箱 / 模型 / 工作区） | 会话、消息、长期记忆、工作区文件版本、模型配置（AES 加密）、权限隔离子进程沙箱、9 个工具、OpenAI-compatible 适配 + 本地引擎 | `test/agent.test.ts`、`test/platform.test.ts` |
 | 5 | 综合分析 Dashboard + 日 / 周 / 月汇报 | 真实聚合：完成数、分钟、连续天数、学科均衡、计划坚持度、趋势；本地 / LLM 报告并落库 | `test/platform.test.ts`、看板截图 |
-| 6 | 专家智能体、技能、连接器，发布与获取 | 公开需教师身份 + 审核；家庭私有即时可用；安装 / 卸载；内置与 HTTP 连接器；调用审计 | `test/platform.test.ts` |
+| 6 | 专家、技能、连接器，发布与获取 | 公开需教师身份 + 审核；家庭私有即时可用；安装 / 卸载；内置与 HTTP 连接器；调用审计 | `test/platform.test.ts` |
 | 7 | 社区广场，发布心得 / 课程，审核审批 | 全部内容先审后发；课程必须关联已发布课时；规范化 + 违禁词 + 导流 / PII 检测；不能自审；举报与隐藏 | `test/community.test.ts` |
 | 8 | 登录注册、权限认证、权限隔离 | scrypt + JWT + 会话吊销；parent/teacher/admin/device 四类主体；household 全链路隔离 | `test/auth.test.ts`、`test/device.test.ts` |
 | 9 | 手机 ↔ Mac / 平板联动 | 6 位一次性配对码（10 分钟）→ 设备令牌 → 推送 → SSE 实时 + 轮询兜底 → 学习 → 进度回传 | 人工验收清单 + `test/device.test.ts` |
@@ -144,7 +144,7 @@ services:
 4. 家长确认激活 → 自动生成未来 7 天提醒。
 5. 逾期 → 「一键纠偏」顺延到最近空白工作日，或跳过；写 `plan_adjustments` 审计；计划结束日期自动延长。
 
-### 智能体工作室
+### 创作中心
 
 - **会话 / 记忆 / 工作区 / 沙箱 / 模型** 完整闭环。
 - 工具：`search_curriculum`、`create_plan`、`report_progress`、`create_lesson_draft`、`save_workspace_file`、`remember`、`submit_community_post`、`sandbox_run`。
@@ -331,6 +331,7 @@ npm run a11y      # 可选：Accessibility Tree 命名审计
 - Family UX 审查（common-family-ux）：`docs/reviews/15-family-ux-audit.md`
 - Family UX 独立复核：`docs/reviews/16-family-ux-review.md`
 - 残余差距关闭：`docs/reviews/17-residual-closure.md`
+- v1.5 方案/代码/终验：`docs/reviews/18-redesign-plan-review.md`、`19-v15-code-review.md`、`20-v15-final-acceptance.md`
 - 本地技能来源与说明：`skills/README.md`
 
 启动后可直接访问 `http://localhost:8080/docs/`。

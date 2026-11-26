@@ -75,7 +75,7 @@
 
     <h2 id="summary"><span class="num">01</span>结论与质量门禁</h2>
     <div class="grid g3">
-      <div class="card"><div class="big">90</div><h4 style="margin-top:6px">自动化用例全部通过</h4><p>10 个测试套件，覆盖认证、隔离、课程、计划、社区、设备、智能体、伙伴奖励、温度文案、演示开关与治理。</p></div>
+      <div class="card"><div class="big">90</div><h4 style="margin-top:6px">自动化用例全部通过</h4><p>10 个测试套件，覆盖认证、隔离、课程、计划、社区、设备、创作中心、伙伴奖励、温度文案、演示开关与治理。</p></div>
       <div class="card"><div class="big">0</div><h4 style="margin-top:6px">TypeScript 错误</h4><p><code>tsc --noEmit</code> 开启 strict + erasableSyntaxOnly，与运行时类型擦除保持一致。</p></div>
       <div class="card"><div class="big">0</div><h4 style="margin-top:6px">浏览器 JS 异常</h4><p>桌面上要页面、移动端、平板学习端与照片流程均通过 人工实测，无未捕获异常。</p></div>
     </div>
@@ -114,7 +114,7 @@ $ ./scripts/smoke.sh
         <tr><td>1</td><td>四学段 × 五模块 / 分级 / 互动听说读写</td><td>框架与课时数量、学段差异、block 类型、进度联动</td><td><span class="pill green">通过</span></td></tr>
         <tr><td>2</td><td>公开课程、持续更新、体系化</td><td>来源 / license / 版本 / checksum / 隔离审核 / 幂等同步</td><td><span class="pill green">通过</span></td></tr>
         <tr><td>3</td><td>Plan + AI + 纠正 + 提醒</td><td>草稿 / 激活 / 提醒 / shift / skip / 跨家庭</td><td><span class="pill green">通过</span></td></tr>
-        <tr><td>4</td><td>完整智能体</td><td>会话 / 记忆 / 工作区 / 模型 / 沙箱 / 工具 / 降级</td><td><span class="pill green">通过</span></td></tr>
+        <tr><td>4</td><td>创作中心</td><td>会话 / 记忆 / 工作区 / 模型 / 沙箱 / 工具 / 降级</td><td><span class="pill green">通过</span></td></tr>
         <tr><td>5</td><td>看板 + 日 / 周 / 月报告</td><td>真实聚合、周期报告、落库、隔离</td><td><span class="pill green">通过</span></td></tr>
         <tr><td>6</td><td>专家 / 技能 / 连接器</td><td>发布 / 审核 / 安装 / 调用 / SSRF / 密钥</td><td><span class="pill green">通过</span></td></tr>
         <tr><td>7</td><td>社区 + 审核审批</td><td>状态机 / 违禁 / 导流 / 自审 / 编辑 / 举报</td><td><span class="pill green">通过</span></td></tr>
@@ -131,7 +131,7 @@ $ ./scripts/smoke.sh
 
     <h2 id="browser"><span class="num">04</span>人工验收（人工点检 + 可选 E2E）</h2>
     <div class="grid g2">
-      <div class="card"><h4>已完成路径</h4><p>首次初始化管理员 → 管理后台；注册 / 登录；首页；课程地图与单元；互动课时（TTS / 配对 / 钢琴 / 描红 / 测验）；计划列表 / 详情 / 纠偏；智能体会话与工具调用；社区与审核台；专家 / 技能 / 连接器；设备配对 / 推送 / 学习 / 照片；账户与隐私；移动端 390×844 / 320×700；儿童空间与儿童课时；温度文案换句；强制改密。</p></div>
+      <div class="card"><h4>已完成路径</h4><p>首次初始化管理员 → 管理后台；注册 / 登录；首页；课程地图与单元；互动课时（TTS / 配对 / 钢琴 / 描红 / 测验）；计划列表 / 详情 / 纠偏；创作中心与工具调用；社区与审核台；专家 / 技能 / 连接器；设备配对 / 推送 / 学习 / 照片；账户与隐私；移动端 390×844 / 320×700；儿童空间与儿童课时；温度文案换句；强制改密。</p></div>
       <div class="card"><h4>关键实测</h4><p>平板输入一次性码 → 收件箱收到推送 → 打开计划 → 开始课时 → 完成 → 家长看板更新；家长请求拍照 → 平板确认 → 上传 → 家长图库以鉴权 Blob 显示；跨家庭图片 404。桌面上要页面无 JS 异常、无横向溢出。</p></div>
     </div>
     <div class="callout warn"><strong>缓存注意：</strong>PWA Service Worker 会缓存静态资源。验证最新前端时请使用无痕窗口 / DevTools 的 Bypass for network，或等待 SW 更新（网络优先策略）。</div>
@@ -176,6 +176,9 @@ $ ./scripts/smoke.sh
         <tr><td>G14 Family UX</td><td><strong>PASS with minor findings</strong>；common-family-ux 六轴审查，儿童 64px/16px</td><td><a href="/docs/reviews/15-family-ux-audit.md">15-family-ux-audit.md</a></td></tr>
         <tr><td>G15 Family UX 复核</td><td><strong>PASS</strong>；设备家长密码门、静音、交还卡、英文标题本地化</td><td><a href="/docs/reviews/16-family-ux-review.md">16-family-ux-review.md</a></td></tr>
         <tr><td>G16 残余差距关闭</td><td><strong>PASS</strong>；14px 文案、AX/VoiceOver 清单、平板 rail、统一 404、连接器工具</td><td><a href="/docs/reviews/17-residual-closure.md">17-residual-closure.md</a></td></tr>
+        <tr><td>G17 v1.5 方案评审</td><td>REVISE：IA 计数、3D 性能、动画生命周期需修正</td><td><a href="/docs/reviews/18-redesign-plan-review.md">18-redesign-plan-review.md</a></td></tr>
+        <tr><td>G18 v1.5 代码评审</td><td>CONDITIONAL：dispose/触摸/几何/抽屉/文案；复核后修复</td><td><a href="/docs/reviews/19-v15-code-review.md">19-v15-code-review.md</a></td></tr>
+        <tr><td>G19 v1.5 终验</td><td><strong>CONDITIONAL</strong>：代码/2.5D/异步生命周期通过；3D 真机矩阵待 GPU 浏览器</td><td><a href="/docs/reviews/20-v15-final-acceptance.md">20</a> · <a href="/docs/reviews/21-v15-final-recheck.md">21 复核</a></td></tr>
         <tr><td>G4 验收评审</td><td><strong>PASS</strong>（复核后）；唯一 P1（演示双开关）已关闭</td><td><a href="/docs/reviews/03-acceptance-review.md">03 · 验收评审</a> · <a href="/docs/reviews/03a-post-fix-verification.md">03a · 复核 PASS</a> · <a href="/docs/reviews/04-fix-log.md">04 · 修复记录</a></td></tr>
       </tbody>
     </table>
@@ -211,7 +214,7 @@ docker compose -f docker-compose.yml -f docker-compose.demo.yml up -d   # 演示
     </ul>
     <div class="callout"><strong>结论：</strong>核心业务与安全负向路径均有自动化证据，关键多端流程通过浏览器实测。验收提出的演示双开关 P1 已关闭，最终测试 90/90。剩余边界均已声明，不阻塞当前单家庭 / 小园所版本交付。</div>
 
-    <h2 id="gapclosure"><span class="num">05</span>Gap 修复台账（v1.4）</h2>
+    <h2 id="gapclosure"><span class="num">05</span>Gap 修复台账（v1.5）</h2>
     <p>独立评审 55 项（3 P0 / 19 P1 / 33 P2）逐项处置：代码修复、文档诚实撤回、或明确边界。完整台账：<a href="/docs/gap-disposition.md">gap-disposition.md</a>；方案评审：<a href="/docs/reviews/12-gap-plan-review.md">12-gap-plan-review.md</a>。</p>
     <div class="grid g3">
       <div class="card"><h4>P0</h4><p>审核规范化的斜杠/软连字符/繁体绕过已修；评论进入审核队列；教学模态补齐；E2E 表述撤回并改为可复现人工清单。</p></div>
@@ -219,7 +222,17 @@ docker compose -f docker-compose.yml -f docker-compose.demo.yml up -d   # 演示
       <div class="card"><h4>验证</h4><p><code>npm test</code> 90/90（10 suites）；<code>tsc --noEmit</code>；<code>npm run e2e</code> 15 项；<a href="/docs/reviews/15-family-ux-audit.md">common-family-ux 六轴审查</a>；320/390 人工点检。</p></div>
     </div>
 
-    <div class="footer"><span>星芽学堂 · Verification Report v1.4 · 2026</span><span>90 tests · 10 suites · 人工点检</span></div>
+    <h2 id="v15"><span class="num">06</span>v1.5 体验重构验收</h2>
+    <div class="table-wrap"><table><thead><tr><th>检查</th><th>结果</th><th>证据</th></tr></thead><tbody>
+      <tr><td>导航无「智能体」</td><td><span class="pill green">通过</span></td><td><code>src/web</code> grep 0；<code>#/agent</code> 重定向 <code>#/creation</code>；E2E 断言 8 项一级导航</td></tr>
+      <tr><td>首页主行动唯一</td><td><span class="pill green">通过</span></td><td>移除三卡统计/今日小约定/学科进度/小铺衣橱入口；E2E 断言 1 个主按钮、无重复统计条</td></tr>
+      <tr><td>创作中心可进入</td><td><span class="pill green">通过</span></td><td>E2E 进入 <code>#/creation</code>，断言 <code>.agent-shell</code> 与页面标题</td></tr>
+      <tr><td>伙伴页 3D/降级</td><td><span class="pill green">通过（2.5D 回退已实测）</span></td><td>E2E 断言 canvas 或 <code>.pet2d-room</code>；当前 headless Chrome 禁用 WebGL，故 3D 路径需在有 GPU 的浏览器复核</td></tr>
+      <tr><td>性能</td><td><span class="pill green">通过</span></td><td>Three.js 仅伙伴页动态加载；gzip 167KB；vendor immutable/ETag；SW 不预缓存</td></tr>
+      <tr><td>测试/可访问性</td><td><span class="pill green">通过</span></td><td>90/90 测试、tsc、E2E、<code>npm run a11y</code>（家长/儿童/平板/移动）</td></tr>
+    </tbody></table></div>
+    <div class="callout"><strong>3D 验证边界：</strong>自动化环境 Chrome 的 GPU 被沙箱禁用，只能验证 2.5D 回退与动作状态；发布前需在真实 Chrome/Safari/iPad 上跑一次 3D 场景与动作矩阵，记录设备/浏览器版本。</div>
+    <div class="footer"><span>星芽学堂 · Verification Report v1.5 · 2026</span><span>90 tests · 10 suites · 人工点检</span></div>
   </main>
 </div>
 </body>

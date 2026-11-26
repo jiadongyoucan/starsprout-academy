@@ -1,7 +1,7 @@
-const CACHE = 'starsprout-v4';
+const CACHE = 'starsprout-v5';
 const SHELL = ['/', '/device', '/device.html', '/styles.css', '/theme.css', '/device.css', '/manifest.webmanifest', '/icon.svg', '/icon-192.png', '/icon-512.png',
   '/js/app.js', '/js/api.js', '/js/ui.js', '/js/assets.js', '/js/device.js',
-  '/js/views/home.js', '/js/views/curriculum.js', '/js/views/learn.js', '/js/views/plans.js', '/js/views/agent.js', '/js/views/registry.js',
+  '/js/views/home.js', '/js/views/curriculum.js', '/js/views/learn.js', '/js/views/plans.js', '/js/views/agent.js', '/js/pet3d.js', '/js/views/registry.js',
   '/js/views/community.js', '/js/views/devices.js', '/js/views/account.js', '/js/views/admin.js', '/js/views/pet.js', '/js/views/child.js', '/js/views/childModal.js'];
 
 self.addEventListener('install', (event) => {

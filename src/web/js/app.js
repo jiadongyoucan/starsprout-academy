@@ -23,32 +23,28 @@ import { openChildModal } from './views/childModal.js';
 const state = { meta: null, booted: false, reminders: [], reminderTimer: null, unread: 0, petData: null };
 
 const NAV = [
-  { group: '学习', items: [
+  { group: '工作台', items: [
     { route: 'home', label: '首页', icon: '🏡', href: '#/home' },
-    { route: 'curriculum', label: '课程体系', icon: '📚', href: '#/curriculum' },
+    { route: 'creation', label: '创作中心', icon: '✨', href: '#/creation' },
     { route: 'plans', label: '学习计划', icon: '🗓️', href: '#/plans' },
   ] },
-  { group: '创作', items: [
-    { route: 'agent', label: '智能体', icon: '🤖', href: '#/agent' },
-    { route: 'registry', label: '专家与技能', icon: '🧑‍🏫', href: '#/registry' },
-  ] },
-  { group: '陪伴', items: [
-    { route: 'child', label: '儿童空间', icon: '🎨', href: '#/child' },
-    { route: 'pet', label: '我的伙伴', icon: '🐾', href: '#/pet' },
+  { group: '成长', items: [
+    { route: 'curriculum', label: '课程', icon: '📚', href: '#/curriculum' },
+    { route: 'pet', label: '伙伴', icon: '🐾', href: '#/pet' },
+    { route: 'community', label: '社区', icon: '🌿', href: '#/community' },
   ] },
   { group: '家庭', items: [
-    { route: 'community', label: '社区广场', icon: '🌿', href: '#/community' },
-    { route: 'devices', label: '多端联动', icon: '📱', href: '#/devices' },
-    { route: 'account', label: '账户与隐私', icon: '⚙️', href: '#/account' },
+    { route: 'devices', label: '多端', icon: '📱', href: '#/devices' },
+    { route: 'account', label: '账户', icon: '⚙️', href: '#/account' },
   ] },
 ];
 
 const BOTTOM = [
   { route: 'home', label: '首页', icon: '🏡', href: '#/home' },
   { route: 'curriculum', label: '课程', icon: '📚', href: '#/curriculum' },
+  { route: 'pet', label: '伙伴', icon: '🐾', href: '#/pet' },
   { route: 'plans', label: '计划', icon: '🗓️', href: '#/plans' },
-  { route: 'agent', label: '智能体', icon: '🤖', href: '#/agent' },
-  { route: 'community', label: '社区', icon: '🌿', href: '#/community' },
+  { route: 'creation', label: '创作', icon: '✨', href: '#/creation' },
 ];
 
 const PAGES = {
@@ -56,7 +52,8 @@ const PAGES = {
   curriculum: { title: '课程体系', subtitle: '四学段 × 五模块，体系化进阶' },
   learn: { title: '互动课时', subtitle: '听一听、说一说、读一读、写一写' },
   plans: { title: '学习计划', subtitle: '生成、纠偏、提醒，一步一步来' },
-  agent: { title: '智能体工作室', subtitle: '会话 · 记忆 · 工作区 · 沙箱' },
+  agent: { title: '创作中心', subtitle: '把想法变成课程、计划与作品' },
+  creation: { title: '创作中心', subtitle: '把想法变成课程、计划与作品' },
   registry: { title: '专家与技能', subtitle: '发布、安装，连接第三方工具' },
   community: { title: '社区广场', subtitle: '健康、相关、经审核的分享' },
   devices: { title: '多端联动', subtitle: '手机制定计划，平板专注学习' },
@@ -325,8 +322,6 @@ async function refreshPetChip() {
       sideEl.onkeydown = (event) => { if (event.key === 'Enter') navigate('#/pet'); };
       sideEl.tabIndex = 0;
     }
-    if (walletEl) walletEl.onclick = () => navigate('#/pet?tab=shop');
-    if (moodEl) moodEl.onclick = () => navigate('#/pet');
   } catch {
     if (walletEl) walletEl.hidden = true;
     if (moodEl) moodEl.hidden = true;
@@ -336,7 +331,10 @@ async function refreshPetChip() {
 
 async function renderRoute() {
   if (!session.user) { renderAuth('login'); return; }
-  const { route, id, query } = parseHash();
+  window.__petCleanup?.(); window.__petCleanup = null;
+  window.__petGeneration = (window.__petGeneration || 0) + 1;
+  let { route, id, query } = parseHash();
+  if (route === 'agent') { const q = query.toString(); location.replace(`#/creation${q ? `?${q}` : ''}`); return; }
   const kidRoute = route === 'child' || (route === 'learn' && query.get('kid') === '1');
   const kidLocked = sessionStorage.getItem('starsprout.kidLocked') === '1';
   if (kidLocked && !kidRoute) {
@@ -368,7 +366,7 @@ async function renderRoute() {
     else if (route === 'curriculum') await renderCurriculum(view, ctx);
     else if (route === 'learn') await renderLearn(view, ctx);
     else if (route === 'plans') { id ? await renderPlanDetail(view, ctx) : await renderPlans(view, ctx); }
-    else if (route === 'agent') await renderAgent(view, ctx);
+    else if (route === 'creation') await renderAgent(view, ctx);
     else if (route === 'registry') await renderRegistry(view, ctx);
     else if (route === 'community' || route === 'review') await renderCommunity(view, ctx);
     else if (route === 'devices') await renderDevices(view, ctx);
@@ -445,7 +443,6 @@ function openUserMenu() {
     <div style="padding:8px 10px 6px"><strong style="font-size:13px">${esc(session.user?.name || '')}</strong>
       <div class="tiny muted">${esc(session.household?.name || '')} · ${role === 'admin' ? '管理员' : role === 'teacher' ? '教师' : '家长'}</div></div>
     <div class="menu-sep"></div>
-    <a href="#/pet" data-menu-close>🐾 我的伙伴</a>
     <a href="#/account" data-menu-close>⚙️ 账户与隐私</a>
     <a href="#/devices" data-menu-close>📱 多端联动</a>
     <a href="#/registry" data-menu-close>🧑‍🏫 专家与技能</a>

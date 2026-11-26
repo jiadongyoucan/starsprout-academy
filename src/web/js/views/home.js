@@ -80,7 +80,7 @@ export async function renderHome(root, ctx) {
         <div class="hero-actions">
           <a class="btn" href="${startHref}">${next ? '开始今天的学习' : '去选一节课'}</a>
           <a class="btn ghost" href="#/plans">制定 / 调整计划</a>
-          <a class="btn ghost" href="#/agent">和智能体聊聊</a>
+          <a class="btn ghost" href="#/child">儿童空间</a>
         </div>
       </div>
       <div class="pet-spotlight" id="petSpotlight" role="link" tabindex="0" aria-label="去看我的伙伴">
@@ -96,11 +96,6 @@ export async function renderHome(root, ctx) {
       </div>
     </section>
 
-    <section class="stat-strip">
-      ${statCard('📚', '这一周完成', metrics.completed, '个小活动', deltaText(metrics.delta?.completed))}
-      ${statCard('⏱️', '一起度过', metrics.minutes, '分钟', deltaText(metrics.delta?.minutes))}
-      ${statCard('🌱', '这一周有学习', metrics.activeDays, '天', '慢慢来，也算数')}
-    </section>
 
     <div class="home-grid">
       <div class="home-main">
@@ -121,27 +116,12 @@ export async function renderHome(root, ctx) {
 
         <section class="card">
           <div class="card-title">
-            <div><h3>这一周的小脚步</h3><span class="hint">每天 15–25 分钟就很好</span></div>
+            <div><h3>这一周的小脚步</h3></div>
             <span class="pill mint">${metrics.activeDays} / 7 天有学习</span>
           </div>
           ${barChart(dashboard.series, { todayStr })}
         </section>
 
-        <section class="card">
-          <div class="card-title"><div><h3>他在慢慢长大</h3><span class="hint">按${esc(childClassLabel(child.class_code))}课程体系统计</span></div>
-            <a class="btn small ghost" href="#/curriculum">课程体系</a></div>
-          <div>
-            ${(dashboard.overall || []).map(subject => `
-              <div class="subject-line">
-                <span class="ico" style="color:${esc(subject.color)}">${subject.icon}</span>
-                <div>
-                  <div class="row between"><strong style="font-size:12.5px">${esc(subject.name)}</strong><span class="tiny muted">${subject.completed}/${subject.total} 课时</span></div>
-                  <div class="meter"><i style="width:${subject.percent}%;background:${esc(subject.color)}"></i></div>
-                </div>
-                <span class="pct">${subject.percent}%</span>
-              </div>`).join('')}
-          </div>
-        </section>
       </div>
 
       <div class="home-side">
@@ -152,19 +132,13 @@ export async function renderHome(root, ctx) {
           <div class="warm-foot"><span>🌿 星芽树洞</span><button class="warm-refresh" id="refreshWarmth" type="button">换一句 ↻</button></div>
         </section>
         <section class="card soft">
-          <div class="card-title"><div><h3>今天的小约定</h3><span class="hint">完成就有小伙伴的回应</span></div><span class="pill primary">${quests.filter(q => q.done).length}/${quests.length || 4}</span></div>
-          ${quests.length ? quests.map(quest => `<div class="mini-quest ${quest.done ? 'done' : ''}"><span class="qdot">${quest.done ? '✓' : ''}</span><span>${esc(quest.label)}</span></div>`).join('') : '<p class="small muted">领养伙伴后解锁每日任务。</p>'}
-          <div class="row" style="margin-top:12px"><a class="btn small soft" href="#/pet">去看伙伴</a></div>
-        </section>
-
-        <section class="card soft">
-          <div class="card-title"><div><h3>一点小发现</h3><span class="hint">${dashboard.ai?.engine === 'llm-assisted' ? 'AI 参与分析' : '基于真实记录的本地分析'}</span></div><span class="pill primary">✨</span></div>
+          <div class="card-title"><div><h3>一点小发现</h3></div><span class="pill primary">✨</span></div>
           ${(dashboard.insights || []).map(insight => `
             <div class="insight ${esc(insight.tone)}">
               <span class="ico">${insight.tone === 'positive' ? '🌿' : insight.tone === 'focus' ? '🎯' : '💡'}</span>
               <div><strong>${esc(insight.title)}</strong><p>${esc(insight.text)}</p></div>
             </div>`).join('')}
-          <p class="tiny muted" style="margin-top:8px">${esc(dashboard.ai?.disclosure || '')}</p>
+          <p class="tiny muted" style="margin-top:8px"></p>
         </section>
 
         ${dashboard.nextLesson ? `<a class="next-card" href="#/learn/${encodeURIComponent(dashboard.nextLesson.id)}">
@@ -173,11 +147,6 @@ export async function renderHome(root, ctx) {
           <span class="spacer"></span><span>→</span>
         </a>` : ''}
 
-        <section class="card">
-          <div class="card-title"><div><h3>值得记住的小事</h3><span class="hint">把坚持变成看得见的礼物</span></div><span class="pill">🪙 ${wallet.coins}</span></div>
-          ${pet ? `<div class="milestone-card"><span class="m-emoji">🎁</span><div><strong>${pet.level >= 5 ? '伙伴已经长大很多啦' : '给伙伴的小礼物'}</strong><p>用学习赚来的金币，给${esc(pet.name)}换一件小衣服，或添一件房间小物。不着急，慢慢来。</p></div></div>` : `<div class="milestone-card"><span class="m-emoji">🐾</span><div><strong>还没有小伙伴</strong><p>领养一只团子兔、小橘狐或芽芽龙，让学习有陪伴。</p><a class="tiny" href="#/pet">去领养 →</a></div></div>`}
-          <div class="row" style="margin-top:12px"><a class="btn small ghost" href="#/pet?tab=shop">逛宠物小铺</a><a class="btn small ghost" href="#/pet?tab=wardrobe">打开衣橱</a></div>
-        </section>
 
         <section class="card">
           <div class="card-title"><div><h3>给家长的一封小信</h3><span class="hint">${latestReport ? `最近更新 ${esc(fmtDateTime(latestReport.created_at))}` : '还没有生成过'}</span></div></div>
@@ -248,21 +217,7 @@ function greetingForChild(name) {
   return `${time}，${name}`;
 }
 
-function statCard(icon, label, value, unit, foot) {
-  return `<div class="stat-card-v2">
-    <div class="lab"><span>${icon}</span>${esc(label)}</div>
-    <div class="val">${esc(value)}<small>${esc(unit)}</small></div>
-    <div class="foot">${foot || '&nbsp;'}</div>
-  </div>`;
-}
 
-function deltaText(delta) {
-  if (delta === undefined || delta === null) return '&nbsp;';
-  if (delta === 0) return '<span class="muted">和上周期差不多</span>';
-  return delta > 0
-    ? `<span class="muted">比上周期多一点点</span>`
-    : `<span class="muted">这周慢一点，也没关系</span>`;
-}
 
 function statusLabel(status) {
   return { pending: '待开始', done: '已完成', missed: '逾期', skipped: '已跳过', moved: '已顺延' }[status] || status;

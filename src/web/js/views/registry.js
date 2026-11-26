@@ -4,7 +4,7 @@ import {
 } from '../ui.js';
 
 const TABS = [
-  { key: 'experts', label: '专家智能体', icon: '🧑‍🏫' },
+  { key: 'experts', label: '专家', icon: '🧑‍🏫' },
   { key: 'skills', label: '技能', icon: '🧩' },
   { key: 'connectors', label: '连接器', icon: '🔌' },
 ];
@@ -139,7 +139,7 @@ export async function renderRegistry(root, ctx) {
   async function loadConnectors() {
     const connectors = await request('/api/registry/connectors');
     body.innerHTML = `
-      <div class="row between" style="margin-bottom:12px"><span class="small muted">连接器把第三方工具接入智能体：内置工具、HTTP Webhook，全部经过权限与 SSRF 校验。</span>
+      <div class="row between" style="margin-bottom:12px"><span class="small muted">连接器把第三方工具接入创作中心：内置工具、HTTP Webhook，全部经过权限与 SSRF 校验。</span>
         <button class="btn small ghost" type="button" id="createConnector2">＋ 新建连接器</button></div>
       ${connectors.length ? `<div class="grid auto">${connectors.map(connector => `
         <article class="entity-card">
@@ -181,7 +181,7 @@ export async function renderRegistry(root, ctx) {
     request('/api/agent/sessions', {
       method: 'POST',
       body: { agentKind: 'expert', expertId, title: '与专家对话' },
-    }).then(sessionData => ctx.navigate(`#/agent?s=${encodeURIComponent(sessionData.id)}`))
+    }).then(sessionData => ctx.navigate(`#/creation?s=${encodeURIComponent(sessionData.id)}`))
       .catch(error => toast(error.message, 'error'));
   }
 
@@ -229,7 +229,7 @@ export async function renderRegistry(root, ctx) {
   async function openExpertModal() {
     const availableSkills = await request('/api/registry/skills').catch(() => []);
     openModal({
-      title: '发布专家智能体', subtitle: '公开专家需要教师/管理员身份并经过审核；家庭专家即时可用',
+      title: '发布专家', subtitle: '公开专家需要教师/管理员身份并经过审核；家庭专家即时可用',
       body: `<form id="expertForm">
         <div class="form-row">
           <div class="field"><label>名称</label><input class="input" name="name" maxlength="40" placeholder="例如：周老师 · 蒙氏日常" required></div>
