@@ -31,7 +31,7 @@ function tone(freq, duration = 0.55, type = 'triangle', volume = 0.14) {
 }
 
 function speak(text, lang = 'zh-CN', rate = 1) {
-  if (!('speechSynthesis' in window) || !text) return;
+  if (!('speechSynthesis' in window) || !text || localStorage.getItem('starsprout.muted') === '1') return;
   window.speechSynthesis.cancel();
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = lang;

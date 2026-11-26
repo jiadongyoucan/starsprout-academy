@@ -4,7 +4,7 @@ import type { Db } from '../infra/db.ts';
 import {
   ackPush, completeLessonOnDevice, createPairingCode, deleteSnapshot, deviceInbox, deviceLesson, devicePlan, deviceProfile,
   endLearning, listDevices, listSnapshots, openDeviceStream, pairDevice, purgeChildSnapshots,
-  pushPlan, requestPhoto, revokeDevice, saveSnapshot, snapshotFile, startLearning,
+  pushPlan, requestPhoto, revokeDevice, saveSnapshot, snapshotFile, startLearning, verifyDeviceParent,
 } from '../modules/device.ts';
 import { warmthForDevice } from '../modules/warmth.ts';
 
@@ -25,6 +25,7 @@ export function registerDeviceRoutes(router: Router, db: Db): void {
   router.delete('/api/snapshots/:id', 'user', ctx => deleteSnapshot(db, ctx.user!, ctx.params.id!));
   router.delete('/api/children/:id/snapshots', 'user', ctx => purgeChildSnapshots(db, ctx.user!, ctx.params.id!));
 
+  router.post('/api/device/verify-parent', 'device', ctx => verifyDeviceParent(db, ctx.device!, ctx.body), { max: 10, windowMs: 10 * 60_000, key: 'device-parent-verify' });
   router.post('/api/device/pair', 'public', ctx => pairDevice(db, ctx.body, ctx.ip),
     { max: 12, windowMs: 10 * 60_000, key: 'device-pair' });
   router.get('/api/device/warmth', 'device', () => warmthForDevice());

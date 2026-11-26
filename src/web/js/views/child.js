@@ -53,7 +53,7 @@ export async function renderChild(root, ctx) {
     <header class="kid-top">
       <button class="kid-parent-link" id="kidExit" type="button">← 家长空间</button>
       <div class="kid-top-badge">今日小冒险</div>
-      <div class="kid-top-right"><span>🪙 ${petState?.wallet?.coins ?? 0}</span><span>🏅 ${stickers.length}</span></div>
+      <div class="kid-top-right"><span>🏅 ${stickers.length} 张贴纸</span></div>
     </header>
     <main class="kid-main">
       <section class="kid-hero">
@@ -91,7 +91,7 @@ export async function renderChild(root, ctx) {
 
       <div class="kid-bottom-grid">
         <section class="kid-sticker-card">
-          <div class="kid-map-head"><div><span class="kid-eyebrow">MY LITTLE COLLECTION</span><h2>我的贴纸墙</h2></div><span class="kid-progress-pill">${stickers.length} 张</span></div>
+          <div class="kid-map-head"><div><span class="kid-eyebrow">我的小收藏</span><h2>我的贴纸墙</h2></div><span class="kid-progress-pill">${stickers.length} 张</span></div>
           ${stickers.length ? `<div class="kid-stickers">${stickers.slice(0, 8).map(s => `<div class="kid-sticker ${s.type}"><span>${s.type === 'unit' ? '🏅' : '🏆'}</span><small>${esc(s.title)}</small></div>`).join('')}</div>` : `<div class="kid-sticker-empty"><p>完成一个单元或一份计划，就会得到一张贴纸。</p><div class="kid-empty-stickers"><span>+</span><span>+</span><span>+</span></div></div>`}
         </section>
         <section class="kid-choice-card">

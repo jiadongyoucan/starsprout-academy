@@ -425,7 +425,7 @@
     <h2 id="gapclosure"><span class="num">19 / GAP CLOSURE</span>v1.4 差距修复与诚实边界</h2>
     <p>根据独立差距评审（55 项：3 P0 / 19 P1 / 33 P2）逐项处置。原则：能改代码的改代码，不能兑现的删掉夸大表述，剩余边界写清楚。完整台账见 <a href="/docs/gap-disposition.md">gap-disposition.md</a>。</p>
     <div class="grid g3">
-      <div class="card"><h4>治理与证据</h4><p>审核规范化覆盖软连字符、斜杠、繁体与分隔手机号；评论进入待审队列；提供可选的 <code>npm run e2e</code>（Chrome CDP，10 项断言）与 <a href="/docs/e2e/manual-checklist.md">人工验收清单</a>；不伪装成 CI 自动化。</p></div>
+      <div class="card"><h4>治理与证据</h4><p>审核规范化覆盖软连字符、斜杠、繁体与分隔手机号；评论进入待审队列；提供可选的 <code>npm run e2e</code>（Chrome CDP，15 项断言）与 <a href="/docs/e2e/manual-checklist.md">人工验收清单</a>；不伪装成 CI 自动化。</p></div>
       <div class="card"><h4>课程与计划</h4><p>所有课时含听/说；家长端显示关键词/重难点/家庭延伸；公开课包真实 sha256、生产首次启动隔离、旧版本在线直到审批；计划标注本地规则，单课超限诚实说明。</p></div>
       <div class="card"><h4>体验与离线</h4><p>儿童空间补 missing 台词、房间装饰、玩具效果、彩虹与字号；PWA 预缓存全部视图/资产并注册设备端 SW；焦点/对比度/触控目标修正。</p></div>
     </div>
@@ -435,7 +435,7 @@
         <tr><td>P0</td><td>审核绕过、教学模态、证据缺失三项关闭或诚实撤回</td></tr>
         <tr><td>P1</td><td>课程元数据/前置、公开课版本、计划诚实性、生态接线、评论审核、伙伴细节、PWA 全部修复</td></tr>
         <tr><td>P2</td><td>可改的已改；连接器模型注入、独立证书、情绪数量等改为明确边界/删除宣称</td></tr>
-        <tr><td>验证</td><td><code>npm test</code> 90/90（10 suites）、<code>tsc --noEmit</code>、人工验收清单</td></tr>
+        <tr><td>验证</td><td><code>npm test</code> 90/90（10 suites）、<code>tsc --noEmit</code>、<code>npm run e2e</code> 15 项、<a href="/docs/reviews/15-family-ux-audit.md">common-family-ux 审查</a></td></tr>
       </tbody>
     </table>
 

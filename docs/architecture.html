@@ -421,7 +421,7 @@
     <div class="grid g3">
       <div class="card"><h4>90 / 90 通过</h4><p>10 个测试套件（含 pet/warmth/seed）；真实 HTTP + 临时 SQLite + 随机端口；并行执行约 2s。</p></div>
       <div class="card"><h4>严格类型</h4><p><code>tsc --noEmit</code> 开启 strict + erasableSyntaxOnly；CI 可同时跑测试与类型检查。</p></div>
-      <div class="card"><h4>浏览器验收</h4><p><code>npm run e2e</code> 可选运行 Chrome CDP 的 10 项断言（家长首页、温度卡、儿童空间、390/320 无溢出、无异常）；另配 <a href="/docs/e2e/manual-checklist.md">人工清单</a>。E2E 依赖本机 Chrome，不作为 CI 必跑。</p></div>
+      <div class="card"><h4>浏览器验收</h4><p><code>npm run e2e</code> 可选运行 Chrome CDP 的 15 项断言（家长首页、温度卡、儿童空间、390/320 无溢出、无异常）；另配 <a href="/docs/e2e/manual-checklist.md">人工清单</a>。E2E 依赖本机 Chrome，不作为 CI 必跑。</p></div>
     </div>
     <table>
       <thead><tr><th>层</th><th>策略</th><th>例子</th></tr></thead>
@@ -503,6 +503,8 @@ cp /backups/2026-11-25/starsprout.db data/</code></pre>
         <tr><td>G11 Gap 方案</td><td>55 项优先级、代码 vs 文档撤回、验收断言</td><td><a href="/docs/reviews/12-gap-plan-review.md">12-gap-plan-review.md</a></td></tr>
         <tr><td>G12 Gap 代码</td><td><strong>PASS</strong>；审核/课程/计划/PWA/回归复核</td><td><a href="/docs/reviews/13-gap-code-review.md">13-gap-code-review.md</a></td></tr>
         <tr><td>G13 Gap 验收</td><td><strong>PASS</strong>；处置台账 + 全量回归 + 文档一致性</td><td><a href="/docs/reviews/14-gap-final-acceptance.md">14-gap-final-acceptance.md</a></td></tr>
+        <tr><td>G14 Family UX</td><td>common-family-ux 六轴：受众/可访问性/安全/舒适/一致性/人味</td><td><a href="/docs/reviews/15-family-ux-audit.md">15-family-ux-audit.md</a></td></tr>
+        <tr><td>G15 Family UX 复核</td><td>设备家长密码门、静音、交还卡、本地化</td><td><a href="/docs/reviews/16-family-ux-review.md">16-family-ux-review.md</a></td></tr>
       </tbody>
     </table>
     <div class="callout mint"><strong>工程结论：</strong>在“零依赖 + 单机 + 低 token 成本”的约束下，用清晰的限界上下文、可验证的测试与显式的安全取舍，交付了完整可运行的产品，而不是演示页面。</div>

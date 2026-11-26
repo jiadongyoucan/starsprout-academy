@@ -35,6 +35,17 @@ describe('多端联动：配对、推送、学习与摄像头照片', () => {
       body: { code: codeResult.data.code, name: '再次配对', kind: 'ipad' },
     });
     assert.equal(reuse.status, 422, '配对码必须一次性使用');
+    // helper uses Bearer token, device token is not a user token; call raw via fetch
+    const wrongGate = await fetch(`${ctx.base}/api/device/verify-parent`, {
+      method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${pair.data.token}` },
+      body: JSON.stringify({ password: 'definitely-wrong' }),
+    });
+    assert.equal(wrongGate.status, 403);
+    const rightGate = await fetch(`${ctx.base}/api/device/verify-parent`, {
+      method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${pair.data.token}` },
+      body: JSON.stringify({ password: user.password }),
+    });
+    assert.equal(rightGate.status, 200);
   });
 
   test('家长推送计划，平板收件箱收到并可标记已打开', async () => {

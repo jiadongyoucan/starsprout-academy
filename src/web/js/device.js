@@ -73,7 +73,8 @@ function headerHtml() {
     ${profile?.children?.length ? `<label class="device-child"><span class="sr-only">选择孩子</span>
       <select id="deviceChild">${profile.children.map(item => `<option value="${esc(item.id)}" ${item.id === child?.id ? 'selected' : ''}>${esc(item.name)} · ${{ nursery: '托班', junior: '小班', middle: '中班', senior: '大班' }[item.class_code] || item.class_code}</option>`).join('')}</select></label>` : ''}
     <span class="device-status-pill"><span class="device-status online"></span>已连接</span>
-    <button class="btn small ghost" id="exitDevice" type="button" title="请家长长按 2 秒">家长设置</button>
+    <button class="btn small ghost" id="muteToggle" type="button" aria-pressed="${localStorage.getItem('starsprout.muted') === '1'}">${localStorage.getItem('starsprout.muted') === '1' ? '🔇 静音' : '🔊 声音'}</button>
+    <button class="btn small ghost" id="exitDevice" type="button" title="家长密码解锁">家长设置</button>
   </header>`;
 }
 
@@ -85,20 +86,53 @@ function bindHeader() {
   });
   const exitDevice = document.getElementById('exitDevice');
   if (exitDevice) {
-    let holdTimer = null;
-    const leave = () => {
-      if (!confirm('家长确认退出学习端？下次需要重新生成配对码。')) return;
-      clearDevice();
-      state.profile = null;
-      renderPair();
-    };
-    exitDevice.addEventListener('pointerdown', () => { holdTimer = setTimeout(leave, 1800); });
-    ['pointerup', 'pointerleave', 'pointercancel'].forEach(type => exitDevice.addEventListener(type, () => { if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; } }));
-    exitDevice.addEventListener('click', (event) => {
-      event.preventDefault();
-      if (!holdTimer) toast('请家长长按 2 秒进入家长设置', 'info');
-    });
+    exitDevice.addEventListener('click', () => openParentGate());
   }
+  document.getElementById('muteToggle')?.addEventListener('click', () => {
+    const next = localStorage.getItem('starsprout.muted') === '1' ? '0' : '1';
+    localStorage.setItem('starsprout.muted', next);
+    if (next === '1') window.speechSynthesis?.cancel();
+    bindHeader();
+  });
+}
+
+function openParentGate() {
+  openModal({
+    title: '家长设置',
+    subtitle: '退出学习端需要家长密码；孩子无法直接进入设备设置',
+    body: `<div class="field"><label>家长登录密码</label><input class="input" id="deviceParentPassword" type="password" autocomplete="current-password" /></div><div id="deviceParentError" class="form-error" style="display:none"></div>`,
+    footer: '<button class="btn ghost" data-close type="button">继续学习</button><button class="btn" id="deviceParentSubmit" type="button">验证并退出</button>',
+    onMount(modal, close) {
+      const input = modal.querySelector('#deviceParentPassword');
+      const error = modal.querySelector('#deviceParentError');
+      const submit = async () => {
+        const button = modal.querySelector('#deviceParentSubmit');
+        button.disabled = true; button.textContent = '验证中…';
+        try {
+          await dapi('/api/device/verify-parent', { method: 'POST', body: { password: input.value } });
+          close(); clearDevice(); state.profile = null; renderPair();
+        } catch (e) {
+          error.textContent = e.message; error.style.display = 'block';
+          button.disabled = false; button.textContent = '验证并退出';
+        }
+      };
+      modal.querySelector('[data-close]').addEventListener('click', close);
+      modal.querySelector('#deviceParentSubmit').addEventListener('click', submit);
+      input.addEventListener('keydown', (event) => { if (event.key === 'Enter') submit(); });
+      input.focus();
+    },
+  });
+}
+
+function renderHandback() {
+  app().innerHTML = `${headerHtml()}<main class="device-main"><section class="device-card" style="max-width:520px;margin:40px auto;text-align:center">
+    <div style="font-size:54px">🌙</div><h2 style="margin-top:10px">今天到这里啦</h2>
+    <p class="device-muted" style="margin-top:8px;font-size:16px;line-height:1.8">把平板交给爸爸妈妈吧。学习记录已经保存，明天再继续。</p>
+    <div class="row" style="justify-content:center;margin-top:18px"><button class="btn" id="handbackHome" type="button">回首页</button><button class="btn ghost" id="handbackAgain" type="button">再学一个</button></div>
+  </section></main>`;
+  bindHeader();
+  document.getElementById('handbackHome').addEventListener('click', () => renderHome());
+  document.getElementById('handbackAgain').addEventListener('click', () => state.plan ? openPlan(state.plan.plan.id) : renderHome());
 }
 
 function renderPair(message = '') {
@@ -364,7 +398,7 @@ function renderLesson() {
         rewards: result.rewards || {},
         petHtml: petSvg(state.plan?.child?.pet?.species || 'bunny', result.rewards?.stars >= 3 ? 'excited' : 'happy', state.plan?.child?.pet?.equipped || [], 110),
         note: '记录已经同步给家长了',
-        onClose: () => { if (state.plan) openPlan(state.plan.plan.id); },
+        onClose: () => renderHandback(),
       });
     } catch (error) {
       toast(error.message, 'error');

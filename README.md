@@ -327,6 +327,9 @@ npm run e2e       # 可选：本机 Chrome 开 --remote-debugging-port=9223
 - Gap 方案评审：`docs/reviews/12-gap-plan-review.md`
 - Gap 代码评审：`docs/reviews/13-gap-code-review.md`
 - Gap 最终验收：`docs/reviews/14-gap-final-acceptance.md`
+- Family UX 审查（common-family-ux）：`docs/reviews/15-family-ux-audit.md`
+- Family UX 独立复核：`docs/reviews/16-family-ux-review.md`
+- 本地技能来源与说明：`skills/README.md`
 
 启动后可直接访问 `http://localhost:8080/docs/`。
 

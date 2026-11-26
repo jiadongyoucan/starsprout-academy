@@ -524,3 +524,23 @@ body.kid-mode .learn-foot .btn{min-height:48px;font-size:15px}
 .room-decor:nth-of-type(1){right:16%;bottom:22%}
 .room-decor:nth-of-type(2){left:12%;bottom:26%;font-size:24px}
 .room-decor:nth-of-type(3){right:30%;top:34%;font-size:22px}
+/* common-family-ux: parent 48px targets, child ages 3-6 64px targets, body 16px */
+body{font-size:16px}
+.btn{min-height:48px}
+.btn.small{min-height:44px}
+.kid-big-btn{min-height:64px;font-size:18px}
+.kid-soft-btn{min-height:56px;font-size:16px}
+.kid-chip,.kid-parent-link{min-height:64px;font-size:16px;padding:10px 16px}
+.kid-speech{font-size:16px;line-height:1.7}
+.kid-stop{min-height:76px}
+.kid-stop-copy small{font-size:14px}
+.kid-sticker small{font-size:14px}
+.kid-footer{font-size:14px}
+.kid-top-right span{font-size:14px;min-height:44px;display:inline-flex;align-items:center}
+.kid-stop-go{font-size:14px}
+.kid-hello p{font-size:17px}
+@media(max-width:820px){.kid-big-btn{min-height:64px}.kid-chip,.kid-parent-link{min-height:64px}.kid-stop{min-height:76px}}
+/* common-family-ux child device: labels >=14px, calm hand-back */
+.device-footer-note,.device-muted,.device-plan-item small,.device-inbox small,.device-card p,.device-card .kv dd,.device-card .kv dt{font-size:14px;line-height:1.7}
+.device-top .btn{min-height:44px}
+.device-lesson .lesson-meta-card{display:none}

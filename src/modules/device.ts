@@ -3,8 +3,8 @@ import path from 'node:path';
 import type http from 'node:http';
 import type { Db } from '../infra/db.ts';
 import { config } from '../config.ts';
-import { forbidden, notFound, validation } from '../core/errors.ts';
-import { newId, nowIso, randomCode, sha256, signToken } from '../core/security.ts';
+import { AppError, forbidden, notFound, validation } from '../core/errors.ts';
+import { newId, nowIso, randomCode, sha256, signToken, verifyPassword } from '../core/security.ts';
 import { oneOf, str } from '../core/validate.ts';
 import type { AuthDevice, AuthUser } from '../core/http.ts';
 import { assertChildAccess, audit, consentGranted, getHousehold, listChildren, trackEvent } from './shared.ts';
@@ -388,6 +388,19 @@ export function completeLessonOnDevice(db: Db, device: AuthDevice, body: any) {
 export function cameraConsentState(db: Db, user: AuthUser, childId: string) {
   const child = assertChildAccess(db, user, childId);
   return { childId: child.id, camera: consentGranted(db, child.id, 'camera'), aiProcessing: consentGranted(db, child.id, 'ai_processing') };
+}
+
+export function verifyDeviceParent(db: Db, device: AuthDevice, body: any) {
+  const password = str(body?.password, { label: '家长密码', max: 72 });
+  const parents = db.all<{ password_hash: string }>(
+    `SELECT u.password_hash FROM users u JOIN household_members hm ON hm.user_id = u.id
+     WHERE hm.household_id = ? AND u.role IN ('parent','admin') AND u.disabled = 0`, [device.householdId],
+  );
+  if (!parents.some(parent => verifyPassword(password, parent.password_hash))) {
+    throw new AppError(403, 'INVALID_PASSWORD', '家长密码不正确');
+  }
+  audit(db, { householdId: device.householdId, actorId: null, action: 'device.parent_unlock', entity: 'device', entityId: device.id });
+  return { verified: true };
 }
 
 export function deviceProfile(db: Db, device: AuthDevice) {

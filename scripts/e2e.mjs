@@ -43,9 +43,10 @@ async function main() {
   await evaluate("location.hash = '#/child'"); await sleep(1600);
   check(await evaluate("document.body.classList.contains('kid-mode')"), 'child mode isolates parent chrome');
   check((await evaluate("document.querySelectorAll('.kid-stop').length")) >= 1, 'child adventure path renders');
-  check(parseFloat(await evaluate("getComputedStyle(document.querySelector('.kid-speech')).fontSize")) >= 15, 'kid speech >=15px');
-  check((await evaluate("document.querySelector('.kid-parent-link').getBoundingClientRect().height")) >= 44, 'parent exit touch target >=44px');
-  check((await evaluate("document.querySelector('.kid-chip').getBoundingClientRect().height")) >= 44, 'kid chip touch target >=44px');
+  check(parseFloat(await evaluate("getComputedStyle(document.querySelector('.kid-speech')).fontSize")) >= 16, 'kid speech >=16px');
+  check((await evaluate("document.querySelector('.kid-parent-link').getBoundingClientRect().height")) >= 64, 'child parent-gate target >=64px');
+  check((await evaluate("document.querySelector('.kid-chip').getBoundingClientRect().height")) >= 64, 'kid chip target >=64px');
+  check(parseFloat(await evaluate("getComputedStyle(document.body).fontSize")) >= 16, 'body >=16px');
   check((await evaluate("getComputedStyle(document.querySelector('.rainbow')).display")) !== 'none', 'rainbow rendered');
   await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true }); await sleep(700);
   check((await evaluate("document.documentElement.scrollWidth")) <= 390, '390px no horizontal overflow');
