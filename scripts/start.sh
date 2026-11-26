@@ -17,13 +17,20 @@ fi
 [ -f .env ] || cp .env.example .env
 mkdir -p data
 
-if [ "${1:-}" = "--demo" ]; then
-  export SEED_DEMO=true DEMO_MODE=true ENABLE_SANDBOX=true
+MODE="${1:-}"
+if [ "$MODE" = "--demo" ]; then
+  export SEED_DEMO=true DEMO_MODE=true ENABLE_SANDBOX=true DATA_DIR="${DATA_DIR:-./data/demo}"
   echo "⚠️  演示模式：会写入演示家庭与演示账号，仅限本机体验，不要对公网开放。"
+elif [ "$MODE" = "--real" ]; then
+  export SEED_DEMO=false DEMO_MODE=false DATA_DIR="${DATA_DIR:-./data/prod}"
+  if [ -z "${SETUP_TOKEN:-}" ]; then SETUP_TOKEN="$(openssl rand -hex 16 2>/dev/null || "$NODE_BIN" -e "console.log(require(\"node:crypto\").randomBytes(16).toString(\"hex\"))")"; export SETUP_TOKEN; fi
+  echo "✓ 真实模式：首次打开会要求创建管理员；数据目录 ${DATA_DIR}"
 fi
 
 echo "🌱 星芽学堂启动中…"
 echo "   家长端: http://localhost:${PORT:-8080}"
 echo "   学习端: http://localhost:${PORT:-8080}/device"
+  if [ "$MODE" = "--real" ]; then echo "   局域网: 手机/平板请使用 http://<本机局域网 IP>:${PORT:-8080}（配对弹窗会自动识别）"; fi
 echo "   文档:   http://localhost:${PORT:-8080}/docs/"
+if [ "$MODE" = "--real" ]; then echo "   首次打开: 创建管理员（仅本机；远程需 SETUP_TOKEN）"; echo "   SETUP_TOKEN: ${SETUP_TOKEN}"; fi
 exec "$NODE_BIN" src/server.ts

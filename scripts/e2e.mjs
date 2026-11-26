@@ -63,6 +63,25 @@ async function main() {
     await evaluate("location.hash = '#/home'"); await sleep(300);
   }
   check((await evaluate("window.__petLive")) === 0, 'pet mount/unmount soak has no orphans');
+  await evaluate("location.hash = '#/account'"); await sleep(900);
+  await evaluate("document.querySelector('#editProfile')?.click()"); await sleep(300);
+  check(await evaluate("!!document.querySelector('#avatarFile')"), 'profile avatar upload available');
+  await evaluate(`(async () => {
+    const c = document.createElement('canvas'); c.width = c.height = 256;
+    const ctx = c.getContext('2d'); ctx.fillStyle = '#ef7d84'; ctx.fillRect(0, 0, 256, 256);
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 120px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('米', 128, 172);
+    const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.8));
+    const file = new File([blob], 'avatar.jpg', { type: 'image/jpeg' });
+    const dt = new DataTransfer(); dt.items.add(file);
+    const input = document.querySelector('#avatarFile'); input.files = dt.files; input.dispatchEvent(new Event('change', { bubbles: true }));
+  })()`); await sleep(500);
+  await evaluate("document.querySelector('#profileSave')?.click()"); await sleep(1200);
+  check(await evaluate("!!document.querySelector('#userAvatar img')"), 'avatar saved and rendered in shell');
+  await evaluate("location.hash = '#/devices'"); await sleep(900);
+  await evaluate("document.querySelector('#pairDevice')?.click()"); await sleep(900);
+  check(await evaluate("!!document.querySelector('#pairQr svg')"), 'pairing QR renders');
+  check(await evaluate("document.querySelector('#pairQr')?.previousElementSibling?.innerText?.includes('/device?code=') || document.body.innerText.includes('/device?code=')"), 'pairing URL carries code');
+  await evaluate("document.querySelector('.modal-close')?.click()"); await sleep(200);
   await evaluate("location.hash = '#/child'"); await sleep(1600);
   check(await evaluate("document.body.classList.contains('kid-mode')"), 'child mode isolates parent chrome');
   check((await evaluate("document.querySelectorAll('.kid-stop').length")) >= 1, 'child adventure path renders');

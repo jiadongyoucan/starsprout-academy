@@ -10,6 +10,7 @@ services:
       PORT: "8080"
       DATA_DIR: /data
       PUBLIC_URL: ${PUBLIC_URL:-http://localhost:8080}
+      SETUP_TOKEN: ${SETUP_TOKEN:-}
       # 默认不写入演示账号：首次打开会引导创建管理员。
       # 需要完整演示数据时使用：docker compose -f docker-compose.yml -f docker-compose.demo.yml up -d
       SEED_DEMO: ${SEED_DEMO:-false}

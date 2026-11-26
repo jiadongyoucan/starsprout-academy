@@ -55,7 +55,7 @@ export function assertStrongPassword(password: string): void {
 // ---------- JWT (HS256) ----------
 export type TokenPayload = {
   sub: string;
-  typ: 'user' | 'device';
+  typ: 'user' | 'device' | 'device-stream';
   role?: string;
   hid?: string;
   jti?: string;
@@ -87,7 +87,7 @@ export function verifyToken(token: string): TokenPayload | null {
     if (provided.length !== expected.length || !crypto.timingSafeEqual(provided, expected)) return null;
     const parsed = JSON.parse(Buffer.from(body, 'base64url').toString('utf8')) as TokenPayload;
     if (!parsed || typeof parsed.exp !== 'number' || parsed.exp < Math.floor(Date.now() / 1000)) return null;
-    if (parsed.typ !== 'user' && parsed.typ !== 'device') return null;
+    if (!['user', 'device', 'device-stream'].includes(parsed.typ)) return null;
     return parsed;
   } catch {
     return null;

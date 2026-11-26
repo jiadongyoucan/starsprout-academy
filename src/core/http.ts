@@ -17,7 +17,7 @@ export type AuthUser = {
   jti: string;
   mustChangePassword?: boolean;
 };
-export type AuthDevice = { id: string; name: string; householdId: string };
+export type AuthDevice = { id: string; name: string; householdId: string; childId: string | null };
 export type AuthContext = { user: AuthUser | null; device: AuthDevice | null };
 
 export type Ctx = {
@@ -105,9 +105,9 @@ async function readBody(req: http.IncomingMessage): Promise<{ body: any; raw: Bu
 export class Router {
   private routes: Route[] = [];
   private limiter: RateLimiter;
-  private resolveAuth: (token: string) => Promise<AuthContext | null>;
+  private resolveAuth: (token: string, path?: string) => Promise<AuthContext | null>;
 
-  constructor(resolveAuth: (token: string) => Promise<AuthContext | null>) {
+  constructor(resolveAuth: (token: string, path?: string) => Promise<AuthContext | null>) {
     this.resolveAuth = resolveAuth;
     this.limiter = createRateLimiter();
   }
@@ -226,7 +226,7 @@ export class Router {
     // EventSource cannot set headers; only the device SSE endpoint accepts a query token.
     if (!token && url.pathname === '/api/device/events') token = url.searchParams.get('token') || '';
     if (!token) return null;
-    return this.resolveAuth(token);
+    return this.resolveAuth(token, url.pathname);
   }
 
   private match(method: string, pathname: string): { route: Route; params: Record<string, string> } | null {

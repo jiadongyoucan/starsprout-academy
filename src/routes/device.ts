@@ -7,9 +7,12 @@ import {
   pushPlan, requestPhoto, revokeDevice, saveSnapshot, snapshotFile, startLearning, verifyDeviceParent,
 } from '../modules/device.ts';
 import { warmthForDevice } from '../modules/warmth.ts';
+import { config } from '../config.ts';
+import { signToken } from '../core/security.ts';
+import { pairingBaseUrl } from '../core/network.ts';
 
 export function registerDeviceRoutes(router: Router, db: Db): void {
-  router.post('/api/devices/pairing-code', 'user', ctx => createPairingCode(db, ctx.user!, ctx.body),
+  router.post('/api/devices/pairing-code', 'user', ctx => createPairingCode(db, ctx.user!, ctx.body, pairingBaseUrl(ctx.req, config.publicUrl)),
     { max: 10, windowMs: 10 * 60_000, key: 'pairing-code' });
   router.get('/api/devices', 'user', ctx => listDevices(db, ctx.user!));
   router.delete('/api/devices/:id', 'user', ctx => revokeDevice(db, ctx.user!, ctx.params.id!));
@@ -29,8 +32,9 @@ export function registerDeviceRoutes(router: Router, db: Db): void {
   router.post('/api/device/pair', 'public', ctx => pairDevice(db, ctx.body, ctx.ip),
     { max: 12, windowMs: 10 * 60_000, key: 'device-pair' });
   router.get('/api/device/warmth', 'device', () => warmthForDevice());
-  router.get('/api/device/me', 'device', ctx => deviceProfile(db, ctx.device!));
+  router.get('/api/device/me', 'device', ctx => deviceProfile(db, ctx.device!, ctx.query.get('childId')));
   router.get('/api/device/inbox', 'device', ctx => deviceInbox(db, ctx.device!));
+  router.post('/api/device/stream-ticket', 'device', ctx => ({ ticket: signToken({ sub: ctx.device!.id, typ: 'device-stream', did: ctx.device!.id, hid: ctx.device!.householdId }, 120), expiresIn: 120 }));
   router.get('/api/device/events', 'device', ctx => { openDeviceStream(ctx.device!, ctx.res); });
   router.post('/api/device/pushes/:id/ack', 'device', ctx => ackPush(db, ctx.device!, ctx.params.id!, ctx.body));
   router.get('/api/device/plans/:id', 'device', ctx => devicePlan(db, ctx.device!, ctx.params.id!));

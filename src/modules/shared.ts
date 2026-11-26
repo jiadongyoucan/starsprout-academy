@@ -1,11 +1,39 @@
 import type { Db } from '../infra/db.ts';
-import { forbidden, notFound } from '../core/errors.ts';
+import { forbidden, notFound, validation } from '../core/errors.ts';
 import { newId, nowIso, today, addDays } from '../core/security.ts';
 import type { AuthUser } from '../core/http.ts';
 
+
+/** User-entered nickname: NFC, trimmed, no controls; count graphemes not UTF-16 units. */
+export function nicknameValue(input: unknown, label = '昵称', max = 20): string {
+  const value = String(input ?? '').normalize('NFC').trim();
+  if (!value) throw validation(`${label}不能为空`);
+  if (/[\u0000-\u001f\u007f]/.test(value)) throw validation(`${label}包含不可见控制字符`);
+  const graphemes = typeof Intl.Segmenter === 'function'
+    ? [...new Intl.Segmenter('zh', { granularity: 'grapheme' }).segment(value)].length
+    : [...value].length;
+  if (graphemes > max) throw validation(`${label}最多 ${max} 个字`);
+  return value;
+}
+
+/** Small inline avatar (data URL) only; no SVG (XSS) and no remote fetch. */
+export function avatarValue(input: unknown): string | null {
+  if (input === null || input === undefined || input === '') return null;
+  const value = String(input);
+  const match = /^data:image\/(png|jpeg|webp);base64,([A-Za-z0-9+/=]+)$/.exec(value);
+  if (!match) throw validation('头像需为 PNG / JPEG / WebP 图片（不支持 SVG 或外链）');
+  const bytes = Buffer.from(match[2], 'base64');
+  if (bytes.length > 200_000) throw validation('头像压缩后不能超过 200KB');
+  const isPng = bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47;
+  const isJpeg = bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
+  const isWebp = bytes.subarray(0, 4).toString() === 'RIFF' && bytes.subarray(8, 12).toString() === 'WEBP';
+  if (!(isPng || isJpeg || isWebp)) throw validation('头像文件内容与格式不符');
+  return value;
+}
+
 export type UserRow = {
   id: string; email: string; name: string; role: 'parent' | 'teacher' | 'admin';
-  password_hash: string; must_change_password: number; disabled: number; created_at: string;
+  password_hash: string; must_change_password: number; disabled: number; created_at: string; avatar: string | null;
 };
 export type ChildRow = {
   id: string; household_id: string; name: string; class_code: string;

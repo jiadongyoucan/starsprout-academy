@@ -173,6 +173,25 @@ describe('身份认证、RBAC 与家庭隔离', () => {
     assert.equal(relogin.status, 403);
   });
 
+
+  test('家长可修改昵称与头像，孩子档案头像走同一白名单', async () => {
+    const user = await newUser(ctx.base);
+    const updated = await api(ctx.base, 'PATCH', '/api/auth/profile', {
+      token: user.token, body: { name: '新昵称', avatar: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl2lS8AAAAASUVORK5CYII=' },
+    });
+    assert.equal(updated.status, 200);
+    assert.equal(updated.data.user.name, '新昵称');
+    assert.equal(updated.data.user.avatar, 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl2lS8AAAAASUVORK5CYII=');
+    const me = await api(ctx.base, 'GET', '/api/auth/me', { token: user.token });
+    assert.equal(me.data.user.avatar, 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl2lS8AAAAASUVORK5CYII=');
+    const bad = await api(ctx.base, 'PATCH', '/api/auth/profile', { token: user.token, body: { avatar: 'data:image/svg+xml;base64,PHN2Zz4=' } });
+    assert.equal(bad.status, 422);
+    const child = await addChild(ctx.base, user.token);
+    const childUpdate = await api(ctx.base, 'PATCH', `/api/children/${child.id}`, { token: user.token, body: { name: '小新', avatar: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl2lS8AAAAASUVORK5CYII=' } });
+    assert.equal(childUpdate.status, 200);
+    assert.equal(childUpdate.data.avatar, 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl2lS8AAAAASUVORK5CYII=');
+  });
+
   test('管理员接口对家长返回 403', async () => {
     const user = await newUser(ctx.base);
     const overview = await api(ctx.base, 'GET', '/api/admin/overview', { token: user.token });

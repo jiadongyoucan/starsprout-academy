@@ -1,9 +1,10 @@
 import type { Router } from '../core/http.ts';
 import type { Db } from '../infra/db.ts';
 import { config } from '../config.ts';
-import { validation } from '../core/errors.ts';
+import crypto from 'node:crypto';
+import { forbidden, validation } from '../core/errors.ts';
 import {
-  adjustDemoMode, adminResetPassword, changePassword, listUsers, login, logout, me, register, setUserRole, setupAdmin, setupRequired, verifyPasswordForUser,
+  adjustDemoMode, adminResetPassword, changePassword, listUsers, login, logout, me, register, setUserRole, setupAdmin, setupRequired, updateProfile, verifyPasswordForUser,
 } from '../modules/auth.ts';
 import {
   childrenView, createChild, deleteChild, deleteHouseholdMemories, disableAccount, eraseHousehold, exportChildData,
@@ -63,12 +64,23 @@ export function registerCoreRoutes(router: Router, db: Db): void {
     };
   });
 
-  router.post('/api/setup', 'public', ctx => setupAdmin(db, ctx.body), { max: 5, windowMs: 10 * 60_000, key: 'setup' });
+  router.post('/api/setup', 'public', ctx => {
+    const remote = ctx.req.socket.remoteAddress || '';
+    const local = remote === '127.0.0.1' || remote === '::1' || remote === '::ffff:127.0.0.1';
+    const proxied = !!(ctx.req.headers['x-forwarded-for'] || ctx.req.headers['x-real-ip'] || ctx.req.headers.forwarded);
+    const token = String(ctx.req.headers['x-setup-token'] || '');
+    const mustToken = !local || proxied || config.env === 'production';
+    const expected = config.setupToken;
+    const tokenOk = !!expected && token.length === expected.length && crypto.timingSafeEqual(Buffer.from(token), Buffer.from(expected));
+    if (mustToken && !tokenOk) throw forbidden('首次初始化需要 SETUP_TOKEN（远程部署必填；请查看启动日志或环境变量）');
+    return setupAdmin(db, ctx.body);
+  }, { max: 5, windowMs: 10 * 60_000, key: 'setup' });
   router.post('/api/auth/register', 'public', ctx => register(db, ctx.body), { max: 8, windowMs: 10 * 60_000, key: 'register' });
   router.post('/api/auth/login', 'public', ctx => login(db, ctx.body), { max: 10, windowMs: 5 * 60_000, key: 'login' });
   router.post('/api/auth/logout', 'user', ctx => logout(db, ctx.user!));
   router.post('/api/auth/verify-password', 'user', ctx => verifyPasswordForUser(db, ctx.user!, ctx.body), { max: 10, windowMs: 10 * 60_000, key: 'verify-password' });
   router.get('/api/auth/me', 'user', ctx => me(db, ctx.user!));
+  router.patch('/api/auth/profile', 'user', ctx => updateProfile(db, ctx.user!, ctx.body), { max: 20, windowMs: 10 * 60_000, key: 'profile' });
   router.post('/api/auth/change-password', 'user', ctx => changePassword(db, ctx.user!, ctx.body), { max: 6, windowMs: 10 * 60_000, key: 'password' });
 
   router.get('/api/children', 'user', ctx => childrenView(db, ctx.user!));

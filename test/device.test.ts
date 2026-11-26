@@ -18,7 +18,7 @@ describe('多端联动：配对、推送、学习与摄像头照片', () => {
     });
     assert.equal(codeResult.status, 200);
     assert.match(codeResult.data.code, /^\d{6}$/);
-    assert.ok(codeResult.data.url.endsWith('/device'));
+    assert.match(codeResult.data.url, /\/device\?code=\d{6}$/);
     assert.ok(codeResult.data.instructions.includes('10 分钟'));
 
     const wrong = await api(ctx.base, 'POST', '/api/device/pair', { body: { code: '999999', name: 'x', kind: 'ipad' } });
@@ -46,6 +46,33 @@ describe('多端联动：配对、推送、学习与摄像头照片', () => {
       body: JSON.stringify({ password: user.password }),
     });
     assert.equal(rightGate.status, 200);
+  });
+
+
+  test('设备只暴露当前孩子，不能读取兄弟姐妹资料或开始其课程', async () => {
+    const user = await newUser(ctx.base);
+    const first = await addChild(ctx.base, user.token, { name: '老大' });
+    const second = await addChild(ctx.base, user.token, { name: '老二' });
+    const code = await api(ctx.base, 'POST', '/api/devices/pairing-code', {
+      token: user.token, body: { name: '共享平板', kind: 'android', childId: first.id },
+    });
+    assert.equal(code.status, 200);
+    assert.ok(code.data.url.includes(`code=${code.data.code}`));
+    const pair = await api(ctx.base, 'POST', '/api/device/pair', { body: { code: code.data.code, name: '共享平板', kind: 'android' } });
+    assert.equal(pair.status, 200);
+    const me = await api(ctx.base, 'GET', '/api/device/me', { token: pair.data.token });
+    assert.equal(me.status, 200);
+    assert.deepEqual(me.data.children.map((c: any) => c.id), [first.id]);
+    const peek = await api(ctx.base, 'GET', `/api/device/me?childId=${second.id}`, { token: pair.data.token });
+    assert.deepEqual(peek.data.children.map((c: any) => c.id), [first.id], 'query cannot switch sibling');
+    const start = await api(ctx.base, 'POST', '/api/device/learning/start', {
+      token: pair.data.token, body: { childId: second.id, lessonId: 'lsn_english_junior_u1_l1' },
+    });
+    assert.equal(start.status, 404);
+    const push = await api(ctx.base, 'POST', `/api/devices/${pair.data.device.id}/push`, {
+      token: user.token, body: { childId: second.id, planId: 'missing' },
+    });
+    assert.equal(push.status, 404);
   });
 
   test('家长推送计划，平板收件箱收到并可标记已打开', async () => {

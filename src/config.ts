@@ -44,6 +44,7 @@ export const config = {
   secret: resolveSecret(),
   tls: { cert: process.env.TLS_CERT || '', key: process.env.TLS_KEY || '' },
   publicUrl: process.env.PUBLIC_URL || `http://localhost:${process.env.PORT || 8080}`,
+  setupToken: process.env.SETUP_TOKEN || '',
   demoMode: process.env.DEMO_MODE === 'true',
   seedDemo: process.env.SEED_DEMO === 'true',
   enableSandbox: process.env.ENABLE_SANDBOX === 'true',

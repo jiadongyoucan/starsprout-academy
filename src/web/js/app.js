@@ -139,6 +139,7 @@ function renderAuth(mode = 'login') {
           <p class="lede">${isSetup ? '还没有任何账号。创建第一位管理员，然后邀请家人使用。' : isLogin ? '用邮箱登录，继续今天的 20 分钟。' : '30 秒完成注册，马上得到一份两周计划。'}</p>
           <form id="authForm" novalidate>
             ${!isLogin ? `<div class="field"><label for="name">${isSetup ? '管理员称呼' : '你的称呼'}</label><input class="input" id="name" name="name" autocomplete="nickname" placeholder="例如：米粒妈妈" required></div>` : ''}
+            ${isSetup ? `<div class="field"><label for="setupToken">初始化令牌 <span class="tiny muted">远程部署必填</span></label><input class="input" id="setupToken" name="setupToken" autocomplete="one-time-code" placeholder="查看启动日志 / SETUP_TOKEN"><p class="tiny muted" style="margin-top:4px">在本机 localhost 初始化可留空。</p></div>` : ''}
             <div class="field"><label for="email">邮箱</label><input class="input" id="email" name="email" type="email" autocomplete="email" placeholder="you@example.com" required></div>
             <div class="field"><label for="password">密码</label><input class="input" id="password" name="password" type="password" autocomplete="${isLogin ? 'current-password' : 'new-password'}" placeholder="至少 8 位，含字母与数字" required></div>
             ${!isLogin ? `<div class="field"><label for="householdName">家庭名称（可选）</label><input class="input" id="householdName" name="householdName" placeholder="例如：星芽之家"></div>
@@ -170,7 +171,7 @@ function renderAuth(mode = 'login') {
     submit.textContent = isSetup ? '初始化中…' : isLogin ? '登录中…' : '创建中…';
     try {
       let payload;
-      if (isSetup) payload = await request('/api/setup', { method: 'POST', body: { name: data.name, email: data.email, password: data.password, householdName: data.householdName } });
+      if (isSetup) payload = await request('/api/setup', { method: 'POST', headers: data.setupToken ? { 'x-setup-token': data.setupToken } : {}, body: { name: data.name, email: data.email, password: data.password, householdName: data.householdName } });
       else if (isLogin) payload = await request('/api/auth/login', { method: 'POST', body: { email: data.email, password: data.password } });
       else payload = await request('/api/auth/register', { method: 'POST', body: { name: data.name, email: data.email, password: data.password, householdName: data.householdName } });
       saveSession(payload);
@@ -234,6 +235,12 @@ function promptPasswordChange() {
 }
 
 /* ---------------- shell ---------------- */
+function paintAvatar(el, person) {
+  if (!el) return;
+  if (person?.avatar) el.innerHTML = `<img src="${esc(person.avatar)}" alt="${esc(person.name || '头像')}">`;
+  else el.textContent = (person?.name || '星').slice(0, 1);
+}
+
 function renderNav() {
   const sideNav = document.getElementById('sideNav');
   const role = session.user?.role || 'parent';
@@ -256,8 +263,8 @@ function renderNav() {
 
   document.getElementById('userName').textContent = session.user?.name || '家长';
   document.getElementById('userRole').textContent = role === 'admin' ? '管理员' : role === 'teacher' ? '教师' : '家长';
-  document.getElementById('userAvatar').textContent = (session.user?.name || '星').slice(0, 1);
-  document.getElementById('topAvatar').textContent = (session.user?.name || '星').slice(0, 1);
+  paintAvatar(document.getElementById('userAvatar'), session.user);
+  paintAvatar(document.getElementById('topAvatar'), session.user);
   document.getElementById('brandMark').innerHTML = logo(38);
 }
 

@@ -11,7 +11,7 @@
 - **默认安全**：演示账号、沙箱都需显式开启；首次打开会引导创建管理员。
 - **陪伴与奖励**：3 种伙伴、6 种情绪、5 种互动；服务端判分、首通奖励、单元/计划里程碑、金币小铺与衣橱。
 - **有温度的 HMI**：家长首页「照顾自己」小纸条、儿童空间天空/草地/贴纸路径、设备端儿童悄悄话；原创文案每日稳定、可换句不换语气。
-- **测试即验收**：`npm test`，90 个集成测试覆盖认证、隔离、计划、审核、设备、创作中心、伙伴奖励与看板。
+- **测试即验收**：`npm test`，93 个集成测试覆盖认证、隔离、计划、审核、设备、创作中心、伙伴奖励与看板。
 
 ---
 
@@ -87,7 +87,7 @@ services:
 
 | # | 需求 | 实现 | 证据 |
 |---|---|---|---|
-| 1 | 四学段 × 五模块，分级课程，互动听说读写 | 192 个已发布课时；每个课时 6–8 个 block：故事 / 词卡 / 听 / 说 / 描红 / 钢琴 / 节奏 / 配对 / 测验；`src/infra/curriculum-data.ts`、`lesson-blocks.ts` | `test/curriculum.test.ts` |
+| 1 | 四学段 × 五模块，分级课程，互动听说读写 | 193 个已发布课时；每个课时 6–8 个 block：故事 / 词卡 / 听 / 说 / 描红 / 钢琴 / 节奏 / 配对 / 测验；`src/infra/curriculum-data.ts`、`lesson-blocks.ts` | `test/curriculum.test.ts` |
 | 2 | 对接优质公开课，持续更新，体系化不零散 | 4 个公开来源（OER Commons、StoryWeaver、国家智慧教育平台、MuseScore），带 license/attribution/版本；同步 → 隔离区 → 管理员审核 → 原子替换 | 课程页「公开课程来源」；Admin 同步；`test/curriculum.test.ts` |
 | 3 | Plan 模块 + AI 辅助 + 纠正 / 提醒 | AI 读取真实进度排课；逾期检测、一键顺延 / 跳过、调整留痕、到期提醒；`src/modules/plans.ts` | `test/plans.test.ts` |
 | 4 | 创作中心（会话 / 记忆 / 沙箱 / 模型 / 工作区） | 会话、消息、长期记忆、工作区文件版本、模型配置（AES 加密）、权限隔离子进程沙箱、9 个工具、OpenAI-compatible 适配 + 本地引擎 | `test/agent.test.ts`、`test/platform.test.ts` |
@@ -97,7 +97,7 @@ services:
 | 8 | 登录注册、权限认证、权限隔离 | scrypt + JWT + 会话吊销；parent/teacher/admin/device 四类主体；household 全链路隔离 | `test/auth.test.ts`、`test/device.test.ts` |
 | 9 | 手机 ↔ Mac / 平板联动 | 6 位一次性配对码（10 分钟）→ 设备令牌 → 推送 → SSE 实时 + 轮询兜底 → 学习 → 进度回传 | 人工验收清单 + `test/device.test.ts` |
 | 10 | 摄像头抓取学习照片供家长查看 | 家长请求 → 设备明确同意 → 拍照 / 相册 → 家长授权校验 → 家庭内鉴权读取 → 可删除 / 30 天清理 | `test/device.test.ts` |
-| 11 | TDD / DDD / 最佳实践 / 简单部署 | 10 个测试套件 90 用例；按限界上下文拆分模块；零依赖部署；Docker + 一键脚本 + 健康检查 | 本文、`docs/architecture.html` |
+| 11 | TDD / DDD / 最佳实践 / 简单部署 | 11 个测试套件 93 用例；按限界上下文拆分模块；零依赖部署；Docker + 一键脚本 + 健康检查 | 本文、`docs/architecture.html` |
 | 12 | 可领养伙伴、多情绪、喂食/玩耍 | 3 种伙伴、6 种情绪、温和离线衰减、免费基础食物、5 种互动、学习联动 | `docs/companion-design.md`、`src/modules/pet.ts` |
 | 13 | 答题/课时奖励、金币兑换、单元/计划仪式 | 服务端判分、首通幂等、单元 +30 / 计划 +100、小铺/衣橱、庆祝与证书 | `test/pet.test.ts`、`docs/product.html#pet` |
 | 14 | 有温度的家长 / 儿童 HMI，儿童更卡通 | 独立儿童空间（天空/草地/路径/贴纸/伙伴）、家长「照顾自己」卡、设备儿童语气、家长密码解锁 | `test/warmth.test.ts`、浏览器 320/390 |
@@ -203,7 +203,7 @@ src/
   modules/               限界上下文（auth、curriculum、plans、agent、ai、sandbox、registry、community、device、analytics、privacy、models）
   routes/                HTTP 接口层
   web/                   index.html、device.html、styles.css、device.css、js/{api,ui,app,device}.js、js/views/*
-test/                    90 个集成测试
+test/                    93 个集成测试
 docs/                    产品 / 架构 / QA HTML 文档、评审记录
 scripts/                 start / smoke / backup / gen-cert
 ```
@@ -214,6 +214,7 @@ scripts/                 start / smoke / backup / gen-cert
 
 ```bash
 npm test          # NODE_ENV=test node --test test/*.test.ts
+./scripts/start.sh --real   # 真实模式；首次打开创建管理员
 npx tsc --noEmit  # 严格类型检查
 ./scripts/smoke.sh
 npm run e2e       # 可选：本机 Chrome 开 --remote-debugging-port=9223
@@ -234,7 +235,7 @@ npm run a11y      # 可选：Accessibility Tree 命名审计
 | `gaps.test.ts` | 审核变体、听说模态、课时元数据、评论审核、计划诚实性、checksum、披风限定 |
 | `seed.test.ts` | 演示双开关与生产种子门禁 |
 
-> 测试使用临时 SQLite + 随机端口 + 真实 HTTP；`NODE_ENV=test` 关闭限流以便批量用例，业务限流在生产启用。90/90 通过，`tsc --noEmit` 通过；`npm run e2e` 为可选 Chrome CDP 验收，不作为 CI 必跑。
+> 测试使用临时 SQLite + 随机端口 + 真实 HTTP；`NODE_ENV=test` 关闭限流以便批量用例，业务限流在生产启用。93/93 通过，`tsc --noEmit` 通过；`npm run e2e` 为可选 Chrome CDP 验收，不作为 CI 必跑。
 
 ---
 
@@ -331,7 +332,7 @@ npm run a11y      # 可选：Accessibility Tree 命名审计
 - Family UX 审查（common-family-ux）：`docs/reviews/15-family-ux-audit.md`
 - Family UX 独立复核：`docs/reviews/16-family-ux-review.md`
 - 残余差距关闭：`docs/reviews/17-residual-closure.md`
-- v1.5 方案/代码/终验：`docs/reviews/18-redesign-plan-review.md`、`19-v15-code-review.md`、`20-v15-final-acceptance.md`
+- v1.6 方案/代码/终验：`docs/reviews/18-redesign-plan-review.md`、`19-v15-code-review.md`、`20-v15-final-acceptance.md`
 - 本地技能来源与说明：`skills/README.md`
 
 启动后可直接访问 `http://localhost:8080/docs/`。

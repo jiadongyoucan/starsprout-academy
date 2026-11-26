@@ -97,7 +97,7 @@ export async function renderDevices(root, ctx) {
           <div class="insight"><span class="ico">1️⃣</span><div><strong>配对</strong><p>家长生成 6 位一次性配对码（10 分钟有效），在平板打开 /device 输入。</p></div></div>
           <div class="insight"><span class="ico">2️⃣</span><div><strong>推送</strong><p>把计划推送到设备；平板收件箱立即显示，并可开始学习。</p></div></div>
           <div class="insight"><span class="ico">3️⃣</span><div><strong>回传</strong><p>完成记录自动同步到看板与周报；家长不用再问“今天学了什么”。</p></div></div>
-          <div class="insight"><span class="ico">4️⃣</span><div><strong>边界</strong><p>撤销设备后令牌立即失效；照片需孩子端明确同意，家长无法静默开启摄像头。</p></div></div>
+          <div class="insight"><span class="ico">4️⃣</span><div><strong>安装</strong><p>Mac 用 Safari「添加到程序坞」或 Chrome 安装；华为平板用浏览器「添加到桌面」。全屏后由家长密码退出。</p></div></div>
         </section>
       </div>
     </div>`;
@@ -160,7 +160,7 @@ export async function renderDevices(root, ctx) {
   root.querySelectorAll('[data-photo-request]').forEach(button => button.addEventListener('click', () => openPhotoRequest(button.dataset.photoRequest)));
 
   function openPairing() {
-    request('/api/devices/pairing-code', { method: 'POST', body: { name: '学习平板', kind: 'ipad' } })
+    request('/api/devices/pairing-code', { method: 'POST', body: { name: '学习平板', kind: 'ipad', childId: currentChild()?.id } })
       .then(result => {
         let remaining = Math.max(0, Math.round((new Date(result.expiresAt).getTime() - Date.now()) / 1000));
         const { close } = openModal({
@@ -172,13 +172,22 @@ export async function renderDevices(root, ctx) {
               <span class="pill" id="countdown">${Math.floor(remaining / 60)}:${String(remaining % 60).padStart(2, '0')}</span>
             </div>
             <div class="divider"></div>
-            <p class="small">1. 在平板或 Mac 浏览器打开：</p>
+            <div id="pairQr" class="pair-qr" aria-label="配对二维码"></div>
+            <p class="small" style="text-align:center;margin-top:6px">手机扫码，或在 Mac / 华为平板浏览器打开：</p>
             <div class="quote" style="font-size:14px;word-break:break-all">${esc(result.url)}</div>
-            <p class="small muted" style="margin-top:8px">2. 输入上方 6 位配对码；成功后设备将获得独立令牌。</p>
+            <div class="row" style="justify-content:center;margin-top:8px"><button class="btn small ghost" type="button" id="copyUrl">复制地址</button></div>
+            <p class="small muted" style="margin-top:8px">2. 在 Mac 或华为平板浏览器输入 6 位配对码；成功后设备获得独立令牌，可长期使用。</p>
             ${!window.isSecureContext ? '<div class="deviation" style="margin-top:12px">摄像头与 PWA 安装需要 HTTPS 或 localhost。请让家长用手机热点/本机地址，或按部署文档生成证书。</div>' : ''}
             <p class="tiny muted" style="margin-top:10px">${esc(result.instructions)}</p>`,
           footer: `<a class="btn ghost" href="/device" target="_blank" rel="noopener">打开学习端 ↗</a><button class="btn" data-close type="button">完成</button>`,
           onMount(modal, closeModal) {
+            const qrEl = modal.querySelector('#pairQr');
+            try {
+              if (qrEl && window.qrcode) { const qr = window.qrcode(0, 'M'); qr.addData(result.url); qr.make(); qrEl.innerHTML = qr.createSvgTag({ cellSize: 4, margin: 1 }); }
+            } catch { if (qrEl) qrEl.remove(); }
+            modal.querySelector('#copyUrl')?.addEventListener('click', async () => {
+              try { await navigator.clipboard.writeText(result.url); toast('地址已复制', 'success'); } catch { toast('复制失败，请手动输入', 'error'); }
+            });
             modal.querySelector('#copyCode').addEventListener('click', async () => {
               try { await navigator.clipboard.writeText(result.code); toast('配对码已复制', 'success'); }
               catch { toast('复制失败，请手动输入', 'error'); }

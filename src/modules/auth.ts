@@ -6,21 +6,21 @@ import {
 } from '../core/security.ts';
 import { email as vEmail, oneOf, str } from '../core/validate.ts';
 import type { AuthUser } from '../core/http.ts';
-import { audit, getHousehold, getUserHouseholdId, listChildren, type ChildRow, type UserRow } from './shared.ts';
+import { audit, avatarValue, getHousehold, getUserHouseholdId, listChildren, nicknameValue, type ChildRow, type UserRow } from './shared.ts';
 import { moderateContent } from './moderation.ts';
 
 const TOKEN_TTL_SECONDS = 7 * 24 * 3600;
 
 export type AuthResult = {
   token: string;
-  user: { id: string; email: string; name: string; role: string; mustChangePassword: boolean };
+  user: { id: string; email: string; name: string; role: string; avatar: string | null; mustChangePassword: boolean };
   household: { id: string; name: string };
   children: ChildRow[];
 };
 
 function publicUser(user: UserRow) {
   return {
-    id: user.id, email: user.email, name: user.name, role: user.role,
+    id: user.id, email: user.email, name: user.name, role: user.role, avatar: user.avatar || null,
     mustChangePassword: !!user.must_change_password,
   };
 }
@@ -138,6 +138,18 @@ export function changePassword(db: Db, user: AuthUser, body: any): { token: stri
   const fresh = db.get<UserRow>('SELECT * FROM users WHERE id = ?', [user.id])!;
   const token = issueSession(db, fresh, user.householdId);
   return { token, user: publicUser(fresh) };
+}
+
+export function updateProfile(db: Db, user: AuthUser, body: any) {
+  const current = db.get<UserRow>('SELECT * FROM users WHERE id = ?', [user.id]);
+  if (!current) throw unauthorized();
+  const name = body?.name !== undefined ? nicknameValue(body.name, '昵称', 20) : current.name;
+  const check = moderateContent(name, { onTopicHint: true });
+  if (check.blocked || check.reasons.some(r => r.code === 'CONTACT' || r.code === 'PII')) throw validation('昵称包含不合适的内容');
+  const avatar = body?.avatar !== undefined ? avatarValue(body.avatar) : current.avatar;
+  db.run('UPDATE users SET name = ?, avatar = ? WHERE id = ?', [name, avatar, user.id]);
+  audit(db, { householdId: user.householdId, actorId: user.id, action: 'user.profile.update', entity: 'user', entityId: user.id });
+  return { user: publicUser({ ...current, name, avatar }) };
 }
 
 export function me(db: Db, user: AuthUser) {

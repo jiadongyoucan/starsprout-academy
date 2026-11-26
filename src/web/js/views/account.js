@@ -1,6 +1,6 @@
 import { bootstrap, clearSession, currentChild, request, saveSession, session } from '../api.js';
 import {
-  emptyState, esc, fmtDateTime, loading, openModal, toast,
+  avatarHtml, emptyState, esc, fileToAvatar, fmtDateTime, loading, openModal, toast,
 } from '../ui.js';
 import { openChildModal } from './childModal.js';
 
@@ -32,11 +32,12 @@ export async function renderAccount(root, ctx) {
       <div class="stack">
         <section class="card">
           <div class="row" style="gap:12px">
-            <span class="avatar" style="width:48px;height:48px;font-size:18px">${esc((session.user.name || '星').slice(0, 1))}</span>
+            ${avatarHtml(session.user, 'avatar profile-avatar')}
             <div style="flex:1"><strong style="font-size:16px">${esc(session.user.name)}</strong>
               <div class="small muted">${esc(session.user.email)}</div>
               <div class="row" style="margin-top:6px"><span class="pill">${roleLabel}</span><span class="pill">${esc(session.household?.name || '')}</span>
               ${session.user.mustChangePassword ? '<span class="pill rose">建议修改临时密码</span>' : ''}</div></div>
+            <button class="btn small ghost" id="editProfile" type="button">编辑资料</button>
           </div>
           <div class="divider"></div>
           <div class="card-title"><h3>修改密码</h3></div>
@@ -73,7 +74,7 @@ export async function renderAccount(root, ctx) {
             <button class="btn small ghost" id="addChild" type="button">＋ 添加</button></div>
           ${children.length ? children.map(item => `
             <div class="plan-item" style="padding:14px">
-              <span class="avatar warm" style="width:38px;height:38px">${esc(item.avatar || item.name.slice(0, 1))}</span>
+              ${avatarHtml(item, 'avatar warm', 38)}
               <span class="pi-meta"><strong>${esc(item.name)} · ${{ nursery: '托班', junior: '小班', middle: '中班', senior: '大班' }[item.class_code] || item.class_code}</strong>
                 <small>${item.stats.completed} 个活动 · ${item.stats.minutes} 分钟 · 连续 ${item.stats.streak} 天</small></span>
               <div class="acts">
@@ -142,6 +143,7 @@ export async function renderAccount(root, ctx) {
       event.currentTarget.reset();
     } catch (error) { toast(error.message, 'error'); }
   });
+  root.querySelector('#editProfile')?.addEventListener('click', () => openProfileModal(root, ctx));
   root.querySelector('#logoutBtn').addEventListener('click', async () => {
     try { await request('/api/auth/logout', { method: 'POST' }); } catch { /* ignore */ }
     clearSession();
@@ -216,6 +218,43 @@ export async function renderAccount(root, ctx) {
   }));
 }
 
+function openProfileModal(root, ctx) {
+  let avatar = session.user.avatar || '';
+  openModal({
+    title: '编辑个人资料',
+    subtitle: '家长昵称与头像会显示在家庭空间；不会公开给其他家庭',
+    body: `<form id="profileForm">
+      <div class="avatar-upload"><div class="preview" id="profilePreview">${avatar ? `<img src="${esc(avatar)}" alt="头像预览">` : esc(session.user.name.slice(0, 1))}</div>
+        <div><label class="btn small ghost" for="avatarFile" style="cursor:pointer">上传头像</label><input id="avatarFile" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+        <p class="tiny muted" style="margin-top:4px">JPG/PNG/WebP，自动裁成 256×256。</p></div></div>
+      <div class="field"><label>昵称</label><input class="input" name="name" maxlength="20" value="${esc(session.user.name)}" required></div>
+    </form>`,
+    footer: `<button class="btn ghost" data-close type="button">取消</button><button class="btn" id="profileSave" type="button">保存</button>`,
+    onMount(modal, close) {
+      modal.querySelector('#avatarFile').addEventListener('change', async (event) => {
+        const file = event.target.files?.[0]; if (!file) return;
+        try { avatar = await fileToAvatar(file); const preview = modal.querySelector('#profilePreview'); preview.innerHTML = `<img src="${esc(avatar)}" alt="头像预览">`; }
+        catch (error) { toast(error.message, 'error'); }
+      });
+      modal.querySelector('[data-close]').addEventListener('click', close);
+      modal.querySelector('#profileSave').addEventListener('click', async () => {
+        const name = modal.querySelector('[name=name]').value.trim();
+        if (!name) { toast('昵称不能为空', 'error'); return; }
+        const button = modal.querySelector('#profileSave'); button.disabled = true; button.textContent = '保存中…';
+        try {
+          await request('/api/auth/profile', { method: 'PATCH', body: { name, avatar: avatar || null } });
+          await bootstrap(); close(); toast('资料已更新', 'success');
+          for (const id of ['userAvatar', 'topAvatar']) {
+            const el = document.getElementById(id);
+            if (el && session.user.avatar) el.innerHTML = `<img src="${esc(session.user.avatar)}" alt="${esc(session.user.name)}">`;
+          }
+          location.hash = '#/account'; window.dispatchEvent(new HashChangeEvent('hashchange'));
+        } catch (error) { toast(error.message, 'error'); button.disabled = false; button.textContent = '保存'; }
+      });
+    },
+  });
+}
+
 function openEditChild(item) {
   openModal({
     title: `编辑 ${item.name} 的档案`,
@@ -227,16 +266,24 @@ function openEditChild(item) {
         </select></div>
       </div>
       <div class="field"><label>出生年份</label><input class="input" type="number" name="birthYear" min="2016" max="2026" value="${item.birth_year || ''}"></div>
+      <div class="avatar-upload"><div class="preview" id="childPreview">${item.avatar ? `<img src="${esc(item.avatar)}" alt="孩子头像">` : esc(item.name.slice(0, 1))}</div>
+        <div><label class="btn small ghost" for="childAvatarFile" style="cursor:pointer">上传孩子头像</label><input id="childAvatarFile" type="file" accept="image/png,image/jpeg,image/webp" hidden></div></div>
     </form>`,
     footer: `<button class="btn ghost" data-close type="button">取消</button><button class="btn" id="editChildSave" type="button">保存</button>`,
     onMount(modal, close) {
+      let avatar = item.avatar || '';
+      modal.querySelector('#childAvatarFile').addEventListener('change', async (event) => {
+        const file = event.target.files?.[0]; if (!file) return;
+        try { avatar = await fileToAvatar(file); modal.querySelector('#childPreview').innerHTML = `<img src="${esc(avatar)}" alt="孩子头像">`; }
+        catch (error) { toast(error.message, 'error'); }
+      });
       modal.querySelector('[data-close]').addEventListener('click', close);
       modal.querySelector('#editChildSave').addEventListener('click', async () => {
         const values = Object.fromEntries(new FormData(modal.querySelector('#editChildForm')).entries());
         try {
           await request(`/api/children/${encodeURIComponent(item.id)}`, {
             method: 'PATCH',
-            body: { name: values.name, classCode: values.classCode, birthYear: values.birthYear ? Number(values.birthYear) : undefined },
+            body: { name: values.name, classCode: values.classCode, birthYear: values.birthYear ? Number(values.birthYear) : undefined, avatar: avatar || null },
           });
           close();
           await bootstrap();

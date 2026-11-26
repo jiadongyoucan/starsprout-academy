@@ -637,3 +637,12 @@ body{font-size:16px}
 .agent-mobile-sessions{display:none}
 @media(max-width:1020px){.agent-mobile-sessions{display:grid}}
 .pet2d-pet{cursor:pointer;outline-offset:6px}
+.pair-qr{display:flex;justify-content:center;margin:8px 0 2px}
+.pair-qr svg{width:164px;height:164px;background:#fff;padding:8px;border-radius:14px;border:1px solid var(--line)}
+
+.avatar-image{overflow:hidden;padding:0!important;display:inline-grid!important;place-items:center}
+.avatar-image img{width:100%;height:100%;object-fit:cover;display:block}
+.profile-avatar{width:64px;height:64px;font-size:22px;border-radius:20px}
+.avatar-upload{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.avatar-upload .preview{width:64px;height:64px;border-radius:20px;overflow:hidden;background:#f4e7d2;display:grid;place-items:center;font-size:22px;font-weight:800;color:#8b6c45}
+.avatar-upload .preview img{width:100%;height:100%;object-fit:cover}

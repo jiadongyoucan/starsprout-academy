@@ -160,6 +160,8 @@ function renderPair(message = '') {
   const form = document.getElementById('pairForm');
   const codeInput = document.getElementById('pairCode');
   codeInput.addEventListener('input', () => { codeInput.value = codeInput.value.replace(/\D/g, '').slice(0, 6); });
+  const autoCode = new URLSearchParams(location.search).get('code');
+  if (autoCode && /^\d{6}$/.test(autoCode)) codeInput.value = autoCode;
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
     const code = codeInput.value.trim();
@@ -516,12 +518,14 @@ async function dismissPush(pushId, silent = false) {
   } catch (error) { if (!silent) toast(error.message, 'error'); }
 }
 
-function connectEvents() {
+async function connectEvents() {
   if (!pollTimer) pollTimer = setInterval(() => { if (state.view === 'home') void renderHome(); }, 30_000);
   if (!token || typeof EventSource === 'undefined') return;
   if (eventSource) eventSource.close();
+  let ticket = '';
+  try { ticket = (await dapi('/api/device/stream-ticket', { method: 'POST' })).ticket; } catch { return; }
   try {
-    eventSource = new EventSource(`/api/device/events?token=${encodeURIComponent(token)}`);
+    eventSource = new EventSource(`/api/device/events?token=${encodeURIComponent(ticket)}`);
     eventSource.addEventListener('push', (event) => {
       try {
         const payload = JSON.parse(event.data);
@@ -536,7 +540,7 @@ function connectEvents() {
       clearDevice();
       renderPair('设备已被家长撤销，请重新配对。');
     });
-    eventSource.onerror = () => { /* browser retries automatically; polling is the fallback */ };
+    eventSource.onerror = () => { eventSource?.close(); eventSource = null; setTimeout(() => { if (token && document.visibilityState === 'visible') void connectEvents(); }, 5000); };
   } catch { /* ignore */ }
 }
 

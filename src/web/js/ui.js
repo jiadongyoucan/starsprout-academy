@@ -342,3 +342,33 @@ export function celebrate({ title, subtitle = '', emoji = '🌟', rewards = {}, 
   }
   overlay.querySelectorAll('[data-celebrate-close]').forEach(el => el.addEventListener('click', close));
 }
+
+/** Read a local image, center-crop to a square, and return a small data URL. */
+export function fileToAvatar(file, size = 256) {
+  if (!file || !/^image\/(png|jpeg|webp)$/.test(file.type)) return Promise.reject(new Error('请选择 PNG / JPEG / WebP 图片'));
+  if (file.size > 8 * 1024 * 1024) return Promise.reject(new Error('图片不能超过 8MB'));
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const side = Math.min(img.width, img.height);
+      const sx = (img.width - side) / 2, sy = (img.height - side) / 2;
+      const canvas = document.createElement('canvas'); canvas.width = canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, sx, sy, side, side, 0, 0, size, size);
+      URL.revokeObjectURL(url);
+      let data = canvas.toDataURL('image/jpeg', 0.84);
+      if (data.length > 210_000) data = canvas.toDataURL('image/jpeg', 0.68);
+      if (data.length > 220_000) return reject(new Error('图片压缩后仍过大，请换一张'));
+      resolve(data);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('图片读取失败')); };
+    img.src = url;
+  });
+}
+
+export function avatarHtml(person, className = 'avatar', size = '') {
+  const style = size ? ` style="width:${size}px;height:${size}px"` : '';
+  if (person?.avatar) return `<span class="${className} avatar-image"${style}><img src="${esc(person.avatar)}" alt="${esc(person.name || '头像')}"></span>`;
+  return `<span class="${className}"${style}>${esc((person?.name || '星').slice(0, 1))}</span>`;
+}

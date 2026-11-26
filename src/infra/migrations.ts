@@ -350,4 +350,9 @@ CREATE INDEX idx_product_events_type_date ON product_events(type, created_at);
 CREATE INDEX idx_product_events_household ON product_events(household_id, created_at);
 `,
   },
+  {
+    version: 7,
+    sql: `ALTER TABLE devices ADD COLUMN child_id TEXT;
+CREATE INDEX idx_devices_child ON devices(child_id);`,
+  },
 ];

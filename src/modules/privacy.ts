@@ -3,8 +3,9 @@ import { forbidden, notFound, validation } from '../core/errors.ts';
 import { newId, nowIso } from '../core/security.ts';
 import { int, oneOf, str } from '../core/validate.ts';
 import type { AuthUser } from '../core/http.ts';
-import { assertChildAccess, audit, consentGranted, listChildren, streakDays, type ChildRow } from './shared.ts';
+import { assertChildAccess, audit, avatarValue, consentGranted, listChildren, nicknameValue, streakDays, type ChildRow } from './shared.ts';
 import { purgeChildSnapshots } from './device.ts';
+import { moderateContent } from './moderation.ts';
 import { forbidden as deny } from '../core/errors.ts';
 
 const POLICY_VERSION = '2026-01';
@@ -41,10 +42,12 @@ function upsertConsent(db: Db, householdId: string, childId: string, kind: strin
 }
 
 export function createChild(db: Db, user: AuthUser, body: any) {
-  const name = str(body?.name, { label: '孩子昵称', min: 1, max: 12 });
+  const name = nicknameValue(body?.name, '孩子昵称', 12);
+  const check = moderateContent(name, { onTopicHint: true });
+  if (check.blocked || check.reasons.some(r => r.code === 'CONTACT' || r.code === 'PII')) throw validation('孩子昵称包含不合适的内容');
   const classCode = oneOf(body?.classCode, ['nursery', 'junior', 'middle', 'senior'] as const, '学段');
   const birthYear = body?.birthYear ? int(body.birthYear, { min: 2016, max: new Date().getFullYear(), label: '出生年份' }) : null;
-  const avatar = str(body?.avatar, { optional: true, max: 4, label: '头像' }) || name.slice(0, 1);
+  const avatar = body?.avatar !== undefined ? avatarValue(body.avatar) : name.slice(0, 1);
   const consents = body?.consents && typeof body.consents === 'object' ? body.consents : {};
   const id = newId();
   db.tx(() => {
@@ -60,13 +63,15 @@ export function createChild(db: Db, user: AuthUser, body: any) {
 
 export function updateChild(db: Db, user: AuthUser, childId: string, body: any) {
   const child = assertChildAccess(db, user, childId);
-  const name = body?.name !== undefined ? str(body.name, { label: '孩子昵称', min: 1, max: 12 }) : child.name;
+  const name = body?.name !== undefined ? nicknameValue(body.name, '孩子昵称', 12) : child.name;
+  if (body?.name !== undefined) { const check = moderateContent(name, { onTopicHint: true }); if (check.blocked || check.reasons.some(r => r.code === 'CONTACT' || r.code === 'PII')) throw validation('孩子昵称包含不合适的内容'); }
   const classCode = body?.classCode !== undefined
     ? oneOf(body.classCode, ['nursery', 'junior', 'middle', 'senior'] as const, '学段') : child.class_code;
   const birthYear = body?.birthYear !== undefined
     ? (body.birthYear ? int(body.birthYear, { min: 2016, max: new Date().getFullYear(), label: '出生年份' }) : null)
     : child.birth_year;
-  db.run('UPDATE children SET name = ?, class_code = ?, birth_year = ? WHERE id = ?', [name, classCode, birthYear, child.id]);
+  const avatar = body?.avatar !== undefined ? avatarValue(body.avatar) : child.avatar;
+  db.run('UPDATE children SET name = ?, class_code = ?, birth_year = ?, avatar = ? WHERE id = ?', [name, classCode, birthYear, avatar, child.id]);
   audit(db, { householdId: user.householdId, actorId: user.id, action: 'child.update', entity: 'child', entityId: child.id });
   return db.get<ChildRow>('SELECT * FROM children WHERE id = ?', [child.id]);
 }

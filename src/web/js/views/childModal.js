@@ -1,5 +1,5 @@
 import { request } from '../api.js';
-import { openModal, toast } from '../ui.js';
+import { esc, fileToAvatar, openModal, toast } from '../ui.js';
 
 export function openChildModal(onDone) {
   const body = `
@@ -16,6 +16,7 @@ export function openChildModal(onDone) {
         </div>
       </div>
       <div class="field"><label>出生年份（可选）</label><input class="input" name="birthYear" type="number" min="2016" max="2026" placeholder="2022"></div>
+      <div class="avatar-upload"><div class="preview" id="newChildPreview">星</div><div><label class="btn small ghost" for="newChildAvatar" style="cursor:pointer">上传孩子头像（可选）</label><input id="newChildAvatar" type="file" accept="image/png,image/jpeg,image/webp" hidden></div></div>
       <div style="background:var(--surface-2);border-radius:12px;padding:12px;margin-bottom:12px">
         <p class="small strong" style="margin-bottom:6px">监护人授权</p>
         <label class="checkline" style="margin-bottom:8px"><input type="checkbox" name="ai_processing"> 允许 AI 使用孩子学习摘要进行计划与汇报（可选，发送前会去标识）</label>
@@ -28,6 +29,12 @@ export function openChildModal(onDone) {
     title: '添加孩子档案', subtitle: '课程和计划会按学段自动适配', body,
     footer: `<button class="btn ghost" data-close type="button">取消</button><button class="btn" id="childSave" type="button">保存</button>`,
     onMount(modal, close) {
+      let avatar = '';
+      modal.querySelector('#newChildAvatar').addEventListener('change', async (event) => {
+        const file = event.target.files?.[0]; if (!file) return;
+        try { avatar = await fileToAvatar(file); modal.querySelector('#newChildPreview').innerHTML = `<img src="${esc(avatar)}" alt="孩子头像">`; }
+        catch (error) { toast(error.message, 'error'); }
+      });
       modal.querySelector('[data-close]').addEventListener('click', close);
       modal.querySelector('#childSave').addEventListener('click', async () => {
         const form = modal.querySelector('#childForm');
@@ -40,7 +47,7 @@ export function openChildModal(onDone) {
           await request('/api/children', {
             method: 'POST',
             body: {
-              name: values.name.trim(), classCode: values.classCode,
+              name: values.name.trim(), classCode: values.classCode, avatar: avatar || undefined,
               birthYear: values.birthYear ? Number(values.birthYear) : undefined,
               consents: {
                 ai_processing: !!form.querySelector('[name=ai_processing]').checked,

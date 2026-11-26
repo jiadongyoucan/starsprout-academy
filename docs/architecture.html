@@ -419,9 +419,9 @@
 
     <h2 id="testing"><span class="num">17 / TESTING</span>测试与质量门禁</h2>
     <div class="grid g3">
-      <div class="card"><h4>90 / 90 通过</h4><p>10 个测试套件（含 pet/warmth/seed）；真实 HTTP + 临时 SQLite + 随机端口；并行执行约 2s。</p></div>
+      <div class="card"><h4>93 / 93 通过</h4><p>11 个测试套件（含 pet/warmth/seed）；真实 HTTP + 临时 SQLite + 随机端口；并行执行约 2s。</p></div>
       <div class="card"><h4>严格类型</h4><p><code>tsc --noEmit</code> 开启 strict + erasableSyntaxOnly；CI 可同时跑测试与类型检查。</p></div>
-      <div class="card"><h4>浏览器验收</h4><p><code>npm run e2e</code> 可选运行 Chrome CDP 的 30 项断言（家长首页、温度卡、儿童空间、390/320 无溢出、无异常）；另配 <a href="/docs/e2e/manual-checklist.md">人工清单</a>。E2E 依赖本机 Chrome，不作为 CI 必跑。</p></div>
+      <div class="card"><h4>浏览器验收</h4><p><code>npm run e2e</code> 可选运行 Chrome CDP 的 36 项断言（家长首页、温度卡、儿童空间、390/320 无溢出、无异常）；另配 <a href="/docs/e2e/manual-checklist.md">人工清单</a>。E2E 依赖本机 Chrome，不作为 CI 必跑。</p></div>
     </div>
     <table>
       <thead><tr><th>层</th><th>策略</th><th>例子</th></tr></thead>
@@ -506,14 +506,14 @@ cp /backups/2026-11-25/starsprout.db data/</code></pre>
         <tr><td>G14 Family UX</td><td>common-family-ux 六轴：受众/可访问性/安全/舒适/一致性/人味</td><td><a href="/docs/reviews/15-family-ux-audit.md">15-family-ux-audit.md</a></td></tr>
         <tr><td>G15 Family UX 复核</td><td>设备家长密码门、静音、交还卡、本地化</td><td><a href="/docs/reviews/16-family-ux-review.md">16-family-ux-review.md</a></td></tr>
         <tr><td>G16 残余差距</td><td><strong>PASS</strong>；14px、AX/ VoiceOver 清单、平板 rail、404、连接器</td><td><a href="/docs/reviews/17-residual-closure.md">17-residual-closure.md</a></td></tr>
-        <tr><td>G17 v1.5 方案</td><td>REVISE → 已按导航/性能/生命周期修正</td><td><a href="/docs/reviews/18-redesign-plan-review.md">18</a></td></tr>
-        <tr><td>G18 v1.5 代码</td><td>CONDITIONAL → 8 项 blocker 已修</td><td><a href="/docs/reviews/19-v15-code-review.md">19</a></td></tr>
-        <tr><td>G19 v1.5 终验</td><td><strong>CONDITIONAL</strong>：3D 真机矩阵待 GPU 浏览器</td><td><a href="/docs/reviews/21-v15-final-recheck.md">21</a></td></tr>
+        <tr><td>G17 v1.6 方案</td><td>REVISE → 已按导航/性能/生命周期修正</td><td><a href="/docs/reviews/18-redesign-plan-review.md">18</a></td></tr>
+        <tr><td>G18 v1.6 代码</td><td>CONDITIONAL → 8 项 blocker 已修</td><td><a href="/docs/reviews/19-v15-code-review.md">19</a></td></tr>
+        <tr><td>G19 v1.6 终验</td><td><strong>CONDITIONAL</strong>：3D 真机矩阵待 GPU 浏览器</td><td><a href="/docs/reviews/21-v15-final-recheck.md">21</a></td></tr>
       </tbody>
     </table>
     <div class="callout mint"><strong>工程结论：</strong>在“零依赖 + 单机 + 低 token 成本”的约束下，用清晰的限界上下文、可验证的测试与显式的安全取舍，交付了完整可运行的产品，而不是演示页面。</div>
 
-    <h2 id="gapclosure"><span class="num">22 / GAP CLOSURE</span>v1.5 差距修复的技术落点</h2>
+    <h2 id="gapclosure"><span class="num">22 / GAP CLOSURE</span>v1.6 差距修复的技术落点</h2>
     <div class="grid g2">
       <div class="card"><h4>迁移 v6</h4><p>lessons 增加 key_points / hard_points / home_extension / prereq_lesson_id；comments 增加审核字段；lesson_versions 保存待审版本；product_events 采集 5 类事件；shop_items 增加 available。</p></div>
       <div class="card"><h4>治理</h4><p>moderation 删除所有 Unicode 格式字符并压缩所有标点/符号；评论默认 pending，管理员评论队列可 approve/reject/hide；审核通过率与平均时长进入后台。</p></div>
@@ -523,14 +523,22 @@ cp /backups/2026-11-25/starsprout.db data/</code></pre>
     <p>完整逐项处置：<a href="/docs/gap-disposition.md">gap-disposition.md</a>。浏览器证据改为 <a href="/docs/e2e/manual-checklist.md">人工验收清单</a>；不宣称自动化 E2E。</p>
 
     <h2 id="v15"><span class="num">23 / V1.5 EXPERIENCE</span>创作中心、3D 伙伴与静态资源优化</h2>
-    <p class="lede">v1.5 的改动集中在信息架构、首屏层级与伙伴运行时，不改变课程/计划/奖励的服务端契约。</p>
+    <p class="lede">v1.6 的改动集中在信息架构、首屏层级与伙伴运行时，不改变课程/计划/奖励的服务端契约。</p>
     <div class="grid g2">
       <div class="card"><h4>路由与导航</h4><p><code>#/creation</code> 为新入口，<code>#/agent</code> 保留 301 式前端重定向并保留 <code>?s=</code>；<code>#/registry</code> 不再占一级导航，从创作中心进入；儿童锁下 <code>#/creation</code> 仍被重定向到儿童空间。移动底栏 5 项、桌面 8 项。</p></div>
       <div class="card"><h4>3D 运行时</h4><p><code>pet3d.js</code> 仅在伙伴页动态 import；WebGLRenderer 失败时走 2.5D CSS 房间。场景全部程序化几何，无外部 GLB/贴图；动作状态机只允许一个动作，<code>idle → action → idle</code> 由 3.4s 时间线收口；页面切换 dispose、IntersectionObserver 暂停、<code>webglcontextlost</code> 回退。</p></div>
       <div class="card"><h4>静态资源</h4><p><code>serveStatic</code> 增加 gzip、ETag/304 与 <code>/js/vendor/</code> immutable；<code>three.module.min.js</code> 655KB，gzip 167KB；SW 不预缓存 vendor，首次访问后运行时缓存，避免安装时下载大包。</p></div>
       <div class="card"><h4>降级与安全</h4><p>WebGL 探测在动态 import 前；无 WebGL 不下载 Three.js；2.5D 仍可喂食/摸摸/玩耍/睡觉/整理。CSP 仍 <code>script-src 'self'</code>，Three.js 本地打包，无 CDN/内联脚本；伙伴 SVG/3D 参数均来自白名单。</p></div>
     </div>
-    <div class="footer"><span>星芽学堂 · Architecture &amp; Engineering v1.5 · 2026</span><span>Source: src/, test/, docs/. All data in screenshots is demo data.</span></div>
+    <h2 id="real"><span class="num">24 / REAL FAMILY</span>资料、配对与生产隔离</h2>
+    <p class="lede">真实家庭模式的关键不是 UI，而是「首次初始化、设备身份、孩子最小暴露、演示数据隔离」四条边界。</p>
+    <div class="grid g2">
+      <div class="card"><h4>资料 API</h4><p><code>PATCH /api/auth/profile</code> 只接受昵称与内联头像；<code>avatarValue</code> 解码后校验魔数与 ≤200KB，<code>nicknameValue</code> 做 NFC/trim/grapheme；孩子 PATCH/POST 复用同一白名单。头像随孩子导出/删除级联，不要求摄像头授权。</p></div>
+      <div class="card"><h4>配对与最小暴露</h4><p>6 位码 10 分钟、一次性、每 IP 失败 8 次锁 15 分钟、单码 5 次即撤销；设备 token 180 天，撤销立即失效。<code>/api/device/me</code> 只返回当前一个孩子，避免共享平板看到兄弟姐妹资料。</p></div>
+      <div class="card"><h4>初始化授权</h4><p><code>/api/setup</code> 默认只允许 loopback；非本机必须提供 <code>SETUP_TOKEN</code>。真实模式启动时若数据库存在 <code>@demo.com</code> 账号则拒绝启动；<code>--demo</code> 使用独立 <code>data/demo</code>。</p></div>
+      <div class="card"><h4>LAN / HTTPS</h4><p>配对地址优先 <code>PUBLIC_URL</code>；否则只信任私网 Host，再回退首选网卡（en0/Wi-Fi），不会把公网 Host 直接写进二维码。摄像头/PWA 依赖 HTTPS；反向代理需正确转发 <code>X-Forwarded-Proto</code>。</p></div>
+    </div>
+    <div class="footer"><span>星芽学堂 · Architecture &amp; Engineering v1.6 · 2026</span><span>Source: src/, test/, docs/. All data in screenshots is demo data.</span></div>
   </main>
 </div>
 </body>

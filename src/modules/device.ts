@@ -3,7 +3,8 @@ import path from 'node:path';
 import type http from 'node:http';
 import type { Db } from '../infra/db.ts';
 import { config } from '../config.ts';
-import { AppError, forbidden, notFound, validation } from '../core/errors.ts';
+import { pairingBaseUrl } from '../core/network.ts';
+import { AppError, forbidden, notFound, tooMany, validation } from '../core/errors.ts';
 import { newId, nowIso, randomCode, sha256, signToken, verifyPassword } from '../core/security.ts';
 import { oneOf, str } from '../core/validate.ts';
 import type { AuthDevice, AuthUser } from '../core/http.ts';
@@ -48,51 +49,66 @@ export function notifyDevice(deviceId: string, payload: unknown): void {
   }
 }
 
-export function createPairingCode(db: Db, user: AuthUser, body: any) {
+export function createPairingCode(db: Db, user: AuthUser, body: any, baseUrl?: string) {
   const name = str(body?.name, { label: '设备名称', min: 1, max: 30, optional: true }) || '学习平板';
   const kind = oneOf(body?.kind ?? 'ipad', ['ipad', 'mac', 'android', 'web'] as const, '设备类型');
   let code = randomCode(6);
   for (let i = 0; i < 5 && db.get('SELECT 1 AS ok FROM devices WHERE pairing_code = ? AND status = ?', [code, 'pending']); i++) {
     code = randomCode(6);
   }
+  const childId = body?.childId ? assertChildAccess(db, user, str(body.childId, { label: '孩子', max: 64 })).id : listChildren(db, user.householdId)[0]?.id || null;
   const id = newId();
   const expiresAt = new Date(Date.now() + 10 * 60_000).toISOString();
   db.run(
-    `INSERT INTO devices(id, household_id, name, kind, pairing_code, code_expires_at, token_hash, status, last_seen_at, created_at, paired_at, code_attempts)
-     VALUES(?,?,?,?,?,?,?,?,?,?,?,?)`,
-    [id, user.householdId, name, kind, code, expiresAt, null, 'pending', null, nowIso(), null, 0],
+    `INSERT INTO devices(id, household_id, child_id, name, kind, pairing_code, code_expires_at, token_hash, status, last_seen_at, created_at, paired_at, code_attempts)
+     VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+    [id, user.householdId, childId, name, kind, code, expiresAt, null, 'pending', null, nowIso(), null, 0],
   );
   audit(db, { householdId: user.householdId, actorId: user.id, action: 'device.pairing_code', entity: 'device', entityId: id });
   return {
     deviceId: id, code, expiresAt, deviceName: name,
-    url: `${config.publicUrl}/device`,
+    url: `${(baseUrl || config.publicUrl).replace(/\/$/, '')}/device?code=${code}`,
     instructions: '在平板或 Mac 浏览器打开该地址，输入 6 位配对码即可；配对码 10 分钟内有效且仅可使用一次。',
     secureContextHint: '摄像头与「添加到主屏幕」需要 HTTPS 或 localhost。局域网请使用 scripts/gen-cert.sh 生成证书并设置 TLS_CERT/TLS_KEY。',
   };
 }
 
+const pairFailures = new Map<string, { count: number; until: number }>();
+
 export function pairDevice(db: Db, body: any, ip?: string) {
   const code = str(body?.code, { label: '配对码', min: 6, max: 6, pattern: /^\d{6}$/ });
+  const key = ip || 'unknown';
+  const failure = pairFailures.get(key);
+  if (failure && failure.until > Date.now()) throw tooMany('配对失败次数过多，请 15 分钟后再试');
   const name = str(body?.name, { label: '设备名称', min: 1, max: 30, optional: true });
   const kind = oneOf(body?.kind ?? 'ipad', ['ipad', 'mac', 'android', 'web'] as const, '设备类型');
   const device = db.get<any>('SELECT * FROM devices WHERE pairing_code = ? AND status = ?', [code, 'pending']);
-  if (!device) throw validation('配对码无效或已使用，请在家长端重新生成');
-  if (new Date(String(device.code_expires_at)).getTime() < Date.now()) {
+  if (!device) {
+    const next = { count: (failure?.until || 0) > Date.now() ? failure!.count + 1 : 1, until: 0 };
+    if (next.count >= 8) next.until = Date.now() + 15 * 60_000;
+    pairFailures.set(key, next);
+    throw validation('配对码无效或已使用，请在家长端重新生成');
+  }
+  if (Number(device.code_attempts || 0) >= 5) {
     db.run("UPDATE devices SET status = 'revoked', pairing_code = NULL WHERE id = ?", [device.id]);
+    throw tooMany('该配对码尝试次数过多，已失效，请重新生成');
+  }
+  if (new Date(String(device.code_expires_at)).getTime() < Date.now()) {
+    db.run("UPDATE devices SET status = 'revoked', pairing_code = NULL, code_attempts = code_attempts + 1 WHERE id = ?", [device.id]);
     throw validation('配对码已过期，请在家长端重新生成');
   }
   // Wrong codes never resolve a device row. Enumeration is controlled by the
   // per-IP route limiter; codes are 6 digits, single-use and expire in 10 minutes.
-  const token = signToken({ sub: device.id, typ: 'device', did: device.id, hid: device.household_id }, 365 * 24 * 3600);
+  pairFailures.delete(key);
+  const token = signToken({ sub: device.id, typ: 'device', did: device.id, hid: device.household_id }, 180 * 24 * 3600);
   db.run(
     "UPDATE devices SET status = 'paired', token_hash = ?, pairing_code = NULL, paired_at = ?, last_seen_at = ?, name = COALESCE(NULLIF(?, ''), name), kind = ? WHERE id = ?",
     [sha256(token), nowIso(), nowIso(), name, kind, device.id],
   );
   const household = getHousehold(db, device.household_id);
-  const children = listChildren(db, device.household_id).map(c => ({
-    id: c.id, name: c.name, class_code: c.class_code,
-    cameraConsent: consentGranted(db, c.id, 'camera'),
-  }));
+  const all = listChildren(db, device.household_id);
+  const active = all.find(c => c.id === device.child_id) || all[0];
+  const children = active ? [{ id: active.id, name: active.name, class_code: active.class_code, cameraConsent: consentGranted(db, active.id, 'camera') }] : [];
   audit(db, { householdId: device.household_id, actorId: null, action: 'device.paired', entity: 'device', entityId: device.id, ip });
   return {
     token,
@@ -128,11 +144,17 @@ function pushRow(db: Db, deviceId: string, payload: Record<string, unknown>, mes
   return id;
 }
 
+function assertDeviceChild(device: { child_id?: string | null; childId?: string | null }, childId: string): void {
+  const scoped = device.child_id || device.childId;
+  if (scoped && scoped !== childId) throw notFound('孩子档案不存在');
+}
+
 export function pushPlan(db: Db, user: AuthUser, deviceId: string, body: any, ip?: string) {
   const device = db.get<any>('SELECT * FROM devices WHERE id = ?', [deviceId]);
   if (!device || device.household_id !== user.householdId) throw notFound('设备不存在');
   if (device.status !== 'paired') throw validation('设备尚未完成配对');
   const child = assertChildAccess(db, user, str(body?.childId, { label: '孩子', max: 64 }));
+  assertDeviceChild(device, child.id);
   const planId = str(body?.planId, { label: '计划', max: 64 });
   const plan = db.get<any>('SELECT * FROM plans WHERE id = ?', [planId]);
   if (!plan || plan.child_id !== child.id) throw notFound('计划不存在');
@@ -155,6 +177,7 @@ export function requestPhoto(db: Db, user: AuthUser, deviceId: string, body: any
   if (!device || device.household_id !== user.householdId) throw notFound('设备不存在');
   if (device.status !== 'paired') throw validation('设备尚未完成配对');
   const child = assertChildAccess(db, user, str(body?.childId, { label: '孩子', max: 64 }));
+  assertDeviceChild(device, child.id);
   if (!consentGranted(db, child.id, 'camera')) {
     throw forbidden('该孩子尚未开启摄像头监督授权，请先在隐私设置中开启');
   }
@@ -173,7 +196,7 @@ export function deviceInbox(db: Db, device: AuthDevice) {
   const pushes = db.all<any>(
     `SELECT dp.*, c.name AS child_name, p.title AS plan_title FROM device_pushes dp
      LEFT JOIN children c ON c.id = dp.child_id LEFT JOIN plans p ON p.id = dp.plan_id
-     WHERE dp.device_id = ? AND dp.status IN ('queued','delivered') ORDER BY dp.created_at DESC LIMIT 20`, [device.id],
+     WHERE dp.device_id = ? AND (dp.child_id = ? OR ? IS NULL) AND dp.status IN ('queued','delivered') ORDER BY dp.created_at DESC LIMIT 20`, [device.id, device.childId, device.childId],
   ).map(row => ({ ...row, payload: parse(row.payload, {}) }));
   const queuedIds = pushes.filter(p => p.status === 'queued').map(p => p.id);
   for (const push of pushes) {
@@ -182,7 +205,9 @@ export function deviceInbox(db: Db, device: AuthDevice) {
     push.status = 'delivered';
   }
   void queuedIds;
-  const children = listChildren(db, device.householdId).map(c => {
+  const allChildren = listChildren(db, device.householdId);
+  const activeChild = allChildren.find(c => c.id === device.childId) || allChildren[0];
+  const children = (activeChild ? [activeChild] : []).map(c => {
     const pet = db.get<Record<string, any>>(
       'SELECT species, name, level, mood, equipped FROM pets WHERE child_id = ?', [c.id],
     );
@@ -210,6 +235,7 @@ export function ackPush(db: Db, device: AuthDevice, pushId: string, body: any) {
 export function devicePlan(db: Db, device: AuthDevice, planId: string) {
   const plan = db.get<any>('SELECT * FROM plans WHERE id = ? AND household_id = ?', [planId, device.householdId]);
   if (!plan) throw notFound('计划不存在');
+  if (device.childId && plan.child_id !== device.childId) throw notFound('计划不存在');
   const child = db.get<any>('SELECT id, name, class_code FROM children WHERE id = ?', [plan.child_id]);
   const items = db.all<any>(
     `SELECT pi.*, l.objective, l.minutes AS lesson_minutes, l.blocks, s.name AS subject_name, s.icon, s.color
@@ -241,7 +267,7 @@ export function deviceLesson(db: Db, device: AuthDevice, lessonId: string) {
 export function startLearning(db: Db, device: AuthDevice, body: any) {
   const childId = str(body?.childId, { label: '孩子', max: 64 });
   const child = db.get<any>('SELECT * FROM children WHERE id = ? AND household_id = ?', [childId, device.householdId]);
-  if (!child) throw notFound('孩子档案不存在');
+  if (!child || (device.childId && device.childId !== childId)) throw notFound('孩子档案不存在');
   const lessonId = str(body?.lessonId, { label: '课时', max: 64 });
   const lesson = db.get('SELECT id FROM lessons WHERE id = ? AND is_published = 1', [lessonId]);
   if (!lesson) throw notFound('课时不存在');
@@ -268,7 +294,7 @@ const IMAGE_TYPES: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 
 export async function saveSnapshot(db: Db, device: AuthDevice, body: any) {
   const childId = str(body?.childId, { label: '孩子', max: 64 });
   const child = db.get<any>('SELECT * FROM children WHERE id = ? AND household_id = ?', [childId, device.householdId]);
-  if (!child) throw notFound('孩子档案不存在');
+  if (!child || (device.childId && device.childId !== childId)) throw notFound('孩子档案不存在');
   if (!consentGranted(db, childId, 'camera')) throw forbidden('该孩子尚未开启摄像头监督授权');
   const image = str(body?.image, { label: '照片', min: 100 });
   const match = image.match(/^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/);
@@ -344,7 +370,7 @@ export async function purgeChildSnapshots(db: Db, user: AuthUser, childId: strin
 export function completeLessonOnDevice(db: Db, device: AuthDevice, body: any) {
   const childId = str(body?.childId, { label: '孩子', max: 64 });
   const child = db.get<{ id: string }>('SELECT id FROM children WHERE id = ? AND household_id = ?', [childId, device.householdId]);
-  if (!child) throw notFound('孩子档案不存在');
+  if (!child || (device.childId && device.childId !== childId)) throw notFound('孩子档案不存在');
   const lessonId = str(body?.lessonId, { label: '课时', max: 64 });
   const lesson = db.get<{ id: string; minutes: number; blocks: string }>('SELECT id, minutes, blocks FROM lessons WHERE id = ? AND is_published = 1', [lessonId]);
   if (!lesson) throw notFound('课时不存在');
@@ -403,21 +429,19 @@ export function verifyDeviceParent(db: Db, device: AuthDevice, body: any) {
   return { verified: true };
 }
 
-export function deviceProfile(db: Db, device: AuthDevice) {
+export function deviceProfile(db: Db, device: AuthDevice, childId?: string | null) {
   db.run('UPDATE devices SET last_seen_at = ? WHERE id = ?', [nowIso(), device.id]);
   const row = db.get<{ id: string; name: string; kind: string; household_id: string }>(
     'SELECT id, name, kind, household_id FROM devices WHERE id = ?', [device.id],
   );
   const household = getHousehold(db, device.householdId);
-  const children = listChildren(db, device.householdId).map(c => {
-    const pet = db.get<Record<string, any>>(
-      'SELECT species, name, level, mood, equipped FROM pets WHERE child_id = ?', [c.id],
-    );
-    return {
-      id: c.id, name: c.name, class_code: c.class_code,
-      cameraConsent: consentGranted(db, c.id, 'camera'),
-      pet: pet ? { species: pet.species, name: pet.name, level: pet.level, mood: pet.mood, equipped: JSON.parse(pet.equipped || '[]') } : null,
-    };
-  });
+  const all = listChildren(db, device.householdId);
+  // A child device sees one active child only; siblings' profiles/photos stay on the parent surface.
+  const active = all.find(c => c.id === device.childId) || all[0];
+  const children = active ? [{
+    id: active.id, name: active.name, class_code: active.class_code,
+    cameraConsent: consentGranted(db, active.id, 'camera'),
+    pet: (() => { const pet = db.get<Record<string, any>>('SELECT species, name, level, mood, equipped FROM pets WHERE child_id = ?', [active.id]); return pet ? { species: pet.species, name: pet.name, level: pet.level, mood: pet.mood, equipped: JSON.parse(pet.equipped || '[]') } : null; })(),
+  }] : [];
   return { device: row, household, children };
 }

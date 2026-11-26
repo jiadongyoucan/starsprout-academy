@@ -40,7 +40,7 @@ export function buildApp(opts: BuildOptions = {}): BuiltApp {
   const db = new Db(dbFile);
   seedDatabase(db, { demo: opts.seedDemo ?? config.seedDemo });
 
-  const router = new Router(async (token): Promise<AuthContext | null> => {
+  const router = new Router(async (token, path): Promise<AuthContext | null> => {
     const payload = verifyToken(token);
     if (!payload) return null;
     if (payload.typ === 'user') {
@@ -58,14 +58,16 @@ export function buildApp(opts: BuildOptions = {}): BuiltApp {
         device: null,
       };
     }
-    if (payload.typ === 'device') {
+    if (payload.typ === 'device' || payload.typ === 'device-stream') {
       if (!payload.did) return null;
-      const device = db.get<{ id: string; name: string; household_id: string; token_hash: string | null; status: string }>(
-        'SELECT id, name, household_id, token_hash, status FROM devices WHERE id = ?', [payload.did],
+      const device = db.get<{ id: string; name: string; household_id: string; child_id: string | null; token_hash: string | null; status: string }>(
+        'SELECT id, name, household_id, child_id, token_hash, status FROM devices WHERE id = ?', [payload.did],
       );
       if (!device || device.status !== 'paired' || !device.token_hash) return null;
-      if (sha256(token) !== device.token_hash) return null;
-      return { user: null, device: { id: device.id, name: device.name, householdId: device.household_id } };
+      if (payload.typ === 'device-stream' && path !== '/api/device/events') return null;
+      if (payload.typ === 'device' && path === '/api/device/events') return null;
+      if (payload.typ === 'device' && sha256(token) !== device.token_hash) return null;
+      return { user: null, device: { id: device.id, name: device.name, householdId: device.household_id, childId: device.child_id || null } };
     }
     return null;
   });
