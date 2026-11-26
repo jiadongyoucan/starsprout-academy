@@ -81,7 +81,7 @@ export async function renderDevices(root, ctx) {
         <section class="card">
           <div class="card-title"><div><h3>学习瞬间</h3><span class="hint">${child ? esc(child.name) : ''} · 仅家庭可见</span></div>
             <div class="row"><span class="pill">${snapshots.length}</span>
-              <button class="btn small ghost" type="button" id="refreshSnaps">刷新</button></div></div>
+              <button class="btn small ghost" type="button" id="refreshSnaps">刷新</button>${snapshots.length ? '<button class="btn small ghost" type="button" id="purgeSnaps">清理全部</button>' : ''}</div></div>
           ${snapshots.length ? `<div class="photo-grid" id="photoGrid">
             ${snapshots.map(snap => `<figure class="photo" data-snap="${esc(snap.id)}" style="margin:0">
               <div class="photo-loading skeleton" style="width:100%;height:100%"></div>
@@ -123,6 +123,14 @@ export async function renderDevices(root, ctx) {
   root.querySelector('#pairDevice')?.addEventListener('click', openPairing);
   root.querySelector('#emptyPair')?.addEventListener('click', openPairing);
   root.querySelector('#refreshSnaps')?.addEventListener('click', () => renderDevices(root, ctx));
+  root.querySelector('#purgeSnaps')?.addEventListener('click', async () => {
+    if (!confirm('删除这个孩子的全部学习照片？此操作不可恢复。')) return;
+    try {
+      await request(`/api/children/${encodeURIComponent(child.id)}/snapshots`, { method: 'DELETE' });
+      toast('照片已全部清理', 'success');
+      await renderDevices(root, ctx);
+    } catch (error) { toast(error.message, 'error'); }
+  });
   root.querySelectorAll('[data-del-snap]').forEach(button => button.addEventListener('click', async (event) => {
     event.stopPropagation();
     if (!confirm('删除这张照片？此操作不可恢复。')) return;

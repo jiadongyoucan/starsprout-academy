@@ -84,6 +84,7 @@
       <a href="#scale">19. 性能与演进</a>
       <a href="#tradeoffs">20. 取舍与限制</a>
       <a href="#reviews">21. 评审门禁</a>
+      <a href="#gapclosure">22. 差距修复</a>
     </nav>
     <div class="doclinks"><a href="/docs/">索引</a><a href="/docs/product.html">产品</a><a href="/docs/qa.html">测试</a><a href="/">打开产品</a></div>
   </aside>
@@ -93,7 +94,7 @@
       <div class="label">Architecture &amp; Engineering · v1.2</div>
       <h1>零依赖单体，<br>撑起一个家庭的全部学习数据。</h1>
       <p>技术选择服务于两个目标：<strong>把产品完整做出来</strong>，以及<strong>让一个家长也能安装、备份和理解</strong>。本文覆盖限界上下文、数据模型、API、AI 运行时、安全威胁模型、测试与部署。</p>
-      <div class="chips"><span class="chip">Node 24 · 原生 TS</span><span class="chip">node:sqlite · WAL</span><span class="chip">Vanilla PWA · 无构建</span><span class="chip">JWT + 会话吊销</span><span class="chip">83 integration tests</span></div>
+      <div class="chips"><span class="chip">Node 24 · 原生 TS</span><span class="chip">node:sqlite · WAL</span><span class="chip">Vanilla PWA · 无构建</span><span class="chip">JWT + 会话吊销</span><span class="chip">90 integration tests</span></div>
     </section>
 
     <h2 id="goals"><span class="num">01 / GOALS</span>架构目标与约束</h2>
@@ -418,9 +419,9 @@
 
     <h2 id="testing"><span class="num">17 / TESTING</span>测试与质量门禁</h2>
     <div class="grid g3">
-      <div class="card"><h4>83 / 83 通过</h4><p>9 个测试套件（含 pet/warmth/seed）；真实 HTTP + 临时 SQLite + 随机端口；并行执行约 2s。</p></div>
+      <div class="card"><h4>90 / 90 通过</h4><p>10 个测试套件（含 pet/warmth/seed）；真实 HTTP + 临时 SQLite + 随机端口；并行执行约 2s。</p></div>
       <div class="card"><h4>严格类型</h4><p><code>tsc --noEmit</code> 开启 strict + erasableSyntaxOnly；CI 可同时跑测试与类型检查。</p></div>
-      <div class="card"><h4>浏览器 E2E</h4><p>Chrome 157 + CDP 实测：登录、首页、课程、课时、计划、智能体、社区、设备配对、学习完成、照片、移动端、审核台、管理后台。</p></div>
+      <div class="card"><h4>浏览器验收</h4><p><code>npm run e2e</code> 可选运行 Chrome CDP 的 10 项断言（家长首页、温度卡、儿童空间、390/320 无溢出、无异常）；另配 <a href="/docs/e2e/manual-checklist.md">人工清单</a>。E2E 依赖本机 Chrome，不作为 CI 必跑。</p></div>
     </div>
     <table>
       <thead><tr><th>层</th><th>策略</th><th>例子</th></tr></thead>
@@ -428,7 +429,7 @@
         <tr><td>领域规则</td><td>通过服务 API 断言结果</td><td>纠偏只移动逾期项；自审 403；SSRF 403；沙箱 timeout</td></tr>
         <tr><td>HTTP 契约</td><td>真实 fetch + 状态码 + envelope</td><td>401 / 403 / 404 / 422 / 429；跨家庭不泄露</td></tr>
         <tr><td>数据不变量</td><td>直接查 DB 断言</td><td>进度唯一、计划项状态、审计记录、待审队列</td></tr>
-        <tr><td>前端</td><td>浏览器手动 / CDP 验证</td><td>响应式、无 JS 异常、图片鉴权、移动端</td></tr>
+        <tr><td>前端</td><td>人工清单验证</td><td>响应式、无 JS 异常、图片鉴权、移动端</td></tr>
         <tr><td>部署</td><td>smoke.sh</td><td>健康 → 登录 → 课程 → 生成计划 → 配对 → 收件箱</td></tr>
       </tbody>
     </table>
@@ -499,11 +500,23 @@ cp /backups/2026-11-25/starsprout.db data/</code></pre>
         <tr><td>G8 温度 UX</td><td>共情 vs 操纵、家长负担、儿童空间、文案频率</td><td><a href="/docs/reviews/08-warmth-ux-review.md">08-warmth-ux-review.md</a></td></tr>
         <tr><td>G9 温度代码</td><td>文案注入、越权、轮换、a11y、家长边界</td><td><a href="/docs/reviews/09-warmth-code-review.md">09-warmth-code-review.md</a></td></tr>
         <tr><td>G10 最终验收</td><td>温度 HMI + 儿童空间 + 文案系统</td><td><a href="/docs/reviews/10-warmth-final-acceptance.md">10-warmth-final-acceptance.md</a></td></tr>
+        <tr><td>G11 Gap 方案</td><td>55 项优先级、代码 vs 文档撤回、验收断言</td><td><a href="/docs/reviews/12-gap-plan-review.md">12-gap-plan-review.md</a></td></tr>
+        <tr><td>G12 Gap 代码</td><td><strong>PASS</strong>；审核/课程/计划/PWA/回归复核</td><td><a href="/docs/reviews/13-gap-code-review.md">13-gap-code-review.md</a></td></tr>
+        <tr><td>G13 Gap 验收</td><td><strong>PASS</strong>；处置台账 + 全量回归 + 文档一致性</td><td><a href="/docs/reviews/14-gap-final-acceptance.md">14-gap-final-acceptance.md</a></td></tr>
       </tbody>
     </table>
     <div class="callout mint"><strong>工程结论：</strong>在“零依赖 + 单机 + 低 token 成本”的约束下，用清晰的限界上下文、可验证的测试与显式的安全取舍，交付了完整可运行的产品，而不是演示页面。</div>
 
-    <div class="footer"><span>星芽学堂 · Architecture &amp; Engineering v1.3 · 2026</span><span>Source: src/, test/, docs/. All data in screenshots is demo data.</span></div>
+    <h2 id="gapclosure"><span class="num">22 / GAP CLOSURE</span>v1.4 差距修复的技术落点</h2>
+    <div class="grid g2">
+      <div class="card"><h4>迁移 v6</h4><p>lessons 增加 key_points / hard_points / home_extension / prereq_lesson_id；comments 增加审核字段；lesson_versions 保存待审版本；product_events 采集 5 类事件；shop_items 增加 available。</p></div>
+      <div class="card"><h4>治理</h4><p>moderation 删除所有 Unicode 格式字符并压缩所有标点/符号；评论默认 pending，管理员评论队列可 approve/reject/hide；审核通过率与平均时长进入后台。</p></div>
+      <div class="card"><h4>课程管线</h4><p>公开包使用真实 sha256；生产非 demo/test 首次导入 quarantine；新版本写入 lesson_versions，旧课时保持在线，approve 原子切换；设备课时返回来源/许可证。</p></div>
+      <div class="card"><h4>运行时与 PWA</h4><p>技能 definition 注入系统提示；私有专家可选；连接器保持手动调用（不进入儿童模型工具表）。SW 预缓存全部视图/资产/device，设备端注册；PNG 图标。</p></div>
+    </div>
+    <p>完整逐项处置：<a href="/docs/gap-disposition.md">gap-disposition.md</a>。浏览器证据改为 <a href="/docs/e2e/manual-checklist.md">人工验收清单</a>；不宣称自动化 E2E。</p>
+
+    <div class="footer"><span>星芽学堂 · Architecture &amp; Engineering v1.4 · 2026</span><span>Source: src/, test/, docs/. All data in screenshots is demo data.</span></div>
   </main>
 </div>
 </body>

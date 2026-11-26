@@ -325,6 +325,7 @@ function renderLesson() {
             <p class="device-muted">${esc(lesson.subject_name)} · ${esc(lesson.class_name)} · ${lesson.minutes} 分钟</p></div>
         </div>
         <div class="lesson-progress">${lesson.blocks.map(() => '<i></i>').join('')}</div>
+        ${lesson.source ? `<div class="source-note">📎 来自「${esc(lesson.source.name)}」 · ${esc(lesson.source.license)}</div>` : ''}
         ${lessonBlocksMarkup(lesson)}
         <div class="device-lesson-complete"><button class="btn large" id="deviceComplete" type="button">完成学习 ✓</button></div>
       </div>
@@ -482,6 +483,7 @@ async function dismissPush(pushId, silent = false) {
 }
 
 function connectEvents() {
+  if (!pollTimer) pollTimer = setInterval(() => { if (state.view === 'home') void renderHome(); }, 30_000);
   if (!token || typeof EventSource === 'undefined') return;
   if (eventSource) eventSource.close();
   try {
@@ -502,7 +504,6 @@ function connectEvents() {
     });
     eventSource.onerror = () => { /* browser retries automatically; polling is the fallback */ };
   } catch { /* ignore */ }
-  if (!pollTimer) pollTimer = setInterval(() => { if (state.view === 'home') void renderHome(); }, 30_000);
 }
 
 async function boot() {
@@ -520,3 +521,7 @@ async function boot() {
 }
 
 boot();
+
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || ['localhost','127.0.0.1'].includes(location.hostname))) {
+  navigator.serviceWorker.register('/sw.js').catch(() => {});
+}

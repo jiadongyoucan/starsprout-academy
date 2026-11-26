@@ -22,9 +22,9 @@ export type PackImportResult = {
 };
 
 export function importPack(db: Db, pack: PublicPack, opts: { autoApprove?: boolean } = {}): PackImportResult {
-  const existing = db.get<{ id: string }>('SELECT id FROM course_packs WHERE source_code = ? AND code = ? AND version = ?',
+  const existingPack = db.get<{ id: string }>('SELECT id FROM course_packs WHERE source_code = ? AND code = ? AND version = ?',
     [pack.sourceCode, pack.code, pack.version]);
-  if (existing) {
+  if (existingPack) {
     return { code: pack.code, version: pack.version, status: 'skipped', lessons: 0, name: pack.name };
   }
   const source = db.get<{ name: string; homepage: string; url: string }>('SELECT name, homepage, url FROM public_sources WHERE code = ?', [pack.sourceCode]);
@@ -32,6 +32,8 @@ export function importPack(db: Db, pack: PublicPack, opts: { autoApprove?: boole
   const status = opts.autoApprove ? 'active' : 'quarantined';
   const frameworkId = `fw_${pack.subject}_${pack.classCode}`;
   let lessonsImported = 0;
+  const checksumParts: unknown[] = [];
+  const packId = `cpk_${pack.code}_${pack.version.replace(/[^0-9]/g, '')}`;
 
   db.tx(() => {
     db.run(
@@ -49,32 +51,51 @@ export function importPack(db: Db, pack: PublicPack, opts: { autoApprove?: boole
       );
       unit.lessons.forEach(([title, focus], li) => {
         const lessonId = `lsn_pack_${pack.code}_u${ui + 1}_l${li + 1}`;
+        const minutes = lessonMinutes(pack.subject, pack.classCode) + 5;
         const blocks = buildBlocks({
           subject: pack.subject, level: pack.classCode, title, focus: [...focus], objective: unit.objective,
           unitTitle: unit.title, index: 100 + ui * 10 + li, pool: tokenPool(pack.subject, pack.classCode),
           resource: { url: source.homepage || source.url, source: source.name, license: pack.license },
         });
+        const blocksJson = JSON.stringify(blocks);
+        const meta = { title, minutes, objective: `${pack.name}：${unit.objective}（${title}）`, tags: ['公开课程', pack.name, ...focus], sourceCode: pack.sourceCode };
+        const checksum = sha256(blocksJson + JSON.stringify(meta));
+        checksumParts.push({ lessonId, blocks: checksum, meta });
+        const current = db.get<{ version: number; is_published: number }>('SELECT version, is_published FROM lessons WHERE id = ?', [lessonId]);
+        if (status === 'active') {
+          db.run(
+            `INSERT INTO lessons(id, unit_id, code, title, seq, minutes, objective, blocks, tags, source_code, version, is_published)
+             VALUES(?,?,?,?,?,?,?,?,?,?,?,?)
+             ON CONFLICT(unit_id, code) DO UPDATE SET title = excluded.title, minutes = excluded.minutes,
+               objective = excluded.objective, blocks = excluded.blocks, tags = excluded.tags,
+               source_code = excluded.source_code, version = lessons.version + 1, is_published = 1`,
+            [lessonId, unitId, `P${ui + 1}L${li + 1}`, title, li + 1, minutes, meta.objective,
+              blocksJson, JSON.stringify(meta.tags), pack.sourceCode, 1, 1],
+          );
+        } else if (!current) {
+          // 新课时先以未发布状态落地，旧课时保持在线，等管理员审批后原子切换
+          db.run(
+            `INSERT INTO lessons(id, unit_id, code, title, seq, minutes, objective, blocks, tags, source_code, version, is_published)
+             VALUES(?,?,?,?,?,?,?,?,?,?,?,0)`,
+            [lessonId, unitId, `P${ui + 1}L${li + 1}`, title, li + 1, minutes, meta.objective,
+              blocksJson, JSON.stringify(meta.tags), pack.sourceCode, 1],
+          );
+        }
+        const nextVersion = Number(current?.version || 0) + 1;
         db.run(
-          `INSERT INTO lessons(id, unit_id, code, title, seq, minutes, objective, blocks, tags, source_code, version, is_published)
-           VALUES(?,?,?,?,?,?,?,?,?,?,?,?)
-           ON CONFLICT(unit_id, code) DO UPDATE SET title = excluded.title, minutes = excluded.minutes,
-             objective = excluded.objective, blocks = excluded.blocks, tags = excluded.tags,
-             source_code = excluded.source_code, version = lessons.version + 1, is_published = excluded.is_published`,
-          [
-            lessonId, unitId, `P${ui + 1}L${li + 1}`, title, li + 1,
-            lessonMinutes(pack.subject, pack.classCode) + 5, `${pack.name}：${unit.objective}（${title}）`,
-            JSON.stringify(blocks), JSON.stringify(['公开课程', pack.name, ...focus]), pack.sourceCode,
-            1, status === 'active' ? 1 : 0,
-          ],
+          `INSERT OR IGNORE INTO lesson_versions(id, lesson_id, pack_id, version, blocks, checksum, meta, created_at)
+           VALUES(?,?,?,?,?,?,?,?)`,
+          [newId(), lessonId, packId, nextVersion, blocksJson, checksum, JSON.stringify(meta), nowIso()],
         );
         lessonsImported += 1;
       });
     });
+    const packChecksum = sha256(JSON.stringify({ code: pack.code, version: pack.version, lessons: checksumParts }));
     db.run(
       `INSERT INTO course_packs(id, source_code, code, name, subject_code, class_code, term, version, checksum, lessons_imported, imported_at, status)
        VALUES(?,?,?,?,?,?,?,?,?,?,?,?)`,
-      [`cpk_${pack.code}_${pack.version.replace(/[^0-9]/g, '')}`, pack.sourceCode, pack.code, pack.name, pack.subject,
-        pack.classCode, TERM, pack.version, `v${pack.version}-${lessonsImported}`, lessonsImported, nowIso(), status],
+      [packId, pack.sourceCode, pack.code, pack.name, pack.subject, pack.classCode, TERM, pack.version,
+        packChecksum, lessonsImported, nowIso(), status],
     );
     db.run('UPDATE public_sources SET last_synced_at = ?, version = ? WHERE code = ?', [nowIso(), pack.version, pack.sourceCode]);
     setMeta(db, `pack_${pack.code}_version`, pack.version);
@@ -90,15 +111,32 @@ export function syncPublicCourses(db: Db, opts: { autoApprove?: boolean } = {}):
 export function approvePack(db: Db, packId: string): { pack: unknown; lessons: number } {
   const pack = db.get<{ id: string; code: string; status: string }>('SELECT id, code, status FROM course_packs WHERE id = ?', [packId]);
   if (!pack) throw new Error('course pack not found');
-  const lessonIds = db.all<{ id: string }>(
-    `SELECT l.id FROM lessons l JOIN units un ON un.id = l.unit_id
-     WHERE un.code LIKE ? AND l.source_code IS NOT NULL`,
-    [`P_${pack.code}_U%`],
+  const versions = db.all<{ lesson_id: string; version: number; blocks: string; meta: string }>(
+    'SELECT lesson_id, version, blocks, meta FROM lesson_versions WHERE pack_id = ?', [packId],
   );
   db.tx(() => {
+    if (versions.length) {
+      // 同一个课程包的旧课时先下线，再一次性应用待审版本，避免审核期间无课可学
+      db.run(
+        `UPDATE lessons SET is_published = 0 WHERE source_code IS NOT NULL AND id IN (
+           SELECT l.id FROM lessons l JOIN units un ON un.id = l.unit_id WHERE un.code LIKE ?)`,
+        [`P_${pack.code}_U%`],
+      );
+      for (const version of versions) {
+        const meta = JSON.parse(version.meta) as { title: string; minutes: number; objective: string; tags: string[] };
+        db.run(
+          `UPDATE lessons SET title = ?, minutes = ?, objective = ?, blocks = ?, tags = ?, version = ?, is_published = 1 WHERE id = ?`,
+          [meta.title, meta.minutes, meta.objective, version.blocks, JSON.stringify(meta.tags || []), version.version, version.lesson_id],
+        );
+      }
+    } else {
+      const lessonIds = db.all<{ id: string }>(
+        `SELECT l.id FROM lessons l JOIN units un ON un.id = l.unit_id
+         WHERE un.code LIKE ? AND l.source_code IS NOT NULL`, [`P_${pack.code}_U%`],
+      );
+      for (const lesson of lessonIds) db.run('UPDATE lessons SET is_published = 1 WHERE id = ?', [lesson.id]);
+    }
     db.run("UPDATE course_packs SET status = 'active' WHERE id = ?", [packId]);
-    for (const lesson of lessonIds) db.run('UPDATE lessons SET is_published = 1 WHERE id = ?', [lesson.id]);
   });
-  return { pack, lessons: lessonIds.length };
+  return { pack, lessons: versions.length };
 }
-

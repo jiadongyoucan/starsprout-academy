@@ -3,10 +3,10 @@ import { notFound, validation } from '../core/errors.ts';
 import { addDays, newId, nowIso, today } from '../core/security.ts';
 import { int, isoDate, oneOf, str } from '../core/validate.ts';
 import type { AuthUser } from '../core/http.ts';
-import { assertChildAccess, assertPlanAccess, audit, consentGranted, resolveChildId, subjectMap } from './shared.ts';
+import { assertChildAccess, assertPlanAccess, audit, consentGranted, resolveChildId, subjectMap, trackEvent } from './shared.ts';
 import { aiConfigured, assertAiQuota, chat, recordAiUsage, resolveModel } from './ai.ts';
 
-export type DraftItem = { lessonId: string; subjectCode: string; title: string; minutes: number; date: string; seq: number };
+export type DraftItem = { lessonId: string; subjectCode: string; title: string; minutes: number; date: string; seq: number; note?: string };
 export type PlanDraft = {
   title: string; goal: string; startDate: string; endDate: string;
   daysPerWeek: number; minutesPerDay: number; rationale: string;
@@ -98,7 +98,19 @@ function buildDraft(db: Db, child: { id: string; name: string; class_code: strin
     while (count < 2) {
       const lesson = takeLesson();
       if (!lesson) break;
-      if (count > 0 && usedMinutes + lesson.minutes > input.minutesPerDay) {
+      if (usedMinutes + lesson.minutes > input.minutesPerDay) {
+        if (count === 0) {
+          // 单课本身超过每日上限：单独安排，但必须诚实标注，而不是宣称“不超过”
+          seq += 1;
+          items.push({
+            lessonId: lesson.id, subjectCode: lesson.subject_code, title: lesson.title,
+            minutes: lesson.minutes, date, seq,
+            note: `本课 ${lesson.minutes} 分钟，超过每日 ${input.minutesPerDay} 分钟；今天只安排这一节，可分段完成`,
+          });
+          usedMinutes += lesson.minutes;
+          count += 1;
+          break;
+        }
         itemPoolPushBack(queues, lesson);
         break;
       }
@@ -121,7 +133,7 @@ function buildDraft(db: Db, child: { id: string; name: string; class_code: strin
   const rationale =
     `已基于${child.name}（${child.class_code === 'nursery' ? '托班' : child.class_code === 'junior' ? '小班' : child.class_code === 'middle' ? '中班' : '大班'}）` +
     `已完成的 ${totalCompleted} 个课时与课程顺序排课：共 ${items.length} 个活动、覆盖 ${subjectNames.length} 个学科，` +
-    `优先补充进度较少的「${weakest}」，并跳过已完成课时；每天不超过 ${input.minutesPerDay} 分钟，周末留白。`;
+    `优先补充进度较少的「${weakest}」，并跳过已完成课时；每天尽量控制在 ${input.minutesPerDay} 分钟；单课超长时单独安排并标注；${input.daysPerWeek >= 6 ? '周日留白' : '周末留白'}。`;
   return {
     title: `${child.name}的${input.weeks}周学习计划`,
     goal: input.goal || '保持每日稳定学习节奏，五大模块均衡发展',
@@ -168,20 +180,21 @@ async function enhanceRationale(db: Db, child: { name: string; class_code: strin
 function persistPlan(db: Db, user: AuthUser, childId: string, draft: PlanDraft, source: 'manual' | 'ai', ip?: string) {
   const planId = newId();
   const now = nowIso();
+  const engine = source === 'ai' ? 'ai-assisted' : source === 'manual' && draft.engine === 'manual' ? 'manual' : 'local-rules';
   db.tx(() => {
     db.run(
       `INSERT INTO plans(id, household_id, child_id, title, goal, created_by, source, status, start_date, end_date,
-        days_per_week, minutes_per_day, ai_rationale, version, created_at, updated_at)
-       VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+        days_per_week, minutes_per_day, ai_rationale, engine, version, created_at, updated_at)
+       VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [planId, user.householdId, childId, draft.title, draft.goal, user.id, source, 'draft',
-        draft.startDate, draft.endDate, draft.daysPerWeek, draft.minutesPerDay, draft.rationale, 1, now, now],
+        draft.startDate, draft.endDate, draft.daysPerWeek, draft.minutesPerDay, draft.rationale, engine, 1, now, now],
     );
     for (const item of draft.items) {
       db.run(
         `INSERT INTO plan_items(id, plan_id, household_id, child_id, date, seq, lesson_id, subject_code, title, minutes, status, completed_at, note)
          VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`,
         [newId(), planId, user.householdId, childId, item.date, item.seq, item.lessonId, item.subjectCode,
-          item.title, item.minutes, 'pending', null, null],
+          item.title, item.minutes, 'pending', null, item.note || null],
       );
     }
     audit(db, { householdId: user.householdId, actorId: user.id, action: 'plan.create', entity: 'plan', entityId: planId, detail: { source, engine: draft.engine }, ip });
@@ -200,7 +213,8 @@ export async function generatePlan(db: Db, user: AuthUser, body: any, ip?: strin
   const draft = buildDraft(db, { id: child.id, name: child.name, class_code: child.class_code },
     { weeks, daysPerWeek, minutesPerDay, goal, startDate });
   await enhanceRationale(db, { name: child.name, class_code: child.class_code, id: childId }, draft, user);
-  const planId = persistPlan(db, user, childId, draft, 'ai', ip);
+  const planId = persistPlan(db, user, childId, draft, draft.engine === 'llm' ? 'ai' : 'manual', ip);
+  trackEvent(db, { householdId: user.householdId, childId, userId: user.id, type: 'plan_generated', meta: { engine: draft.engine, items: draft.items.length } });
   return { plan: planDetail(db, user, planId), engine: draft.engine };
 }
 
@@ -219,6 +233,7 @@ export async function createManualPlan(db: Db, user: AuthUser, body: any, ip?: s
   draft.rationale = `家长手动创建：${str(body?.notes, { optional: true, max: 480, label: '备注' }) || '系统按课程顺序与已完成进度自动填充课时，可在计划中调整。'}`;
   draft.engine = 'manual';
   const planId = persistPlan(db, user, childId, draft, 'manual', ip);
+  trackEvent(db, { householdId: user.householdId, childId, userId: user.id, type: 'plan_generated', meta: { engine: 'manual', items: draft.items.length } });
   return { plan: planDetail(db, user, planId), engine: 'manual' as const };
 }
 
@@ -275,7 +290,7 @@ export function planDetail(db: Db, user: AuthUser, planId: string): any {
     "SELECT * FROM reminders WHERE plan_id = ? AND status != 'cancelled' ORDER BY at LIMIT 20", [planId],
   );
   return {
-    plan: { ...plan, engine: plan.source === 'ai' ? 'ai-assisted' : 'manual' },
+    plan: { ...plan, engine: plan.engine || (plan.source === 'ai' ? 'ai-assisted' : 'manual') },
     child,
     items,
     stats: planStats(db, planId, plan.child_id),
@@ -299,6 +314,8 @@ function reminderAt(date: string): string {
 }
 
 function createPlanReminders(db: Db, planId: string, householdId: string, childId: string): number {
+  const planState = db.get<{ status: string }>('SELECT status FROM plans WHERE id = ?', [planId]);
+  if (!planState || planState.status !== 'active') return 0;
   const todayStr = today();
   const horizon = addDays(todayStr, 7);
   const items = db.all<{ date: string; title: string; minutes: number }>(
@@ -333,6 +350,7 @@ export function updatePlanStatus(db: Db, user: AuthUser, planId: string, body: a
   if (status === 'active') {
     const plan = assertPlanAccess(db, user, planId);
     createPlanReminders(db, planId, plan.household_id, plan.child_id);
+    trackEvent(db, { householdId: plan.household_id, childId: plan.child_id, userId: user.id, type: 'plan_activated' });
   }
   audit(db, { householdId: user.householdId, actorId: user.id, action: 'plan.status', entity: 'plan', entityId: planId, detail: { status } });
   return planDetail(db, user, planId);
@@ -352,11 +370,13 @@ export function correctPlan(db: Db, user: AuthUser, planId: string, body: any) {
   if (strategy === 'skip') {
     db.tx(() => {
       for (const item of overdue) db.run("UPDATE plan_items SET status = 'skipped' WHERE id = ?", [item.id]);
+      db.run('UPDATE plans SET version = version + 1, updated_at = ? WHERE id = ?', [nowIso(), planId]);
       db.run(
         'INSERT INTO plan_adjustments(id, plan_id, household_id, actor_id, reason, action, detail, created_at) VALUES(?,?,?,?,?,?,?,?)',
         [newId(), planId, plan.household_id, user.id, reason, 'skip_overdue', JSON.stringify({ items: overdue.map(i => i.id) }), nowIso()],
       );
     });
+    trackEvent(db, { householdId: plan.household_id, childId: plan.child_id, userId: user.id, type: 'plan_corrected', meta: { strategy, count: overdue.length } });
     audit(db, { householdId: user.householdId, actorId: user.id, action: 'plan.correct', entity: 'plan', entityId: planId, detail: { strategy, count: overdue.length } });
     return { moved: 0, skipped: overdue.length, message: `已跳过 ${overdue.length} 个逾期课时`, detail: planDetail(db, user, planId) };
   }
@@ -368,6 +388,11 @@ export function correctPlan(db: Db, user: AuthUser, planId: string, body: any) {
   for (const row of db.all<{ date: string; c: number }>('SELECT date, COUNT(*) AS c FROM plan_items WHERE plan_id = ? GROUP BY date', [planId])) {
     countByDate.set(row.date, row.c);
   }
+  for (const row of db.all<{ date: string; c: number }>(
+    `SELECT pi.date, COUNT(*) AS c FROM plan_items pi JOIN plans p ON p.id = pi.plan_id
+     WHERE pi.child_id = ? AND p.status = 'active' AND p.id != ? AND pi.date >= ? GROUP BY pi.date`,
+    [plan.child_id, planId, todayStr],
+  )) countByDate.set(row.date, (countByDate.get(row.date) || 0) + Number(row.c));
   let moved = 0;
   let lastNewDate = plan.end_date;
   const movedDetail: { itemId: string; from: string; to: string }[] = [];
@@ -398,6 +423,7 @@ export function correctPlan(db: Db, user: AuthUser, planId: string, body: any) {
     );
     createPlanReminders(db, planId, plan.household_id, plan.child_id);
   });
+  trackEvent(db, { householdId: plan.household_id, childId: plan.child_id, userId: user.id, type: 'plan_corrected', meta: { strategy, moved } });
   audit(db, { householdId: user.householdId, actorId: user.id, action: 'plan.correct', entity: 'plan', entityId: planId, detail: { strategy, moved } });
   return {
     moved, skipped: 0,

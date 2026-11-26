@@ -3,13 +3,13 @@ import { conflict, notFound, validation } from '../core/errors.ts';
 import { newId, nowIso, today } from '../core/security.ts';
 import { int, oneOf, str } from '../core/validate.ts';
 import type { AuthUser } from '../core/http.ts';
-import { assertChildAccess, audit, resolveChildId } from './shared.ts';
+import { assertChildAccess, audit, resolveChildId, trackEvent } from './shared.ts';
 import { moderateContent } from './moderation.ts';
 import { lessonWarmth } from './warmth.ts';
 
 export const PET_SPECIES = ['bunny', 'fox', 'dragon'] as const;
 export type PetSpecies = (typeof PET_SPECIES)[number];
-export type PetMood = 'happy' | 'excited' | 'hungry' | 'sleepy' | 'sad' | 'missing';
+export type PetMood = 'happy' | 'excited' | 'hungry' | 'sleepy' | 'missing';
 
 type PetRow = {
   id: string; household_id: string; child_id: string; species: PetSpecies; name: string;
@@ -23,7 +23,6 @@ const MOOD: Record<PetMood, { label: string; face: string }> = {
   excited: { label: '超级开心', face: '🤩' },
   hungry: { label: '有点饿', face: '🥺' },
   sleepy: { label: '想睡觉', face: '😴' },
-  sad: { label: '需要抱抱', face: '😢' },
   missing: { label: '有点想你', face: '🥺' },
 };
 
@@ -34,7 +33,6 @@ function clamp(n: number, min = 0, max = 100): number {
 function moodOf(pet: { hunger: number; happiness: number; energy: number }): PetMood {
   if (pet.hunger < 25) return 'hungry';
   if (pet.energy < 20) return 'sleepy';
-  if (pet.happiness < 30) return 'sad';
   if (pet.happiness >= 85) return 'excited';
   return 'happy';
 }
@@ -100,7 +98,7 @@ function parseItem<T>(raw: string, fallback: T): T {
 }
 
 function shopRows(db: Db) {
-  return db.all<Record<string, any>>('SELECT * FROM shop_items ORDER BY sort, price').map(item => ({
+  return db.all<Record<string, any>>('SELECT * FROM shop_items WHERE available = 1 ORDER BY sort, price').map(item => ({
     ...item, effect: parseItem(item.effect, {}),
   }));
 }
@@ -269,12 +267,21 @@ export function interactPet(db: Db, user: AuthUser, body: any) {
     } else if (action === 'play') {
       cooldownCheck(db, pet.id, 'play', 20);
       if (pet.energy < 12) throw validation(`${pet.name}有点累了，先睡一觉再玩吧`);
+      const toyCode = str(body?.itemCode, { optional: true, max: 40 });
+      let toyBonus = 0;
+      if (toyCode) {
+        const toy = db.get<Record<string, any>>('SELECT * FROM shop_items WHERE code = ? AND kind = ?', [toyCode, 'toy']);
+        const owned = db.get('SELECT 1 AS ok FROM pet_inventory WHERE pet_id = ? AND item_code = ?', [pet.id, toyCode]);
+        if (!toy || !owned) throw validation('还没有这个玩具，先去小铺看看吧');
+        toyBonus = Number(parseItem<Record<string, number>>(toy.effect, {}).happiness || 0);
+        itemName = toy.name;
+      }
       pet.energy = clamp(pet.energy - 10);
-      pet.happiness = clamp(pet.happiness + 15);
+      pet.happiness = clamp(pet.happiness + 15 + toyBonus);
       pet.hunger = clamp(pet.hunger - 4);
       pet.exp += 4;
       pet.bond += 1;
-      reaction = `你和小伙伴玩了一会儿，${pet.name}开心得转了个圈！`;
+      reaction = toyBonus ? `你拿出${itemName}，${pet.name}开心得转了个圈！` : `你和小伙伴玩了一会儿，${pet.name}开心得转了个圈！`;
     } else if (action === 'pet') {
       cooldownCheck(db, pet.id, 'pet', 1);
       pet.happiness = clamp(pet.happiness + 4);
@@ -321,6 +328,7 @@ export function buyItem(db: Db, user: AuthUser, body: any) {
   const qty = int(body?.qty ?? 1, { min: 1, max: 10, label: '数量' });
   const item = db.get<Record<string, any>>('SELECT * FROM shop_items WHERE code = ?', [code]);
   if (!item) throw notFound('商品不存在');
+  if (!item.available) throw validation('这件限定配饰只能通过完成计划获得');
   if (item.kind === 'clothing' && qty !== 1) throw validation('衣服一次只能兑换一件');
   const wallet = ensureWallet(db, childId);
   const total = Number(item.price) * qty;
@@ -425,6 +433,7 @@ function planMilestone(db: Db, childId: string, planId: string): Milestone | nul
   // Ceremony rewards require a real plan (≥3 items across ≥3 days), preventing one-item farming.
   if (Number(counts.total) < 3 || dates < 3) return null;
   if (!grantRewardEvent(db, childId, 'plan', planId, 100, 60, 3, { title: plan.title })) return null;
+  trackEvent(db, { householdId: db.get<{ household_id: string }>('SELECT household_id FROM children WHERE id = ?', [childId])?.household_id, childId, type: 'plan_completed', meta: { planId } });
   addCoins(db, childId, 100);
   gainPet(db, childId, 60, 12);
   const cape = db.get<{ code: string; name: string }>("SELECT code, name FROM shop_items WHERE code = 'star-cape'");
@@ -454,6 +463,8 @@ export function awardLessonCompletion(db: Db, childId: string, lessonId: string,
     if (firstTime) {
       addCoins(db, childId, coins);
       gainPet(db, childId, 10, 6);
+    } else {
+      gainPet(db, childId, 0, 2);
     }
     const unit = unitMilestone(db, childId, lessonId);
     if (unit) milestones.push(unit);

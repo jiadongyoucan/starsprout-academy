@@ -29,7 +29,7 @@ describe('智能体会话、记忆、工作区与沙箱', () => {
     assert.ok(toolNames.includes('create_plan'));
     assert.ok(reply.data.message.content.includes('计划'));
     const plans = await api(ctx.base, 'GET', '/api/plans', { token: user.token });
-    assert.ok(plans.data.some((p: any) => p.source === 'ai' && p.status === 'draft'));
+    assert.ok(plans.data.some((plan: any) => plan.source === 'manual' && plan.status === 'draft'));
     const refreshed = await api(ctx.base, 'GET', `/api/agent/sessions/${session.data.id}`, { token: user.token });
     assert.ok(refreshed.data.messages.length >= 2);
     assert.ok(refreshed.data.messages[0].content.includes('排两周计划'));

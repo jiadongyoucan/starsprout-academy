@@ -91,6 +91,11 @@ export async function renderLearn(root, ctx) {
         </div>
       </div>
       <div class="lesson-progress">${lesson.blocks.map(() => '<i></i>').join('')}</div>
+      ${!kidMode && (lesson.keyPoints || lesson.hardPoints || lesson.homeExtension) ? `<div class="lesson-meta-card">
+        ${lesson.keyPoints ? `<div><span>今天的关键词</span><p>${esc(lesson.keyPoints)}</p></div>` : ''}
+        ${lesson.hardPoints ? `<div><span>可能卡住的地方</span><p>${esc(lesson.hardPoints)}</p></div>` : ''}
+        ${lesson.homeExtension ? `<div><span>回家可以这样玩</span><p>${esc(lesson.homeExtension)}</p></div>` : ''}
+      </div>` : ''}
       ${lesson.source ? `<div class="source-note" style="margin-bottom:14px">📎 本课时来自公开课源「${esc(lesson.source.name)}」 · ${esc(lesson.source.license)} · 已按平台体系二次设计</div>` : ''}
       ${blocksHtml}
       <div class="learn-foot">
@@ -180,13 +185,13 @@ function renderBlock(block, index, lesson) {
     case 'cards':
       return `<section class="block">${head}<h3>${esc(block.title)}</h3><p class="lede">点一张卡片，听一听它的发音。</p>
         <div class="cards-grid">${block.items.map(item => `
-          <button class="learn-card" type="button" data-speak="${esc(item.label)}" data-lang="zh-CN">
+          <button class="learn-card" type="button" data-speak="${esc(item.label)}" data-lang="${lang}">
             <div class="e">${esc(item.emoji || '✨')}</div><strong>${esc(item.label)}</strong><small>${esc(item.note || '')}</small>
           </button>`).join('')}</div></section>`;
     case 'listen':
       return `<section class="block">${head}<h3>${esc(block.title)}</h3>
         <div class="quote">${esc(block.text)}</div><div class="translation">${esc(block.translation || '')}</div>
-        <div class="actions">${speakButton(block.text, 'en-US', '听一听')}${speakButton(block.text, 'en-US', '慢速', 0.7)}</div></section>`;
+        <div class="actions">${speakButton(block.text, lang, '听一听')}${speakButton(block.text, lang, '慢速', 0.7)}</div></section>`;
     case 'speak':
       return `<section class="block" data-speak-block>${head}<h3>${esc(block.title)}</h3>
         <div class="quote">${esc(block.text)}</div><div class="translation">${esc(block.translation || '')}</div>

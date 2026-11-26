@@ -223,10 +223,11 @@ export async function renderRegistry(root, ctx) {
   function openCreate(tab) {
     if (tab === 'skills') openSkillModal();
     else if (tab === 'connectors') openConnectorModal();
-    else openExpertModal();
+    else void openExpertModal();
   }
 
-  function openExpertModal() {
+  async function openExpertModal() {
+    const availableSkills = await request('/api/registry/skills').catch(() => []);
     openModal({
       title: '发布专家智能体', subtitle: '公开专家需要教师/管理员身份并经过审核；家庭专家即时可用',
       body: `<form id="expertForm">
@@ -240,6 +241,7 @@ export async function renderRegistry(root, ctx) {
           <div class="field"><label>擅长学科</label><select class="select" name="subjects" multiple size="4">${SUBJECTS.map(s => `<option value="${s.code}">${s.name}</option>`).join('')}</select></div>
           <div class="field"><label>适用学段</label><select class="select" name="classes" multiple size="4">${CLASSES.map(c => `<option value="${c.code}">${c.name}</option>`).join('')}</select></div>
         </div>
+        <div class="field"><label>引用技能（可多选）</label><select class="select" name="skillIds" multiple size="3">${availableSkills.map(skill => `<option value="${esc(skill.id)}">${esc(skill.name)}</option>`).join('')}</select></div>
         <div class="field"><label>可见范围</label><select class="select" name="visibility">
           <option value="household">仅本家庭</option>
           <option value="public" ${canPublish ? '' : 'disabled'}>公开（需审核${canPublish ? '' : ' · 需教师身份'}）</option>
@@ -254,12 +256,13 @@ export async function renderRegistry(root, ctx) {
           const values = Object.fromEntries(new FormData(form).entries());
           const subjects = [...form.querySelector('[name=subjects]').selectedOptions].map(o => o.value);
           const classCodes = [...form.querySelector('[name=classes]').selectedOptions].map(o => o.value);
+          const skillIds = [...form.querySelector('[name=skillIds]').selectedOptions].map(o => o.value);
           const button = modal.querySelector('#expertSubmit');
           button.disabled = true;
           try {
             const result = await request('/api/registry/experts', {
               method: 'POST',
-              body: { ...values, subjects, classCodes },
+              body: { ...values, subjects, classCodes, skillIds },
             });
             close(); toast(result.message || '已提交', 'success'); await loadTab('experts');
           } catch (error) { toast(error.message, 'error'); button.disabled = false; }
@@ -279,6 +282,7 @@ export async function renderRegistry(root, ctx) {
         <div class="field"><label>说明</label><input class="input" name="description" maxlength="300" placeholder="给出一首曲子的慢练分解步骤与鼓励话术"></div>
         <div class="field"><label>类型</label><select class="select" name="kind"><option value="prompt">提示词</option><option value="workflow">工作流</option></select></div>
         <div class="field"><label>模板 / 步骤</label><textarea class="input" name="template" maxlength="2000" placeholder="先分手慢练 2 遍 → 只练难点小节 3 遍 → 合手 1 遍 → 录下来听一遍"></textarea></div>
+        <div class="field"><label>引用技能（可多选）</label><select class="select" name="skillIds" multiple size="3">${availableSkills.map(skill => `<option value="${esc(skill.id)}">${esc(skill.name)}</option>`).join('')}</select></div>
         <div class="field"><label>可见范围</label><select class="select" name="visibility">
           <option value="household">仅本家庭</option><option value="public" ${canPublish ? '' : 'disabled'}>公开（需审核）</option>
         </select></div>
@@ -322,7 +326,8 @@ export async function renderRegistry(root, ctx) {
         </div>
         <div class="field"><label>工具清单（JSON 数组）</label><textarea class="input" name="tools" style="font-family:var(--mono);font-size:12px;min-height:150px">${esc(sample)}</textarea></div>
         <div class="form-row">
-          <div class="field"><label>可见范围</label><select class="select" name="visibility"><option value="household">仅本家庭</option><option value="public" ${canPublish ? '' : 'disabled'}>公开（需审核）</option></select></div>
+          <div class="field"><label>引用技能（可多选）</label><select class="select" name="skillIds" multiple size="3">${availableSkills.map(skill => `<option value="${esc(skill.id)}">${esc(skill.name)}</option>`).join('')}</select></div>
+        <div class="field"><label>可见范围</label><select class="select" name="visibility"><option value="household">仅本家庭</option><option value="public" ${canPublish ? '' : 'disabled'}>公开（需审核）</option></select></div>
           <div class="field"><label>安全提示</label><p class="form-hint">HTTP 连接器仅允许白名单域名，拒绝私网地址与重定向。</p></div>
         </div>
       </form>`,

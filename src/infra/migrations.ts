@@ -325,4 +325,29 @@ CREATE INDEX idx_pet_interactions ON pet_interactions(pet_id, created_at);
     version: 5,
     sql: `ALTER TABLE plan_items ADD COLUMN completed_via TEXT;`,
   },
+  {
+    version: 6,
+    sql: `
+ALTER TABLE lessons ADD COLUMN key_points TEXT;
+ALTER TABLE lessons ADD COLUMN hard_points TEXT;
+ALTER TABLE lessons ADD COLUMN home_extension TEXT;
+ALTER TABLE lessons ADD COLUMN prereq_lesson_id TEXT;
+ALTER TABLE comments ADD COLUMN moderation_reasons TEXT NOT NULL DEFAULT '[]';
+ALTER TABLE comments ADD COLUMN reviewed_at TEXT;
+ALTER TABLE comments ADD COLUMN reviewed_by TEXT;
+ALTER TABLE plans ADD COLUMN engine TEXT;
+ALTER TABLE shop_items ADD COLUMN available INTEGER NOT NULL DEFAULT 1;
+CREATE TABLE lesson_versions (
+  id TEXT PRIMARY KEY, lesson_id TEXT NOT NULL, pack_id TEXT, version INTEGER NOT NULL, blocks TEXT NOT NULL,
+  checksum TEXT NOT NULL, meta TEXT NOT NULL DEFAULT '{}', created_at TEXT NOT NULL, UNIQUE(lesson_id, version)
+);
+UPDATE shop_items SET available = 0 WHERE code = 'star-cape';
+CREATE TABLE product_events (
+  id TEXT PRIMARY KEY, household_id TEXT, child_id TEXT, user_id TEXT,
+  type TEXT NOT NULL, meta TEXT NOT NULL DEFAULT '{}', created_at TEXT NOT NULL
+);
+CREATE INDEX idx_product_events_type_date ON product_events(type, created_at);
+CREATE INDEX idx_product_events_household ON product_events(household_id, created_at);
+`,
+  },
 ];

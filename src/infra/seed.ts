@@ -1,6 +1,6 @@
 import type { Db } from './db.ts';
 import { config } from '../config.ts';
-import { hashPassword, newId, nowIso, today, addDays } from '../core/security.ts';
+import { hashPassword, newId, nowIso, today, addDays, sha256 } from '../core/security.ts';
 import { importPack } from './public-courses.ts';
 import { buildBlocks, lessonMinutes } from './lesson-blocks.ts';
 import { SHOP_ITEMS } from './shop-data.ts';
@@ -64,7 +64,7 @@ function insertCoreFramework(db: Db, subject: SubjectCode, level: LevelCode): vo
   });
 }
 
-function seedCurriculum(db: Db): void {
+function seedCurriculum(db: Db, autoApprovePublic: boolean): void {
   if (meta(db, 'curriculum_version')) return;
   db.tx(() => {
     for (const subject of SUBJECTS) {
@@ -82,7 +82,7 @@ function seedCurriculum(db: Db): void {
     for (const subject of SUBJECTS) {
       for (const level of LEVELS) insertCoreFramework(db, subject.code, level.code);
     }
-    for (const pack of PUBLIC_PACKS) importPack(db, pack, { autoApprove: true });
+    for (const pack of PUBLIC_PACKS) importPack(db, pack, { autoApprove: autoApprovePublic });
     setMeta(db, 'curriculum_version', '1');
   });
 }
@@ -376,20 +376,75 @@ export function shouldSeedDemo(explicit?: boolean): boolean {
   return config.seedDemo && config.demoMode;
 }
 
+export function backfillPackChecksums(db: Db): void {
+  const packs = db.all<{ id: string; code: string; checksum: string }>('SELECT id, code, checksum FROM course_packs');
+  for (const pack of packs) {
+    if (/^[a-f0-9]{64}$/.test(pack.checksum)) continue;
+    const lessons = db.all<Record<string, unknown>>(
+      `SELECT l.id, l.title, l.minutes, l.objective, l.blocks, l.tags FROM lessons l
+       JOIN units un ON un.id = l.unit_id WHERE un.code LIKE ? ORDER BY l.id`, [`P_${pack.code}_U%`],
+    );
+    if (!lessons.length) continue;
+    db.run('UPDATE course_packs SET checksum = ? WHERE id = ?', [sha256(JSON.stringify(lessons)), pack.id]);
+  }
+}
+
+export function backfillLessonMetadata(db: Db): void {
+  const lessons = db.all<{ id: string; subject_code: string; title: string; tags: string; unit_id: string; seq: number }>(
+    `SELECT l.id, f.subject_code, l.title, l.tags, l.unit_id, l.seq
+     FROM lessons l JOIN units un ON un.id = l.unit_id JOIN frameworks f ON f.id = un.framework_id
+     ORDER BY l.unit_id, l.seq`,
+  );
+  const hard: Record<string, string> = {
+    english: '在真实用餐/家庭情境中开口，而不是只跟读单词',
+    hanzi: '笔画顺序与田字格位置；先观察再落笔',
+    piano: '稳定节拍与手型，允许慢速但不要抢拍',
+    thinking: '先说清楚“为什么”，再选答案；允许用实物演示',
+    montessori: '按自己的节奏完成操作，成人只示范不代劳',
+  };
+  const home: Record<string, string> = {
+    english: '晚饭时用今天的 2 个单词点一次餐，家长只回应不纠错',
+    hanzi: '在纸上写 3 个今天学的字，每个字只写一遍',
+    piano: '给家人演奏今天的一小节，拍手打一次节拍',
+    thinking: '请孩子把今天的一道题讲给家人听，家长问“你怎么想的？”',
+    montessori: '让孩子把今天的工作示范给家人看，家长安静看完',
+  };
+  let prevUnit = '';
+  let prevId: string | null = null;
+  db.tx(() => {
+    for (const lesson of lessons) {
+      if (lesson.unit_id !== prevUnit) { prevUnit = lesson.unit_id; prevId = null; }
+      db.run(
+        `UPDATE lessons SET key_points = COALESCE(key_points, ?), hard_points = COALESCE(hard_points, ?),
+           home_extension = COALESCE(home_extension, ?), prereq_lesson_id = COALESCE(prereq_lesson_id, ?)
+         WHERE id = ?`,
+        [lesson.tags || lesson.title, hard[lesson.subject_code] || '先理解再练习，允许慢一点',
+          home[lesson.subject_code] || '请孩子把今天学的内容讲给家人听',
+          prevId, lesson.id],
+      );
+      prevId = lesson.id;
+    }
+  });
+}
+
 export function seedShopItems(db: Db): void {
   if (meta(db, 'shop_version')) return;
   for (const item of SHOP_ITEMS) {
     db.run(
-      `INSERT OR IGNORE INTO shop_items(code, kind, name, emoji, price, description, effect, sort)
-       VALUES(?,?,?,?,?,?,?,?)`,
-      [item.code, item.kind, item.name, item.emoji, item.price, item.description, JSON.stringify(item.effect), item.sort],
+      `INSERT OR IGNORE INTO shop_items(code, kind, name, emoji, price, description, effect, sort, available)
+       VALUES(?,?,?,?,?,?,?,?,?)`,
+      [item.code, item.kind, item.name, item.emoji, item.price, item.description, JSON.stringify(item.effect), item.sort, item.available === false ? 0 : 1],
     );
   }
   setMeta(db, 'shop_version', '1');
 }
 
 export function seedDatabase(db: Db, opts: { demo?: boolean } = {}): void {
-  seedCurriculum(db);
+  const demo = shouldSeedDemo(opts.demo);
+  // 测试与显式 demo 才自动发布公开课包；生产首次启动保持隔离，等管理员审核。
+  seedCurriculum(db, demo || config.env === 'test');
+  backfillPackChecksums(db);
+  backfillLessonMetadata(db);
   seedShopItems(db);
-  if (shouldSeedDemo(opts.demo)) seedDemo(db);
+  if (demo) seedDemo(db);
 }

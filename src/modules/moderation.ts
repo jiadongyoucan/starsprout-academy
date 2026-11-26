@@ -4,6 +4,12 @@ export type ModerationResult = { score: number; reasons: ModerationReason[]; blo
 const HOMOGLYPHS: Record<string, string> = {
   'а': 'a', 'е': 'e', 'о': 'o', 'р': 'p', 'с': 'c', 'х': 'x', 'і': 'i', 'ј': 'j',
   'ѕ': 's', 'ԁ': 'd', 'ν': 'v', 'ⅴ': 'v', '𝐯': 'v', 'ｖ': 'v', 'ⱱ': 'v', 'ɡ': 'g',
+  // 常见繁体/异体字：让「賭博網站」「加/微信」在压缩分隔符后仍命中
+  '賭': '赌', '網': '网', '黃': '黄', '約': '约', '槍': '枪', '彈': '弹', '藥': '药',
+  '醫': '医', '療': '疗', '兒': '儿', '褻': '亵', '殺': '杀', '賤': '贱', '滾': '滚',
+  '詐': '诈', '騙': '骗', '職': '职', '結': '结', '購': '购', '掃': '扫', '碼': '码',
+  '眾': '众', '號': '号', '聯': '联', '繫': '系', '機': '机', '領': '领', '資': '资',
+  '費': '费', '價': '价', '錢': '钱', '轉': '转', '賬': '账', '帳': '帐', '團': '团',
 };
 
 const BANNED: { re: RegExp; label: string }[] = [
@@ -22,7 +28,7 @@ const BANNED: { re: RegExp; label: string }[] = [
 ];
 
 const CONTACT = /加微信|加v|加薇|vx|wx号|微信号|weixin|wechat|扫码|公众号|加群|私聊|qq号|扣扣|手机号|联系方式|领取资料|免费领取/;
-const URL_RE = /(https?:\/\/|www\.)/;
+const URL_RE = /(https?:\/\/|www\.|(?:[a-z0-9-]+\.)+(?:com|cn|net|org|io|me|vip|shop|top|cc|xyz))/i;
 const PHONE_RE = /1[3-9]\d{9}/;
 const ID_RE = /\b\d{17}[\dXx]\b/;
 const EDUCATION_KEYWORDS = [
@@ -33,7 +39,8 @@ const EDUCATION_KEYWORDS = [
 
 export function normalizeText(input: string): string {
   return String(input || '').normalize('NFKC')
-    .replace(/[\u200B-\u200D\uFEFF\u2060]/g, '')
+    // 所有 Unicode 格式字符（零宽、软连字符、方向标记等）都不能作为隐身衣
+    .replace(/\p{Cf}/gu, '')
     .split('').map(ch => HOMOGLYPHS[ch] ?? ch).join('')
     .toLowerCase()
     .replace(/\s+/g, ' ')
@@ -42,7 +49,8 @@ export function normalizeText(input: string): string {
 
 export function moderateContent(text: string, meta: { onTopicHint?: boolean } = {}): ModerationResult {
   const normalized = normalizeText(text);
-  const compact = normalized.replace(/[\s._\-*~·|]/g, '');
+  // 压缩所有标点/符号/空白：斜杠、点、竖线、间隔号、软连字符都不能拆开敏感词
+  const compact = normalized.replace(/[\p{P}\p{S}\s]/gu, '');
   const reasons: ModerationReason[] = [];
   let score = 100;
 

@@ -156,9 +156,14 @@ describe('社区广场、内容审核与审批状态机', () => {
       token: reviewer.token, body: { decision: 'approve' },
     });
     const good = await api(ctx.base, 'POST', `/api/community/posts/${created.data.id}/comments`, {
-      token: reviewer.token, body: { content: '这个方法很实用，今晚就试试。' },
+      token: author.token, body: { content: '这个方法很实用，今晚就试试。' },
     });
     assert.equal(good.status, 200);
+    assert.equal(good.data.status, 'pending');
+    const reviewedComment = await api(ctx.base, 'POST', `/api/admin/community/comments/${good.data.id}/review`, {
+      token: reviewer.token, body: { decision: 'approve' },
+    });
+    assert.equal(reviewedComment.status, 200);
     const bad = await api(ctx.base, 'POST', `/api/community/posts/${created.data.id}/comments`, {
       token: reviewer.token, body: { content: '加微信 13800138000 领取资料' },
     });

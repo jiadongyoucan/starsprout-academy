@@ -15,7 +15,10 @@ export async function renderAgent(root, ctx) {
     const results = await Promise.all([
       request('/api/agent/sessions'),
       request('/api/agent/models'),
-      request('/api/registry/experts').catch(() => []),
+      Promise.all([
+        request('/api/registry/experts').catch(() => []),
+        request('/api/registry/experts?scope=mine').catch(() => []),
+      ]).then(([pub, mine]) => [...new Map([...pub, ...mine].map(e => [e.id, e])).values()]),
     ]);
     sessions = results[0];
     models = results[1].models || [];

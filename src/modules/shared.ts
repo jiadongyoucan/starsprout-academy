@@ -119,3 +119,15 @@ export function isoWeekKey(date = new Date()): string {
   const weekNo = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
   return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`;
 }
+
+export function trackEvent(db: Db, opts: {
+  householdId?: string | null; childId?: string | null; userId?: string | null;
+  type: 'plan_generated' | 'plan_activated' | 'lesson_completed' | 'plan_completed' | 'plan_corrected';
+  meta?: Record<string, unknown>;
+}): void {
+  db.run(
+    'INSERT INTO product_events(id, household_id, child_id, user_id, type, meta, created_at) VALUES(?,?,?,?,?,?,?)',
+    [newId(), opts.householdId || null, opts.childId || null, opts.userId || null, opts.type,
+      JSON.stringify(opts.meta || {}), nowIso()],
+  );
+}

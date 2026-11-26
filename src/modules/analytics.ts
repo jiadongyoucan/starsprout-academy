@@ -47,12 +47,14 @@ function windowMetrics(db: Db, childId: string, start: string, end: string): Win
   };
 }
 
-function adherenceFor(db: Db, childId: string): { planned: number; done: number; percent: number } {
+function adherenceFor(db: Db, childId: string, start?: string, end?: string): { planned: number; done: number; percent: number } {
+  const from = start || '0000-01-01';
+  const to = end || today();
   const row = db.get<{ planned: number; done: number }>(
     `SELECT COUNT(*) AS planned, SUM(CASE WHEN pi.status = 'done' THEN 1 ELSE 0 END) AS done
      FROM plan_items pi JOIN plans p ON p.id = pi.plan_id
-     WHERE pi.child_id = ? AND p.status = 'active' AND pi.date <= ?`,
-    [childId, today()],
+     WHERE pi.child_id = ? AND p.status = 'active' AND pi.date BETWEEN ? AND ?`,
+    [childId, from, to],
   );
   const planned = Number(row?.planned || 0);
   const done = Number(row?.done || 0);
@@ -88,7 +90,7 @@ export function dashboard(db: Db, user: AuthUser, childIdRaw: unknown, rangeRaw:
   const prevStart = addDays(prevEnd, -(days - 1));
   const current = windowMetrics(db, childId, start, end);
   const previous = windowMetrics(db, childId, prevStart, prevEnd);
-  const adherence = adherenceFor(db, childId);
+  const adherence = adherenceFor(db, childId, start, end);
   const streak = streakDays(db, childId);
   const delta = (now: number, before: number) => before === 0 ? (now > 0 ? 100 : 0) : Math.round(((now - before) / before) * 100);
 
@@ -192,7 +194,7 @@ function periodBounds(period: 'daily' | 'weekly' | 'monthly', now = new Date()) 
 
 function localReport(db: Db, childId: string, period: string, bounds: ReturnType<typeof periodBounds>) {
   const metrics = windowMetrics(db, childId, bounds.start, bounds.end);
-  const adherence = adherenceFor(db, childId);
+  const adherence = adherenceFor(db, childId, bounds.start, bounds.end);
   const child = db.get<{ name: string; class_code: string }>('SELECT name, class_code FROM children WHERE id = ?', [childId]);
   const top = metrics.subjectDist[0];
   const summary = metrics.completed
@@ -293,6 +295,14 @@ export function listReports(db: Db, user: AuthUser, childIdRaw: unknown) {
 export function adminOverview(db: Db) {
   const count = (sql: string, params: unknown[] = []) => Number(db.get<{ c: number }>(sql, params)?.c || 0);
   const since = new Date(Date.now() - 24 * 3600_000).toISOString();
+  const weekAgo = new Date(Date.now() - 7 * 86400_000).toISOString();
+  const reviewed = count('SELECT COUNT(*) AS c FROM post_reviews');
+  const approvedReviews = count("SELECT COUNT(*) AS c FROM post_reviews WHERE decision = 'approve'");
+  const avgReviewHours = Number(db.get<{ h: number }>(
+    `SELECT AVG((julianday(r.created_at) - julianday(p.created_at)) * 24) AS h
+     FROM post_reviews r JOIN community_posts p ON p.id = r.post_id`, [])?.h || 0);
+  const planCompletion = count(`SELECT COUNT(*) AS c FROM plans p WHERE p.status = 'active' AND EXISTS (SELECT 1 FROM plan_items pi WHERE pi.plan_id = p.id)
+    AND NOT EXISTS (SELECT 1 FROM plan_items pi WHERE pi.plan_id = p.id AND pi.status != 'done')`);
   return {
     users: count('SELECT COUNT(*) AS c FROM users'),
     households: count('SELECT COUNT(*) AS c FROM households'),
@@ -303,6 +313,11 @@ export function adminOverview(db: Db) {
     pendingExperts: count("SELECT COUNT(*) AS c FROM experts WHERE status = 'pending_review'"),
     pendingSkills: count("SELECT COUNT(*) AS c FROM skills WHERE status = 'pending_review'"),
     pendingPacks: count("SELECT COUNT(*) AS c FROM course_packs WHERE status = 'quarantined'"),
+    pendingComments: count("SELECT COUNT(*) AS c FROM comments WHERE status = 'pending'"),
+    activeHouseholds7d: count('SELECT COUNT(DISTINCT household_id) AS c FROM product_events WHERE created_at >= ?', [weekAgo]),
+    planCompletion,
+    reviewApprovalRate: reviewed ? Math.round((approvedReviews / reviewed) * 100) : null,
+    reviewAvgHours: reviewed ? Math.round(avgReviewHours * 10) / 10 : null,
     aiRuns24h: count('SELECT COUNT(*) AS c FROM agent_runs WHERE created_at >= ?', [since]),
     snapshots: count('SELECT COUNT(*) AS c FROM snapshots'),
     reports: count('SELECT COUNT(*) AS c FROM reports'),

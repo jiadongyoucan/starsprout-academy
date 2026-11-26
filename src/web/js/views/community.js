@@ -127,8 +127,8 @@ export async function renderCommunity(root, ctx) {
             const content = new FormData(event.currentTarget).get('content')?.trim();
             if (!content) return;
             try {
-              await request(`/api/community/posts/${encodeURIComponent(post.id)}/comments`, { method: 'POST', body: { content } });
-              close(); toast('评论已发布', 'success'); void openPost(post.id);
+              const result = await request(`/api/community/posts/${encodeURIComponent(post.id)}/comments`, { method: 'POST', body: { content } });
+              close(); toast(result.status === 'pending' ? '评论已提交，审核通过后展示' : '评论已发布', 'success'); void openPost(post.id);
             } catch (error) { toast(error.message, 'error'); }
           });
           modal.querySelector('#reportPost').addEventListener('click', () => {
@@ -184,13 +184,14 @@ export async function renderCommunity(root, ctx) {
   }
 
   async function loadReview() {
-    const [queue, reports] = await Promise.all([
+    const [queue, comments, reports] = await Promise.all([
       request('/api/admin/community/queue?status=pending'),
+      request('/api/admin/community/comments?status=pending').catch(() => []),
       request('/api/admin/community/reports'),
     ]);
     body.innerHTML = `
       <div class="row between" style="margin-bottom:12px"><span class="small muted">先看审核提示，再决定通过或拒绝；拒绝必须写清原因。不能审核自己的内容。</span>
-        <span class="pill">${queue.length} 条待审 · ${reports.filter(r => r.status === 'open').length} 条举报</span></div>
+        <span class="pill">${queue.length} 条待审 · ${comments.length} 条评论 · ${reports.filter(r => r.status === 'open').length} 条举报</span></div>
       ${queue.length ? queue.map(post => `<div class="review-item">
         <div class="row" style="gap:6px">${badge(post.status)}<span class="pill tiny">${TYPE_LABEL[post.type]}</span><span class="tiny muted">${esc(post.author_name)} · ${esc(post.household_name)}</span></div>
         <h4 style="margin-top:6px">${esc(post.title)}</h4>
@@ -200,8 +201,20 @@ export async function renderCommunity(root, ctx) {
         <div class="review-actions">
           <button class="btn small" type="button" data-review="${esc(post.id)}" data-decision="approve">通过</button>
           <button class="btn small ghost" type="button" data-review="${esc(post.id)}" data-decision="reject">拒绝</button>
+          <button class="btn small danger" type="button" data-review="${esc(post.id)}" data-decision="hide">隐藏</button>
         </div>
       </div>`).join('') : '<p class="small muted">审核队列已清空。</p>'}
+      <h3 style="margin:22px 0 10px;font-size:15px">评论审核</h3>
+      ${comments.length ? comments.map(comment => `<div class="review-item">
+        <div class="row" style="gap:6px"><span class="pill tiny">评论</span><span class="tiny muted">${esc(comment.author_name)} · ${esc(comment.post_title)}</span></div>
+        <div class="small" style="margin-top:6px;white-space:pre-wrap">${esc(comment.content)}</div>
+        ${comment.moderationReasons?.length ? `<div class="moderation">⚠️ ${comment.moderationReasons.map(r => esc(r.label || r)).join('；')}</div>` : ''}
+        <div class="review-actions">
+          <button class="btn small" type="button" data-review-comment="${esc(comment.id)}" data-decision="approve">通过</button>
+          <button class="btn small ghost" type="button" data-review-comment="${esc(comment.id)}" data-decision="reject">拒绝</button>
+          <button class="btn small danger" type="button" data-review-comment="${esc(comment.id)}" data-decision="hide">隐藏</button>
+        </div>
+      </div>`).join('') : '<p class="small muted">没有待审评论。</p>'}
       <h3 style="margin:22px 0 10px;font-size:15px">举报处理</h3>
       ${reports.length ? reports.map(report => `<div class="review-item">
         <div class="row" style="gap:6px"><span class="pill ${report.status === 'open' ? 'rose' : ''}">${esc(report.status === 'open' ? '待处理' : '已处理')}</span><strong style="font-size:13px">${esc(report.post_title)}</strong></div>
@@ -210,6 +223,12 @@ export async function renderCommunity(root, ctx) {
           <button class="btn small danger" type="button" data-resolve="${esc(report.id)}" data-decision="hide">隐藏内容</button></div>` : ''}
       </div>`).join('') : '<p class="small muted">没有举报记录。</p>'}`;
     body.querySelectorAll('[data-review]').forEach(button => button.addEventListener('click', () => reviewPost(button.dataset.review, button.dataset.decision)));
+    body.querySelectorAll('[data-review-comment]').forEach(button => button.addEventListener('click', async () => {
+      try {
+        await request(`/api/admin/community/comments/${encodeURIComponent(button.dataset.reviewComment)}/review`, { method: 'POST', body: { decision: button.dataset.decision } });
+        toast('评论已处理', 'success'); await loadReview();
+      } catch (error) { toast(error.message, 'error'); }
+    }));
     body.querySelectorAll('[data-resolve]').forEach(button => button.addEventListener('click', async () => {
       try {
         await request(`/api/admin/community/reports/${encodeURIComponent(button.dataset.resolve)}/resolve`, { method: 'POST', body: { decision: button.dataset.decision } });

@@ -17,7 +17,8 @@ describe('AI 辅助计划、提醒与纠偏', () => {
     assert.equal(generated.status, 200);
     const result = generated.data;
     assert.equal(result.plan.plan.status, 'draft');
-    assert.equal(result.plan.plan.source, 'ai');
+    assert.equal(result.plan.plan.source, 'manual');
+    assert.equal(result.plan.plan.engine, 'local-rules');
     assert.ok(result.plan.items.length >= 4);
     assert.ok(result.plan.plan.ai_rationale.length > 10);
     assert.ok(['local-rules', 'llm'].includes(result.engine));

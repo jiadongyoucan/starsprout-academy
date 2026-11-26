@@ -1,0 +1,972 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>星芽学堂 · 实现与产品文档差距评审</title>
+<style>
+  :root{
+    --bg:#f5f1e8; --surface:#fffdf9; --ink:#20242e; --body:#3a4050; --muted:#6f7280;
+    --line:#e6dfd0; --line-strong:#d8cdb6;
+    --primary:#4f46e5; --primary-soft:#eef0ff; --accent:#f97316;
+    --p0:#b42318; --p0-bg:#fdecec; --p1:#a15c07; --p1-bg:#fff4e0; --p2:#0f766e; --p2-bg:#e8f6f1;
+    --ok:#0f766e; --ok-bg:#e8f6f1; --code:#f3efe4;
+    --shadow:0 10px 30px rgba(32,36,46,.06);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:"PingFang SC","Hiragino Sans GB","Noto Sans SC",system-ui,-apple-system,sans-serif;
+    font-size:15px; line-height:1.75; -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--primary); text-decoration:none}
+  a:hover{text-decoration:underline}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; background:var(--code);
+    padding:1px 5px; border-radius:5px; font-size:.86em; word-break:break-word}
+  pre{margin:8px 0 0; background:#1f2430; color:#e9e6dd; border-radius:10px; padding:11px 13px;
+    overflow:auto; font-size:12px; line-height:1.65}
+  pre code{background:none; padding:0; color:inherit; font-size:12px}
+
+  .skip{position:absolute; left:-9999px; top:0; background:#fff; padding:10px 14px; z-index:99}
+  .skip:focus{left:12px}
+
+  .shell{display:grid; grid-template-columns:264px minmax(0,1fr); max-width:1320px; margin:0 auto}
+  aside{position:sticky; top:0; height:100vh; overflow:auto; padding:30px 20px 40px;
+    border-right:1px solid var(--line); background:linear-gradient(180deg,#faf7f0,#f5f1e8 60%)}
+  .brand{display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:-.02em; font-size:15px}
+  .brand svg{width:32px; height:32px; flex:none}
+  .brand small{display:block; font-weight:500; font-size:10.5px; color:var(--muted); letter-spacing:.12em}
+  .side-meta{margin:18px 0 10px; padding:12px 13px; border:1px solid var(--line); border-radius:12px;
+    background:var(--surface); font-size:11.5px; color:var(--muted); line-height:1.7}
+  .side-meta b{color:var(--ink)}
+  nav.toc{display:flex; flex-direction:column; gap:1px; margin-top:8px}
+  nav.toc .grp{font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:#a3977d;
+    font-weight:800; margin:16px 8px 4px}
+  nav.toc a{color:var(--muted); font-size:12.5px; padding:5px 9px; border-radius:8px; line-height:1.5}
+  nav.toc a:hover{background:var(--surface); color:var(--ink); text-decoration:none}
+  nav.toc a.active{background:var(--primary-soft); color:#312e81; font-weight:700}
+  .legend{margin-top:16px; display:flex; gap:6px; flex-wrap:wrap}
+  .chip{display:inline-flex; align-items:center; gap:4px; border-radius:999px; padding:2px 8px;
+    font-size:10.5px; font-weight:800; letter-spacing:.02em; white-space:nowrap}
+  .chip.p0{background:var(--p0-bg); color:var(--p0)}
+  .chip.p1{background:var(--p1-bg); color:var(--p1)}
+  .chip.p2{background:var(--p2-bg); color:var(--p2)}
+  .chip.ok{background:var(--ok-bg); color:var(--ok)}
+
+  main{min-width:0; padding:40px 48px 90px; background:var(--surface); border-left:1px solid rgba(255,255,255,.5)}
+
+  .hero{position:relative; overflow:hidden; border-radius:24px; padding:34px 34px 30px; color:#fff;
+    background:
+      radial-gradient(520px 260px at 100% 0%, rgba(253,230,138,.26), transparent 62%),
+      linear-gradient(135deg,#4f46e5 0%,#4338ca 52%,#312e81 100%);
+    box-shadow:0 18px 40px rgba(49,46,129,.18)}
+  .hero:after{content:""; position:absolute; right:-80px; bottom:-120px; width:300px; height:300px;
+    border-radius:50%; border:44px solid rgba(255,255,255,.07)}
+  .hero .eyebrow{position:relative; font-size:10.5px; letter-spacing:.22em; text-transform:uppercase;
+    color:rgba(255,255,255,.62); font-weight:800}
+  .hero h1{position:relative; margin:10px 0 8px; font-size:clamp(26px,3.4vw,38px); line-height:1.22;
+    letter-spacing:-.035em; font-weight:800; max-width:24em}
+  .hero p{position:relative; margin:0; max-width:46em; color:rgba(255,255,255,.82); font-size:14px}
+  .verdict{position:relative; margin-top:20px; display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+  .verdict .badge{background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.28);
+    border-radius:999px; padding:5px 12px; font-size:11.5px; font-weight:700}
+  .verdict .badge.warn{background:#fff4e0; border-color:#f5d8a8; color:#7a4306}
+
+  .metrics{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin:18px 0 0}
+  .metric{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:14px 16px}
+  .metric .n{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:24px; font-weight:800;
+    letter-spacing:-.03em; line-height:1.2}
+  .metric .n.p0{color:var(--p0)} .metric .n.p1{color:var(--p1)} .metric .n.p2{color:var(--p2)}
+  .metric .l{font-size:11.5px; color:var(--muted); margin-top:2px}
+  .metric .s{font-size:10.5px; color:#9a907c; margin-top:6px}
+
+  section.doc{padding-top:34px; scroll-margin-top:16px}
+  h2{display:flex; align-items:baseline; gap:10px; font-size:23px; letter-spacing:-.03em; margin:0 0 6px}
+  h2 .num{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; color:var(--primary);
+    font-size:12px; font-weight:800; letter-spacing:.12em}
+  .lede{color:var(--body); font-size:14px; max-width:62em; margin:0 0 6px}
+  h3{font-size:15.5px; margin:26px 0 8px; letter-spacing:-.01em}
+  h4{font-size:13px; margin:18px 0 6px; color:#4a4f5e}
+  p{margin:8px 0; color:var(--body)}
+  .muted{color:var(--muted)}
+  .small{font-size:12px}
+  .tiny{font-size:11px}
+  ul,ol{margin:8px 0 8px 1.15em; padding-left:1em}
+  li{margin:4px 0; color:var(--body)}
+  blockquote{margin:14px 0; padding:12px 16px; border-left:3px solid var(--primary);
+    background:var(--primary-soft); border-radius:0 12px 12px 0; color:#312e81; font-size:13.5px}
+  blockquote p{margin:0; color:inherit}
+
+  .callout{border-left:3px solid var(--accent); background:#fff6e9; border-radius:0 12px 12px 0;
+    padding:12px 15px; margin:14px 0; font-size:13px; color:#7a4306}
+  .callout.mint{border-color:var(--ok); background:var(--ok-bg); color:#065f46}
+  .callout.indigo{border-color:var(--primary); background:var(--primary-soft); color:#312e81}
+
+  .filterbar{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:16px 0 4px;
+    padding:10px 12px; border:1px solid var(--line); border-radius:12px; background:#fbf8f1}
+  .filterbar strong{font-size:11.5px; color:var(--muted); letter-spacing:.06em; margin-right:2px}
+  .fbtn{border:1px solid var(--line-strong); background:var(--surface); color:var(--body);
+    border-radius:999px; padding:5px 11px; font-size:11.5px; font-weight:700; cursor:pointer; font-family:inherit}
+  .fbtn:hover{border-color:var(--primary); color:var(--primary)}
+  .fbtn[aria-pressed="true"]{background:var(--ink); border-color:var(--ink); color:#fff}
+  .fbtn .c{opacity:.55; font-weight:600; margin-left:3px}
+  .filter-note{font-size:11px; color:#9a907c; margin-left:auto}
+
+  .domain{margin-top:30px; padding:22px 24px 24px; border:1px solid var(--line); border-radius:18px;
+    background:linear-gradient(160deg,#fffdf9,#fbf7ef 70%)}
+  .domain-head{display:flex; align-items:flex-start; gap:14px; flex-wrap:wrap; justify-content:space-between}
+  .domain-head .t{min-width:0}
+  .domain-head h3{margin:0; font-size:19px; letter-spacing:-.025em}
+  .domain-head .verdict-line{font-size:12.5px; color:var(--muted); margin-top:3px}
+  .score{min-width:190px; flex:none}
+  .score .lab{display:flex; justify-content:space-between; font-size:10.5px; color:var(--muted);
+    letter-spacing:.06em; margin-bottom:5px}
+  .score .bar{height:7px; border-radius:99px; background:#eee7d8; overflow:hidden}
+  .score .bar i{display:block; height:100%; border-radius:99px;
+    background:linear-gradient(90deg,#6366f1,#a78bfa)}
+  .score .note{font-size:10.5px; color:#9a907c; margin-top:5px}
+
+  .gap-list{display:flex; flex-direction:column; gap:12px; margin-top:16px}
+  .gap{border:1px solid var(--line); border-left:4px solid var(--line-strong); border-radius:12px;
+    background:var(--surface); padding:14px 16px 13px; box-shadow:var(--shadow)}
+  .gap.p0{border-left-color:var(--p0)} .gap.p1{border-left-color:#e0912f}
+  .gap.hide{display:none}
+  .gap-head{display:flex; align-items:center; gap:8px; flex-wrap:wrap}
+  .gid{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:10.5px; font-weight:800;
+    color:var(--muted); background:#f4efe3; border-radius:5px; padding:1px 6px; letter-spacing:.04em}
+  .gap-head h4{margin:0; font-size:14px; letter-spacing:-.01em; flex:1; min-width:220px; color:var(--ink)}
+  .tag{font-size:10px; font-weight:700; color:#7b7264; background:#f4efe3; border-radius:999px;
+    padding:1px 8px; white-space:nowrap}
+  .kv{display:grid; grid-template-columns:64px minmax(0,1fr); gap:4px 10px; margin-top:9px}
+  .kv .k{font-size:10.5px; font-weight:800; color:#a3977d; letter-spacing:.1em; padding-top:3px}
+  .kv .v{font-size:13px; color:var(--body); min-width:0}
+  .kv .v p{margin:0}
+  .ref{display:inline-block; font-size:10.5px; color:#8a8170; background:#f6f1e5; border-radius:5px;
+    padding:0 6px; margin-left:4px; white-space:nowrap}
+  .impact{margin-top:8px; padding:8px 11px; border-radius:9px; background:#fbf7ee;
+    font-size:12px; color:#6b6252}
+  .impact b{color:#4a4234}
+
+  .table-wrap{margin-top:14px; overflow:auto; border:1px solid var(--line); border-radius:12px; background:var(--surface)}
+  table{width:100%; border-collapse:collapse; font-size:12px; min-width:720px}
+  thead th{background:#f8f3e8; color:var(--muted); text-align:left; font-size:10.5px;
+    letter-spacing:.08em; text-transform:uppercase; padding:8px 10px; border-bottom:1px solid var(--line);
+    white-space:nowrap}
+  tbody td{padding:9px 10px; border-bottom:1px solid #f0ebdf; vertical-align:top; color:var(--body)}
+  tbody tr:last-child td{border-bottom:0}
+  tbody tr:hover td{background:#fdfaf3}
+  tbody tr.hide{display:none}
+  td .gid{margin-right:4px}
+  td code{font-size:11px}
+  .t-cap{font-size:11px; color:var(--muted); margin:8px 0 0}
+
+  .grid2{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin-top:14px}
+  .grid3{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin-top:14px}
+  .card{border:1px solid var(--line); border-radius:13px; padding:14px 16px; background:#fffdf9}
+  .card h4{margin:0 0 6px; font-size:13.5px; color:var(--ink)}
+  .card p{font-size:12px; color:var(--muted); margin:0}
+  .card .num{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:10.5px; color:var(--primary);
+    font-weight:800; letter-spacing:.1em; display:block; margin-bottom:4px}
+
+  .oklist{list-style:none; margin:10px 0 0; padding:0; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px}
+  .oklist li{position:relative; padding-left:20px; font-size:12.5px; color:var(--body); margin:0}
+  .oklist li:before{content:"✓"; position:absolute; left:0; top:0; color:var(--ok); font-weight:800}
+
+  .roadmap td:first-child{white-space:nowrap; font-weight:700}
+  .badge-phase{display:inline-block; border-radius:6px; padding:1px 7px; font-size:10.5px; font-weight:800}
+  .badge-phase.p0{background:var(--p0-bg); color:var(--p0)}
+  .badge-phase.p1{background:var(--p1-bg); color:var(--p1)}
+  .badge-phase.p2{background:var(--p2-bg); color:var(--p2)}
+
+  footer{margin-top:44px; padding-top:18px; border-top:1px solid var(--line); font-size:11px; color:var(--muted);
+    display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap}
+
+  @media (max-width:1080px){
+    .shell{grid-template-columns:1fr}
+    aside{position:relative; height:auto; border-right:0; border-bottom:1px solid var(--line); padding:20px}
+    nav.toc{flex-direction:row; flex-wrap:wrap}
+    nav.toc .grp{width:100%; margin:8px 8px 0}
+    main{padding:26px 20px 60px; border-left:0}
+    .metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .grid2,.grid3,.oklist{grid-template-columns:1fr}
+  }
+  @media (max-width:620px){
+    body{font-size:14px}
+    .hero{padding:24px 20px}
+    .gap{padding:13px}
+    .kv{grid-template-columns:1fr; gap:2px}
+    .kv .k{padding-top:6px}
+    .domain{padding:16px}
+    .score{min-width:100%}
+    main{padding:20px 14px 50px}
+  }
+  @media print{
+    body{background:#fff; font-size:11pt}
+    aside,.filterbar,.skip{display:none !important}
+    .shell{display:block; max-width:none}
+    main{border:0; padding:0; background:#fff}
+    .hero{box-shadow:none; -webkit-print-color-adjust:exact; print-color-adjust:exact}
+    .domain,.gap,.card{break-inside:avoid}
+    a{color:inherit; text-decoration:none}
+    .table-wrap{overflow:visible}
+    table{min-width:0; font-size:9pt}
+    thead{display:table-header-group}
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<div class="shell">
+  <aside>
+    <div class="brand">
+      <svg viewBox="0 0 32 32" aria-hidden="true">
+        <circle cx="16" cy="16" r="15" fill="#4f46e5"/>
+        <path d="M16 25c0-5 0-8 0-10" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+        <path d="M16 16c-4 0-6-2.4-6-6 3.6 0 6 2.2 6 6Z" fill="#a7f3d0"/>
+        <path d="M16 18c4 0 6-2.4 6-6-3.6 0-6 2.2-6 6Z" fill="#fde68a"/>
+      </svg>
+      <span>星芽学堂<small>GAP REVIEW · V1.0</small></span>
+    </div>
+
+    <div class="side-meta">
+      <b>评审对象</b>：产品文档 v1.3 × 当前代码<br>
+      <b>方法</b>：文档逐节对照 + 代码审阅 + 运行时取数 + 负向实测<br>
+      <b>范围</b>：<code>src/</code>、<code>test/</code>、<code>docs/</code>、<code>scripts/</code>
+    </div>
+
+    <nav class="toc" aria-label="目录">
+      <a href="#summary">执行摘要</a>
+      <a href="#method">评审方法与证据</a>
+      <a href="#overview">成熟度总览</a>
+      <div class="grp">分域差距</div>
+      <a href="#d-curriculum">A · 课程与学习体验</a>
+      <a href="#d-planning">B · 计划 / AI / 报告</a>
+      <a href="#d-agent">C · 智能体与生态</a>
+      <a href="#d-community">D · 社区 / 权限 / 多端</a>
+      <a href="#d-pet">E · 伙伴 / 温度 / 儿童空间</a>
+      <a href="#d-design">F · 设计系统 / PWA / 证据</a>
+      <div class="grp">横向结论</div>
+      <a href="#patterns">五个系统性模式</a>
+      <a href="#doc-conflicts">文档自相矛盾</a>
+      <a href="#roadmap">修复路线与验收</a>
+      <a href="#appendix">附录：验证记录</a>
+    </nav>
+
+    <div class="legend" aria-label="严重度图例">
+      <span class="chip p0">P0 3</span>
+      <span class="chip p1">P1 19</span>
+      <span class="chip p2">P2 33</span>
+    </div>
+  </aside>
+
+  <main id="main">
+    <div class="hero">
+      <div class="eyebrow">Product Spec × Implementation · Gap Review</div>
+      <h1>骨架是真的，血肉没有跟上</h1>
+      <p>星芽学堂的核心流程可以真实跑通：192 个课时、计划生成与纠偏、8 个智能体工具、设备配对与照片、伙伴奖励、社区审核状态机。但把产品文档逐条对照实现后，会发现大量承诺停留在「已设计 / 已写文案 / 已写死数据」层：教学模态只兑现两成，审核可被一个斜杠绕过，连接器没有接进智能体，文档反复引用的浏览器 E2E 在仓库里不存在。</p>
+      <div class="verdict">
+        <span class="badge">可运行 · 可演示</span>
+        <span class="badge">结构完成度高</span>
+        <span class="badge warn">承诺兑现度约 6 成</span>
+        <span class="badge">55 个可复现差距</span>
+      </div>
+      <div class="metrics">
+        <div class="metric"><div class="n p0">3</div><div class="l">P0 · 与核心承诺直接相反</div><div class="s">内容覆盖 / 审核失守 / 证据缺失</div></div>
+        <div class="metric"><div class="n p1">19</div><div class="l">P1 · 明显缩水或行为不符</div><div class="s">影响核心体验与治理</div></div>
+        <div class="metric"><div class="n p2">33</div><div class="l">P2 · 细节、文案与死代码</div><div class="s">可在迭代中清理</div></div>
+        <div class="metric"><div class="n">6</div><div class="l">评审域</div><div class="s">课程 / 计划 / 智能体 / 社区 / 伙伴 / 设计系统</div></div>
+      </div>
+    </div>
+
+    <section class="doc" id="summary">
+      <h2><span class="num">01</span>执行摘要</h2>
+      <p class="lede">先给结论：这不是一个「演示壳」。数据库里确实有 192 个课时、计划纠偏确实写审计、沙箱确实拦住了逃逸、照片确实按 0600 落盘并按家庭隔离。问题在于——<b>文档描述的是 v1 的完整产品，代码交付的是「结构完整 + 局部占位」的版本</b>，而且文档把不少「设计了」写成了「已验收」。</p>
+
+      <div class="grid2">
+        <div class="card"><span class="num">FINDING 01</span><h4>教学模态只在 20% 的课时里成立</h4><p>192 个课时都有 6–8 个 block，但「听 / 说 / 描红 / 钢琴 / 节奏」只出现在英语、汉字、钢琴课里。智趣思维与蒙氏工作共 72 个核心课时（40%）只剩故事、卡片、配对、选择题与回顾。</p></div>
+        <div class="card"><span class="num">FINDING 02</span><h4>审核输入侧失守</h4><p>把「加微信」写成「加/微信」、把手机号写成「138/0013/8000」，就能零拦截通过；评论更是直接 <code>approved</code>，从不进入人工队列。</p></div>
+        <div class="card"><span class="num">FINDING 03</span><h4>生态只兑现了「人格」</h4><p>专家人格确实注入系统提示；但连接器完全不在模型工具表里，技能只拼名字、定义从不进提示词。所谓「人格 + 提示词 + 技能」缺了两块。</p></div>
+        <div class="card"><span class="num">FINDING 04</span><h4>温度叙事在最关键处掉线</h4><p>孩子离开 24 小时，情绪标签是「有点想你」，台词却回落成「今天心情很好」；房间装饰买了不显示，玩具效果从不生效。</p></div>
+        <div class="card"><span class="num">FINDING 05</span><h4>证据链不可复现</h4><p>产品文档、QA 报告、README 三处都写了「浏览器 E2E / Chrome 157 CDP 实测」，但仓库里没有任何浏览器测试、脚本或截图。PWA 离线壳冷启动会白屏。</p></div>
+        <div class="card"><span class="num">FINDING 06</span><h4>指标章节零实现</h4><p>北极星指标、D0/D7/D30/D90、审核通过率与平均时长，没有任何采集、聚合或导出。后台只有 12 个 COUNT。</p></div>
+      </div>
+
+      <h3>公正起见：这些确实做到了</h3>
+      <ul class="oklist">
+        <li>192 课时严格等于 180 核心 + 12 公开；4 学段 × 5 学科 × 3 单元结构无缺口，每单元有可观察目标。</li>
+        <li>每个课时 6–8 个 block（实测 108 / 45 / 39 分布），家长端与平板端共用同一份 block 渲染器（<code>device.js</code> 直接 import <code>views/learn.js</code>）。</li>
+        <li>计划：19:00 Asia/Shanghai 提醒、21 天顺延、跳过留痕、<code>plan_adjustments</code> + 审计、一键纠偏 UI 全部可用。</li>
+        <li>智能体：8 个工具真实注册且可执行；沙箱用独立子进程 + <code>--permission</code>，实测 <code>process</code>/<code>require</code> 为 undefined、死循环 800ms 终止。</li>
+        <li>社区：待审状态机、禁止自审、课程必须关联已发布课时、编辑重审、举报隐藏均已落地。</li>
+        <li>多端：6 位一次性码、设备令牌哈希落库与撤销即失效、照片 0600 + 随机名 + 跨家庭 404 + 30 天清理。</li>
+        <li>伙伴：服务端判分、首通幂等、单元 +30 / 计划 +100、衰减封顶与下限、庆祝层焦点陷阱与 reduced-motion。</li>
+        <li>工程：<code>tsc --noEmit</code> 通过；Docker 镜像可构建、容器健康检查通过；备份脚本可用。</li>
+      </ul>
+    </section>
+
+    <section class="doc" id="method">
+      <h2><span class="num">02</span>评审方法与证据</h2>
+      <p class="lede">本报告不是读文档后的主观印象。每条差距都要求：文档原文可定位、实现可指到文件与行、行为可复现（必要时用运行时数据或负向输入验证）。</p>
+
+      <h3>四层证据</h3>
+      <ol>
+        <li><b>规范层</b>：以 <code>docs/product.html</code>（Product Spec v1.3）为主，<code>companion-design.md</code> / <code>warmth-design.md</code> 补充领域设计，<code>DESIGN.md</code> / <code>architecture.html</code> / <code>qa.html</code> / README 做交叉校验。product.html 内联了 14 张 base64 截图（文件 1.98 MB），先剥离样式与图片再逐节阅读。</li>
+        <li><b>实现层</b>：通读 <code>src/</code> 的服务端模块与 <code>src/web/</code> 的前端视图，逐条定位承诺的实现点；对「声称有、实际无」的能力做全仓 grep 反证。</li>
+        <li><b>运行时层</b>：真实启动服务并直接查询 SQLite，统计课时、block、单元、课程包；用 <code>moderateContent()</code> 对分隔符、软连字符、繁体做负向探测。</li>
+        <li><b>工程层</b>：<code>npm test</code>、<code>tsc --noEmit</code>、<code>docker build</code> / <code>docker run</code> 健康检查，确认报告中的「已通过」到底能不能复现。</li>
+      </ol>
+
+      <div class="callout indigo">
+        <b>严重度定义</b>　<b>P0</b>：与文档的核心承诺直接相反，或关键证据根本不存在（对外可信度受损）。<b>P1</b>：能力明显缩水、行为与描述不符，影响核心体验或治理闭环。<b>P2</b>：细节、文案、死代码、可访问性等可在迭代中清理的问题。
+      </div>
+
+      <h3>本次评审实际执行的验证</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>验证</th><th>命令 / 方式</th><th>观察结果</th></tr></thead>
+          <tbody>
+            <tr><td>课时与 block 结构</td><td>启动服务后直接查询 <code>lessons</code></td><td>192 个课时；每课 6–8 个 block（6:108 / 7:45 / 8:39）；64 个单元；4 个课程包</td></tr>
+            <tr><td>模态覆盖</td><td>按学科聚合 block 类型</td><td><code>listen/speak</code> 各 36；<code>trace/read/piano/rhythm</code> 各 39；思维与蒙氏 72 课无听/说/读/写/弹</td></tr>
+            <tr><td>审核绕过</td><td>直接调用 <code>moderateContent()</code></td><td><code>色­情</code>、<code>色/情</code>、<code>加/微信</code>、<code>138/0013/8000</code> 全部 <code>blocked=false</code></td></tr>
+            <tr><td>类型检查</td><td><code>tsc --noEmit</code>（安装 devDependency 后）</td><td>exit 0，文档声明属实</td></tr>
+            <tr><td>自动化测试</td><td><code>NODE_ENV=test node --test test/*.test.ts</code></td><td>83 个用例；并行满载时 81 通过（2 个沙箱用例撞 1.5s 硬超时），单独跑 <code>agent.test.ts</code> 为 10/10</td></tr>
+            <tr><td>容器部署</td><td><code>docker build</code> + <code>docker run</code></td><td>镜像构建成功；<code>/api/health</code> 200，容器 <code>healthy</code>，数据卷权限正确</td></tr>
+            <tr><td>浏览器 E2E</td><td>全仓搜索 playwright / puppeteer / CDP / *.spec</td><td><b>零命中</b>；无截图、无脚本、无 CI 配置</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="t-cap">说明：测试并行时的 2 个沙箱超时属于机器负载敏感，不计入产品差距，但它说明「83/83」不是一个稳定的可复现结论。</p>
+    </section>
+
+    <section class="doc" id="overview">
+      <h2><span class="num">03</span>成熟度总览</h2>
+      <p class="lede">分数是评审判断，不是量化指标，用来表达「文档承诺被兑现的比例」。共性很清楚：<b>数据结构与 API 完成度高，内容深度、治理严格度与可复现证据完成度低</b>。</p>
+      <div class="grid3">
+        <div class="card"><h4>A · 课程与学习体验</h4><p>数字全对，教学深度不对：模态覆盖 20%，元数据与前置关系缺失，公开课管线是「本地静态目录 + 假 checksum」。</p></div>
+        <div class="card"><h4>B · 计划 / AI / 报告</h4><p>闭环成立，但「AI」标签通胀、时长上限对首项失效、指标域完全空白。</p></div>
+        <div class="card"><h4>C · 智能体与生态</h4><p>工作台真实，生态是壳：连接器不进工具表、技能定义不进提示词、公开资源不做内容检测。</p></div>
+        <div class="card"><h4>D · 社区 / 权限 / 多端</h4><p>状态机严谨，输入侧失守；评论免审；审核 KPI 无记录；SSE 兜底逻辑有洞。</p></div>
+        <div class="card"><h4>E · 伙伴 / 温度 / 儿童空间</h4><p>奖励与判分扎实，陪伴叙事掉线：招牌台词错、房间闭环假、儿童字号不达标。</p></div>
+        <div class="card"><h4>F · 设计系统 / PWA / 证据</h4><p>组件大多在，抽屉与骨架屏退化；离线壳不全、平板端不注册 SW、E2E 证据不存在。</p></div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>域</th><th>达成度</th><th>一句话判断</th><th>P0/P1/P2</th></tr></thead>
+          <tbody>
+            <tr><td>A 课程与学习</td><td>58%</td><td>结构真实，内容模板化，教学承诺被高估</td><td>1 / 5 / 3</td></tr>
+            <tr><td>B 计划与 AI</td><td>62%</td><td>流程闭环，AI 标签与时长约束失真，指标为零</td><td>0 / 3 / 6</td></tr>
+            <tr><td>C 智能体与生态</td><td>55%</td><td>工作台可用，生态承诺大面积未接线</td><td>0 / 3 / 6</td></tr>
+            <tr><td>D 社区与治理</td><td>66%</td><td>状态机严谨，但第一道门失守</td><td>1 / 2 / 5</td></tr>
+            <tr><td>E 伙伴与温度</td><td>62%</td><td>奖励逻辑好，情感细节与儿童可用性欠账</td><td>0 / 4 / 6</td></tr>
+            <tr><td>F 设计系统与证据</td><td>52%</td><td>组件基本齐，离线与证据链不成立</td><td>1 / 2 / 7</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="filterbar" role="group" aria-label="按严重度筛选">
+        <strong>筛选</strong>
+        <button class="fbtn" data-filter="all" aria-pressed="true">全部 <span class="c">55</span></button>
+        <button class="fbtn" data-filter="p0" aria-pressed="false">P0 <span class="c">3</span></button>
+        <button class="fbtn" data-filter="p1" aria-pressed="false">P1 <span class="c">19</span></button>
+        <button class="fbtn" data-filter="p2" aria-pressed="false">P2 <span class="c">33</span></button>
+        <span class="filter-note">筛选同时作用于卡片与次要差距表</span>
+      </div>
+    </section>
+
+    <!-- ============ A ============ -->
+    <section class="doc domain" id="d-curriculum">
+      <div class="domain-head">
+        <div class="t">
+          <h2><span class="num">A</span>课程与学习体验</h2>
+          <div class="verdict-line">数字全部对得上，教学深度对不上。</div>
+        </div>
+        <div class="score">
+          <div class="lab"><span>承诺兑现度</span><span>58%</span></div>
+          <div class="bar"><i style="width:58%"></i></div>
+          <div class="note">9 个差距 · 1 P0 / 5 P1 / 3 P2</div>
+        </div>
+      </div>
+
+      <p>课程骨架是这份代码里最扎实的部分：4 学段 × 5 学科 × 3 单元 × 3 课时严格成立，公开课包正好补 12 个课时，每单元有目标，每课 6–8 个 block，平板端复用家长端渲染器。真正的问题在「内容与元数据」：模板化生成、模态覆盖窄、前置关系不存在、公开课管线只是本地静态目录。</p>
+
+      <div class="gap-list">
+        <article class="gap p0" data-sev="p0">
+          <div class="gap-head"><span class="gid">A1</span><h4>「听 · 说 · 读 · 写 · 弹」只在约 20% 的课时里成立</h4><span class="chip p0">P0</span><span class="tag">行为不符</span></div>
+          <div class="kv">
+            <div class="k">承诺</div><div class="v"><p>「每个课时由 6–8 个互动 block 组成，覆盖听、说、读、写 / 弹、练、评。」<span class="ref">product.html §06</span></p></div>
+            <div class="k">实现</div><div class="v"><p>实测 192 课：<code>listen/speak</code> 各 36 课、<code>trace/read/piano/rhythm</code> 各 39 课；<code>intro/story/quiz/reflect</code> 才是每课都有。智趣思维（36）与蒙氏工作（36）共 <b>72 个核心课时（40%）没有任何听/说/读/写/弹</b>，只剩卡片 + 配对 + 选择题。分支见 <code>src/infra/lesson-blocks.ts:190-287</code>。</p></div>
+          </div>
+          <div class="impact"><b>影响</b>　「亲子共学 + 多感官互动」是产品最核心的差异化；四成课时退化为低交互题库，家长一眼可感知。</div>
+        </article>
+
+        <article class="gap p1" data-sev="p1">
+          <div class="gap-head"><span class="gid">A2</span><h4>「重难点 / 关键词 / 家庭延伸」不存在</h4><span class="chip p1">P1</span><span class="tag">部分实现</span></div>
+          <div class="kv">
+            <div class="k">承诺</div><div class="v"><p>「每个课时标注重难点、时长、关键词与家庭延伸，避免『看完了但不知道学会了什么』。」<span class="ref">product.html §05</span></p></div>
+            <div class="k">实现</div><div class="v"><p><code>lessons</code> 表只有 <code>objective / minutes / tags / blocks</code>（<code>src/infra/migrations.ts:55-61</code>）。<code>tags</code> 被当作关键词写入，但课时页与课程页都不渲染它（<code>src/web/js/views/learn.js:82-94</code>、<code>curriculum.js:174</code>）——关键词只作为「今日回顾」prompt 里的一串提示词出现（<code>lesson-blocks.ts:291</code>）。全仓 grep「重难点」「家庭延伸」零命中。只有「时长」兑现。</p></div>
+          </div>
+          <div class="impact"><b>影响</b>　家长无法在进入课时前判断重点，也无法把学习延伸到家庭场景；课程页只剩标题 + 分钟数。</div>
+        </article>
+
+        <article class="gap p1" data-sev="p1">
+          <div class="gap-head"><span class="gid">A3</span><h4>前置课时体系为零，但界面文案声称「前置关系清晰」</h4><span class="chip p1">P1</span><span class="tag">未实现 / 仅文案</span></div>
+          <div class="kv">
+            <div class="k">承诺</div><div class="v"><p>「所有内容都必须回答……承接哪个前置课时」「补齐前置与目标」<span class="ref">product.html §05</span></p></div>
+            <div class="k">实现</div><div class="v"><p><code>units</code> / <code>lessons</code> 没有任何 prereq 字段（<code>src/infra/migrations.ts:45-61</code>），全仓 grep 只命中两句 UI 文案：<code>src/web/js/views/curriculum.js:44</code> 与 <code>:107</code>（「前置关系清晰」「映射到既有框架与前置关系」）。</p></div>
+          </div>
+          <div class="impact"><b>影响</b>　「螺旋上升」只是标题；计划排课只能依赖单元顺序，无法做真正的掌握度与前置约束。</div>
+        </article>
+
+        <article class="gap p1" data-sev="p1">
+          <div class="gap-head"><span class="gid">A4</span><h4>公开课 checksum 是拼出来的字符串，sha256 从未调用</h4><span class="chip p1">P1</span><span class="tag">数据硬编码</span></div>
+          <div class="kv">
+            <div class="k">承诺</div><div class="v"><p>「公开内容保留来源、许可证、版本、checksum」<span class="ref">product.html §05</span></p></div>
+            <div class="k">实现</div><div class="v"><p><code>src/infra/public-courses.ts:2</code> 引入了 <code>sha256</code>，但全文件零调用；<code>:77</code> 写入的 checksum 是 <code>`v${pack.version}-${lessonsImported}`</code>。测试也只断言「非空」（<code>test/curriculum.test.ts</code>）。</p></div>
+          </div>
+          <div class="impact"><b>影响</b>　无法校验内容是否被替换，「版本可追溯」在合规与审核场景下不成立。</div>
+        </article>
+
+        <article class="gap p1" data-sev="p1">
+          <div class="gap-head"><span class="gid">A5</span><h4>「新版本默认隔离」被种子数据绕过：12 个公开课时未经审核直接上线</h4><span class="chip p1">P1</span><span class="tag">行为不符</span></div>
+          <div class="kv">
+            <div class="k">承诺</div><div class="v"><p>「新版本默认 quarantined；管理员确认许可与内容」<span class="ref">product.html §05 管线 04</span></p></div>
+            <div class="k">实现</div><div class="v"><p>函数默认值确实是 <code>quarantined</code>（<code>public-courses.ts:32</code>），但初始课程种子调用 <code>importPack(db, pack, { autoApprove: true })</code>（<code>src/infra/seed.ts:85</code>），且这一步与 demo 开关无关——生产首次启动同样直接发布。</p></div>
+          </div>
+          <div class="impact"><b>影响</b>　「所有公开内容都过人审」的合规叙事在首次启动时就不成立。</div>
+        </article>
+
+        <article class="gap p1" data-sev="p1">
+          <div class="gap-head"><span class="gid">A6</span><h4>「原子替换」实为原地覆盖：导入新版本会先把线上旧课时下线</h4><span class="chip p1">P1</span><span class="tag">行为不符</span></div>
+          <div class="kv">
+            <div class="k">承诺</div><div class="v"><p>「发布：原子替换课时；保留版本记录与来源」<span class="ref">product.html §05 管线 05</span></p></div>
+            <div class="k">实现</div><div class="v"><p>课时 ID 不含版本（<code>public-courses.ts:51</code>），导入用 UPSERT 覆盖 blocks，并写入 <code>is_published = excluded.is_published</code>（<code>:60-62</code>）。隔离导入时该值为 0，于是<b>线上旧课时立即从课程接口消失</b>（<code>curriculum.ts:107</code> 要求 <code>is_published=1</code>）。approve 只是把 <code>is_published</code> 改回 1（<code>:99-100</code>），没有旧版快照可回退。</p></div>
+          </div>
+          <div class="impact"><b>影响</b>　审核期「无课可学」；一旦新版本有问题，无法回滚到上一版内容。</div>
+        </article>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>编号</th><th>承诺</th><th>实际与证据</th><th>类型</th></tr></thead>
+          <tbody>
+            <tr data-sev="p2"><td><span class="gid">A7</span><span class="chip p2">P2</span></td><td>UI 显示「公开课程」与来源说明</td><td>家长端有 pill 与来源注记（<code>learn.js:89,94</code>）；平板端接口未 join <code>public_sources</code>（<code>device.ts:222-228</code>），<code>device.js:319-332</code> 无来源与许可证。</td><td>部分实现</td></tr>
+            <tr data-sev="p2"><td><span class="gid">A8</span><span class="chip p2">P2</span></td><td>词卡「点读，建立音—形—义关联」</td><td>cards block 固定 <code>data-lang="zh-CN"</code>（<code>learn.js:183</code>），英语 Word Cards（<code>lesson-blocks.ts:215</code>）会用中文音色读 apple。</td><td>行为不符</td></tr>
+            <tr data-sev="p2"><td><span class="gid">A9</span><span class="chip p2">P2</span></td><td>故事卡可理解输入 / 描红练笔顺</td><td>intro 与 story 共用同一模板（<code>lesson-blocks.ts:180-188</code>）；intro 恒称「玩 4 个小环节，大约 20 分钟」，实际 6–8 block、12–25 分钟（<code>:300-304</code>）；描红是「背景字 + 空白 canvas」，无笔顺或分步引导数据（<code>learn.js:197-210</code>）。</td><td>数据硬编码</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="t-cap">次要差距（P2）3 条；上表与卡片均受顶部筛选器控制。</p>
+    </section>
+
+    <!-- ============ B ============ -->
+    <section class="doc domain" id="d-planning">
+      <div class="domain-head">
+        <div class="t">
+          <h2><span class="num">B</span>计划 / AI / 报告</h2>
+          <div class="verdict-line">闭环成立，「AI」与「指标」两处名不副实。</div>
+        </div>
+        <div class="score">
+          <div class="lab"><span>承诺兑现度</span><span>62%</span></div>
+          <div class="bar"><i style="width:62%"></i></div>
+          <div class="note">9 个差距 · 0 P0 / 3 P1 / 6 P2</div>
+        </div>
+      </div>
+
+      <p>计划模块是第二个扎实的部分：约束排课、激活、19:00 提醒、60s 轮询、一键顺延、跳过留痕、<code>plan_adjustments</code> + 审计，全部真实可用。但三件事拉低了可信度：本地规则生成被标成「AI 辅助」、每日时长上限对首项失效、整章指标体系没有任何实现。</p>
+
+      <div class="gap-list">
+        <article class="gap p1" data-sev="p1">
+          <div class="gap-head"><span class="gid">B1</span><h4>本地规则引擎生成的结果，被 UI 标成「AI 辅助」</h4><span class="chip p1">P1</span><span class="tag">仅文案 / 行为不符</span></div>
+          <div class="kv">
+            <div class="k">承诺</div><div class="v"><p>「AI 仅补全理由；无模型则本地规则」「不把模板伪装成 AI」<span class="ref">product.html §07；architecture.html:368</span></p></div>
+            <div class="k">实现</div><div class="v"><p>结构上确实只让 AI 覆盖 rationale（<code>plans.ts:138-166</code>），但落库时恒传 <code>source='ai'</code>（<code>plans.ts:203</code>），详情页再用 source 反推 <code>engine='ai-assisted'</code>（<code>:278</code>），前端显示「AI 辅助生成」「AI + 真实数据」（<code>plans.js:48,264</code>）。没有 API Key 时也如此。</p></div>
+          </div>
+          <div class="impact"><b>影响</b>　与架构文档明文承诺冲突；对外演示时属于「把规则包装成智能」。</div>
+        </article>
+
+        <article class="gap p1" data-sev="p1">
+          <div class="gap-head"><span class="gid">B2</span><h4>每日时长上限对「当日第一项」无效，理由却保证不超时</h4><span class="chip p1">P1</span><span class="tag">行为不符</span></div>
+          <div class="kv">
+            <div class="k">承诺</div><div class="v"><p>「按每日时长约束排课」「每天不超过 25 分钟」<span class="ref">product.html §07</span></p></div>
+            <div class="k">实现</div><div class="v"><p><code>if (count &gt; 0 &amp;&amp; usedMinutes + lesson.minutes &gt; minutesPerDay)</code>（<code>plans.ts:101</code>）——当日第一个课时<b>无条件排入</b>。15 分钟上限会排出 18/17/20 分钟的课时，而家长看到的理由仍写「每天不超过 15 分钟」（<code>:124</code>）。</p></div>
+          </div>
+          <div class="impact"><b>影响</b>　对「下班后只有 20 分钟」的核心用户，计划从一开始就不符合约束，且理由文案在说谎。</div>
+        </article>
+
+        <article class="gap p1" data-sev="p1">
+          <div class="gap-head"><span class="gid">B3</span><h4>指标章节零实现：北极星、留存、审核时长都没有采集</h4><span class="chip p1">P1</span><span class="tag">未实现</span></div>
+          <div class="kv">
+            <div class="k">承诺</div><div class="v"><p>北极星「每周完成 ≥3 次有效亲子共学的家庭占比」；D0/D7/D30/D90 成功信号；治理指标「通过率 60–80%、平均审核 &lt;24h」<span class="ref">product.html §01、§17</span></p></div>
+            <div class="k">实现</div><div class="v"><p>全仓无 <code>retention / cohort / funnel / event</code> 采集；<code>analytics.ts:293-310</code> 的 <code>adminOverview</code> 只有 12 个 COUNT；社区统计只有按状态计数（<code>community.ts:235-238</code>），<code>post_reviews</code> 只有 <code>created_at</code>，无时长/通过率聚合。路由只有 dashboard / reports 两个（<code>learn.ts:42-44</code>）。</p></div>
+          </div>
+          <div class="impact"><b>影响</b>　产品无法回答「是否变好了」；文档里的阶段目标无法验收，也无法驱动迭代。</div>
+        </article>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>编号</th><th>承诺</th><th>实际与证据</th><th>类型</th></tr></thead>
+          <tbody>
+            <tr data-sev="p2"><td><span class="gid">B4</span><span class="chip p2">P2</span></td><td>草稿 → 激活 → 才生成提醒</td><td>顺延分支在事务里调用 <code>createPlanReminders</code>（<code>plans.ts:399</code>），函数不检查计划状态；未激活的草稿被纠偏后也会产生 scheduled 提醒。</td><td>行为不符</td></tr>
+            <tr data-sev="p2"><td><span class="gid">B5</span><span class="chip p2">P2</span></td><td>「只选工作日、周末留白」</td><td><code>WEEK_PATTERNS[6] = [1..6]</code>（<code>plans.ts:18</code>），6 天/周会排到周六；理由仍硬编码「周末留白」（<code>:124</code>）。</td><td>行为不符</td></tr>
+            <tr data-sev="p2"><td><span class="gid">B6</span><span class="chip p2">P2</span></td><td>每次纠偏计划版本 +1</td><td>shift 分支 <code>version = version + 1</code>（<code>:394</code>）；skip 分支（<code>:352-359</code>）没有，实测 skip 后 version 仍为 1。</td><td>行为不符</td></tr>
+            <tr data-sev="p2"><td><span class="gid">B7</span><span class="chip p2">P2</span></td><td>顺延「无冲突」</td><td><code>occupied</code> 集合构造后从未读取（<code>:364-366,389</code>），实际只判本计划同日 &lt;2 项（<code>:382</code>）；不避让其他 active 计划。</td><td>死代码 / 部分</td></tr>
+            <tr data-sev="p2"><td><span class="gid">B8</span><span class="chip p2">P2</span></td><td>提醒按日期聚合</td><td>每个 at 只建一条（<code>:313</code>），但文案只取当日第一项（<code>:321</code>）；跨计划同日各发一条，去重仅限单计划内。</td><td>部分</td></tr>
+            <tr data-sev="p2"><td><span class="gid">B9</span><span class="chip p2">P2</span></td><td>日 / 周 / 月报告的计划坚持度</td><td><code>adherenceFor</code> 不接受日期范围（<code>analytics.ts:50-60</code>），<code>localReport</code> 直接复用（<code>:195</code>），三档报告拿到同一个值。</td><td>部分</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="t-cap">已验证无差距：19:00+08 提醒、60s 轮询与系统通知、日/周/月报告落库、逾期口径与文案、21 天顺延与结束日期延长、纠偏写审计。</p>
+    </section>
+
+    <!-- ============ C ============ -->
+    <section class="doc domain" id="d-agent">
+      <div class="domain-head">
+        <div class="t">
+          <h2><span class="num">C</span>智能体与生态</h2>
+          <div class="verdict-line">工作台是真的，生态是壳。</div>
+        </div>
+        <div class="score">
+          <div class="lab"><span>承诺兑现度</span><span>55%</span></div>
+          <div class="bar"><i style="width:55%"></i></div>
+          <div class="note">9 个差距 · 0 P0 / 3 P1 / 6 P2</div>
+        </div>
+      </div>
+
+      <p>会话、消息、记忆、工作区、模型、沙箱都真实存在，8 个工具也确实能被模型调用，沙箱防护经得起负向实测。但生态三件套（专家 / 技能 / 连接器）只有「专家人格」真正进入了对话：技能定义从未被读取，连接器从未进入工具表，公开资源也不做任何内容检测。</p>
+
+      <div class="gap-list">
+        <article class="gap p1" data-sev="p1">
+          <div class="gap-head"><span class="gid">C1</span><h4>连接器没有接入智能体：模型永远看不到第三方工具</h4><span class="chip p1">P1</span><span class="tag">未实现</span></div>
+          <div class="kv">
+            <div class="k">承诺</div><div class="v"><p>「连接器把第三方工具安全地接入智能体」<span class="ref">product.html §09</span></p></div>
+            <div class="k">实现</div><div class="v"><p>工具表是硬编码的 8 个（<code>src/modules/agent.ts:84-160</code>）；<code>agent.ts</code> 与 <code>ai.ts</code> 全仓 grep <code>connector</code> <b>零命中</b>。连接器只能由用户在 UI 手动 <code>invoke</code>（<code>registry.ts:289</code>），模型既发现不了也调用不了。</p></div>
+          </div>
+          <div class="impact"><b>影响</b>　生态最核心的「可扩展工具」能力等于未交付；「专家 + 技能 + 连接器」只剩前两个的半成品。</div>
+        </article>
+
+        <article class="gap p1" data-sev="p1">
+          <div class="gap-head"><span class="gid">C2</span><h4>技能从未生效：只把名字拼进提示词，定义零引用</h4><span class="chip p1">P1</span><span class="tag">未实现 / 部分</span></div>
+          <div class="kv">
+            <div class="k">承诺</div><div class="v"><p>「专家是人格 + 提示词 + 技能的组合」「技能是可复用的提示词或工作流」<span class="ref">product.html §09</span></p></div>
+            <div class="k">实现</div><div class="v"><p><code>expertFor()</code> 查出了 <code>s.definition</code>（<code>agent.ts:43-47</code>），但系统提示只用了 <code>s.name</code>（<code>:70</code>），定义全文没有任何引用。前端专家表单也没有技能选择器，不传 <code>skillIds</code>（<code>registry.js:231-268</code>）——虽然后端接口支持该字段。</p></div>
+          </div>
+          <div class="impact"><b>影响</b>　技能只是 marketplace 里的展示卡；安装/关联不会改变智能体行为。</div>
+        </article>
+
+        <article class="gap p1" data-sev="p1">
+          <div class="gap-head"><span class="gid">C3</span><h4>公开专家 / 技能 / 连接器零内容检测，儿童隐私只靠审核员肉眼</h4><span class="chip p1">P1</span><span class="tag">仅文案</span></div>
+          <div class="kv">
+            <div class="k">承诺</div><div class="v"><p>「公开内容不包含儿童真实信息」「工具参数由服务端逐字段校验」<span class="ref">product.html §09</span></p></div>
+            <div class="k">实现</div><div class="v"><p><code>createExpert / createSkill / createConnector</code>（<code>registry.ts:79-196</code>）全都没有调用 <code>moderateContent</code>；只有前端表单一句提示（<code>registry.js:246</code>）。对比社区提交有强检（<code>community.ts:38</code>）、用户名有检测（<code>auth.ts:43</code>）。</p></div>
+          </div>
+          <div class="impact"><b>影响</b>　公开专家的人格提示词可以携带联系方式、机构导流甚至儿童姓名，完全依赖人工审核兜底。</div>
+        </article>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>编号</th><th>承诺</th><th>实际与证据</th><th>类型</th></tr></thead>
+          <tbody>
+            <tr data-sev="p2"><td><span class="gid">C4</span><span class="chip p2">P2</span></td><td>会话可绑定计划规划师 / 陪学导师</td><td>只存 <code>agent_kind</code>（<code>agent.ts:336,345</code>）；<code>buildSystemPrompt</code>（<code>:50-82</code>）不读它，两种角色的提示词与工具完全相同，仅前端换名。</td><td>仅文案</td></tr>
+            <tr data-sev="p2"><td><span class="gid">C5</span><span class="chip p2">P2</span></td><td>工作区文件「带版本」</td><td>只有一个行内 <code>version+1</code> 的覆盖更新（<code>agent.ts:274-285</code>），无版本表（<code>migrations.ts:127-131</code>）；UI 只显示「版本 N」，没有历史与回滚。</td><td>部分实现</td></tr>
+            <tr data-sev="p2"><td><span class="gid">C6</span><span class="chip p2">P2</span></td><td>写操作可追溯</td><td>审计只覆盖 session.create/delete、memory.delete（<code>:302,347,379</code>）；<code>remember</code>、<code>save_workspace_file</code>、<code>sandbox_run</code> 无独立审计，删会话即失去痕迹。</td><td>部分</td></tr>
+            <tr data-sev="p2"><td><span class="gid">C7</span><span class="chip p2">P2</span></td><td>连接器调用审计可见</td><td><code>invocationLogs</code> 按连接器 owner 的 household 过滤（<code>registry.ts:390-394</code>），安装他人家公开连接器的家庭看不到自己的调用；前端也没有入口。</td><td>部分</td></tr>
+            <tr data-sev="p2"><td><span class="gid">C8</span><span class="chip p2">P2</span></td><td>家庭私有专家立即可用</td><td>服务端允许 household 可见性（<code>registry.ts:41</code>），但会话侧专家下拉只取公开列表（<code>agent.js:18</code>），私有专家选不到；管理后台待办数还漏了连接器（<code>admin.js:46</code>）。</td><td>部分</td></tr>
+            <tr data-sev="p2"><td><span class="gid">C9</span><span class="chip p2">P2</span></td><td>工具参数按上下文过滤</td><td><code>search_curriculum</code> 接收了 <code>classCode</code> 但没有写进查询（<code>agent.ts:168-171</code>），学段过滤被丢弃。</td><td>部分</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="t-cap">已验证无差距：沙箱隔离（env 清空、<code>--permission</code>、32MB、死循环终止、逃逸失败）、路径穿越拦截、家庭隔离、专家公开需教师+审核、禁止自审、内置连接器可用、密钥 AES-256-GCM 只回尾号。</p>
+    </section>
+
+    <!-- ============ D ============ -->
+    <section class="doc domain" id="d-community">
+      <div class="domain-head">
+        <div class="t">
+          <h2><span class="num">D</span>社区 / 权限 / 多端</h2>
+          <div class="verdict-line">状态机严谨，输入侧失守。</div>
+        </div>
+        <div class="score">
+          <div class="lab"><span>承诺兑现度</span><span>66%</span></div>
+          <div class="bar"><i style="width:66%"></i></div>
+          <div class="note">8 个差距 · 1 P0 / 2 P1 / 5 P2</div>
+        </div>
+      </div>
+
+      <p>审核的状态机、禁止自审、课程关联、编辑重审、举报隐藏都做对了；设备配对、令牌撤销、照片落盘与家庭隔离也很扎实。但「先审后发」依赖第一道内容检测，而这道门可以被打一个斜杠绕过；评论则完全不走审核。</p>
+
+      <div class="gap-list">
+        <article class="gap p0" data-sev="p0">
+          <div class="gap-head"><span class="gid">D1</span><h4>审核规范化可被斜杠 / 软连字符 / 繁体直接绕过</h4><span class="chip p0">P0</span><span class="tag">行为不符</span></div>
+          <div class="kv">
+            <div class="k">承诺</div><div class="v"><p>「规范化：NFKC、去零宽字符、常见形近字母归一、压缩分隔符」；阻断级命中「直接 422，内容不落库」。<span class="ref">product.html §10</span></p></div>
+            <div class="k">实现</div><div class="v"><p><code>normalizeText</code> 只删 <code>\u200B-\u200D\uFEFF\u2060</code>（<code>moderation.ts:36</code>），<code>compact</code> 只删 <code>[\s._\-*~·|]</code>（<code>:45</code>）——<b>不处理软连字符 U+00AD、斜杠、繁简</b>。实测：</p>
+              <pre><code>moderateContent("色\u00AD情")      → blocked=false
+moderateContent("色/情")          → blocked=false
+moderateContent("加/微信")        → blocked=false
+moderateContent("138/0013/8000")  → blocked=false
+moderateContent("賭博網站")       → blocked=false（只命中 OFF_TOPIC）</code></pre></div>
+          </div>
+          <div class="impact"><b>影响</b>　「违规内容 0 公开」的治理承诺不成立；这是社区与公开专家审核共同的第一道门。</div>
+        </article>
+
+        <article class="gap p1" data-sev="p1">
+          <div class="gap-head"><span class="gid">D2</span><h4>评论完全绕过人工审核，复核级规则对它无效</h4><span class="chip p1">P1</span><span class="tag">行为不符</span></div>
+          <div class="kv">
+            <div class="k">承诺</div><div class="v"><p>「所有内容（心得、课程、提问）先审后发」「站外链接、医疗建议、跑题进入人工复核」<span class="ref">product.html §10</span></p></div>
+            <div class="k">实现</div><div class="v"><p><code>addComment</code> 只拦 <code>blocked / CONTACT / PII</code>，随后直接 <code>INSERT ... status='approved'</code>（<code>community.ts:161-166</code>）。路由只有「发评论」，没有审核接口（<code>routes/community.ts:16</code>），审核队列只查 <code>community_posts</code>。</p></div>
+          </div>
+          <div class="impact"><b>影响</b>　评论是导流与争执的高发区，却成了唯一免审的内容形态。</div>
+        </article>
+
+        <article class="gap p1" data-sev="p1">
+          <div class="gap-head"><span class="gid">D3</span><h4>审核台没有「隐藏」入口，审核通过率与时长从未记录</h4><span class="chip p1">P1</span><span class="tag">部分 / 未实现</span></div>
+          <div class="kv">
+            <div class="k">承诺</div><div class="v"><p>「通过 / 拒绝 / 隐藏」「审核通过率 60–80%、平均审核 &lt;24h」<span class="ref">product.html §10、§17</span></p></div>
+            <div class="k">实现</div><div class="v"><p>队列 UI 只有通过 / 拒绝（<code>community.js:200-203</code>）；<code>reviewPost</code> 的 hide 分支（<code>community.ts:224</code>）没有前端入口，只能借举报间接隐藏。<code>communityStats</code> 只有状态计数（<code>:235-238</code>），<code>post_reviews</code> 只有 <code>created_at</code>（<code>migrations.ts:197-200</code>），没有时长或通过率聚合。</p></div>
+          </div>
+          <div class="impact"><b>影响</b>　治理 KPI 无法度量；管理员缺一个「下架但保留记录」的常规动作。</div>
+        </article>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>编号</th><th>承诺</th><th>实际与证据</th><th>类型</th></tr></thead>
+          <tbody>
+            <tr data-sev="p2"><td><span class="gid">D4</span><span class="chip p2">P2</span></td><td>复核级识别站外链接</td><td><code>URL_RE</code> 只匹配 <code>https?://</code> 与 <code>www.</code>（<code>moderation.ts:25</code>），<code>taobao.com/shop</code> 不会被标记。</td><td>部分</td></tr>
+            <tr data-sev="p2"><td><span class="gid">D5</span><span class="chip p2">P2</span></td><td>跨租户不泄露存在性（403/404 一致）</td><td><code>assertChildAccess</code> 先查存在性再查家庭归属（<code>shared.ts:48-58</code>）：他人家庭的孩子返回 403「无权访问」，不存在的 ID 返回 404——可据此判断资源是否存在。照片读取反而统一 404。</td><td>行为不符</td></tr>
+            <tr data-sev="p2"><td><span class="gid">D6</span><span class="chip p2">P2</span></td><td>SSE 实时 + 30s 轮询兜底</td><td><code>connectEvents()</code> 在 <code>typeof EventSource === 'undefined'</code> 时直接 <code>return</code>（<code>device.js:96</code>），轮询定时器在函数末尾才创建（<code>:505</code>）——恰好在不支持 SSE 的环境里没有兜底。</td><td>部分</td></tr>
+            <tr data-sev="p2"><td><span class="gid">D7</span><span class="chip p2">P2</span></td><td>照片可按孩子批量删除；家长端明示「不是实时监控」</td><td>批量接口存在（<code>routes/device.ts:26</code>），但 Web 只有单张删除（<code>devices.js:130</code>）；全站没有「不是实时监控」文案，设备页只提撤销与静默（<code>device.js:100</code>）。</td><td>部分 / 仅文案</td></tr>
+            <tr data-sev="p2"><td><span class="gid">D8</span><span class="chip p2">P2</span></td><td>形近字母归一</td><td><code>HOMOGLYPHS</code> 只覆盖少量拉丁字母（<code>moderation.ts:4-7</code>），中文繁体、日文汉字、全角片假名都不归一。</td><td>部分</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="t-cap">已验证无差距：6 位码 10 分钟一次性、令牌哈希与撤销即失效、推送附言 + SSE、照片 0600/随机名/鉴权读取/跨家庭 404/30 天清理、导出不含原图、禁止自审。</p>
+    </section>
+
+    <!-- ============ E ============ -->
+    <section class="doc domain" id="d-pet">
+      <div class="domain-head">
+        <div class="t">
+          <h2><span class="num">E</span>伙伴 / 温度 / 儿童空间</h2>
+          <div class="verdict-line">奖励逻辑扎实，陪伴叙事在最关键处掉线。</div>
+        </div>
+        <div class="score">
+          <div class="lab"><span>承诺兑现度</span><span>62%</span></div>
+          <div class="bar"><i style="width:62%"></i></div>
+          <div class="note">10 个差距 · 0 P0 / 4 P1 / 6 P2</div>
+        </div>
+      </div>
+
+      <p>服务端判分、首通幂等、单元/计划奖励、衰减下限、无排行榜、庆祝层可访问性，这些都做对了。但产品文档里最有温度的几个细节——「有点想你」的台词、房间布置、儿童字号——恰好是没兑现的那几个。</p>
+
+      <div class="gap-list">
+        <article class="gap p1" data-sev="p1">
+          <div class="gap-head"><span class="gid">E1</span><h4>离开 24 小时说「有点想你」，台词却是「今天心情很好」</h4><span class="chip p1">P1</span><span class="tag">行为不符</span></div>
+          <div class="kv">
+            <div class="k">承诺</div><div class="v"><p>「≥24h 进入『有点想你』」「承诺不制造愧疚」<span class="ref">companion-design.md:17,57；product.html §11</span></p></div>
+            <div class="k">实现</div><div class="v"><p>情绪标签层确实产出 <code>missing</code>（<code>pet.ts:80</code>），但台词函数没有 <code>missing</code> 键，落到 <code>lines.happy</code>（<code>src/web/js/assets.js:89-96</code>），伙伴页直接渲染（<code>pet.js:31</code>）→ 孩子看到「今天心情很好，想和你一起学习」。</p></div>
+          </div>
+          <div class="impact"><b>影响</b>　整个「被想念」的情感设计，在最该出现的时刻变成一句错误情绪。</div>
+        </article>
+
+        <article class="gap p1" data-sev="p1">
+          <div class="gap-head"><span class="gid">E2</span><h4>「布置房间」闭环是假的：装饰不显示、玩具效果不生效</h4><span class="chip p1">P1</span><span class="tag">仅文案 / 未实现</span></div>
+          <div class="kv">
+            <div class="k">承诺</div><div class="v"><p>「完成课时 → 金币 → 小铺兑换 → 喂食 / 穿衣 / 布置房间」<span class="ref">product.html §11 闭环</span></p></div>
+            <div class="k">实现</div><div class="v"><p>房间是硬编码的 <code>room-sun / room-plant / room-rug</code>（<code>pet.js:46</code>），与购买记录无关；衣橱页对所有装饰固定写「已摆进小窝」（<code>:109</code>）却没有摆放动作。服务端 <code>effect</code> 只在投喂分支读取（<code>pet.ts:258-262</code>），玩具/装饰的 <code>happiness</code> 从不生效。</p></div>
+          </div>
+          <div class="impact"><b>影响</b>　金币消费的下游闭环断裂；孩子买了东西看不到任何变化，复访动机被削弱。</div>
+        </article>
+
+        <article class="gap p1" data-sev="p1">
+          <div class="gap-head"><span class="gid">E3</span><h4>「六种情绪」实际只有五种可达，<code>sad</code> 是死代码</h4><span class="chip p1">P1</span><span class="tag">死代码</span></div>
+          <div class="kv">
+            <div class="k">承诺</div><div class="v"><p>「三种伙伴，六种情绪」<span class="ref">product.html §11</span></p></div>
+            <div class="k">实现</div><div class="v"><p>类型有 6 个（<code>pet.ts:12</code>），但 <code>sad</code> 要求 <code>happiness &lt; 30</code>（<code>:37</code>），而 <code>happiness</code> 的衰减下限是 38（<code>:76</code>），且所有互动只增不减（<code>:248-292</code>）→ <b>永远达不到</b>。产品文档正文本身也只列了 5 种情绪，与标题自相矛盾。</p></div>
+          </div>
+          <div class="impact"><b>影响</b>　对外宣称与可观察行为不一致；<code>sad</code> 的台词与表情永远不会被孩子看到。</div>
+        </article>
+
+        <article class="gap p1" data-sev="p1">
+          <div class="gap-head"><span class="gid">E4</span><h4>儿童空间字号 8.5–12.5px、触控 44px，双双低于设计硬指标</h4><span class="chip p1">P1</span><span class="tag">行为不符</span></div>
+          <div class="kv">
+            <div class="k">承诺</div><div class="v"><p>「字号 ≥ 16px，触控目标 ≥ 48px」<span class="ref">warmth-design.md:27</span></p></div>
+            <div class="k">实现</div><div class="v"><p><code>.kid-speech</code> 12.5px（<code>theme.css:425</code>）、<code>.kid-stop-copy small</code> 12px（<code>:447</code>）、<code>.kid-sticker small</code> 9.5px（<code>:460</code>）、<code>.kid-footer</code> 11px（<code>:466</code>）；<code>.kid-chip</code> / <code>.kid-parent-link</code> 的 <code>min-height: 44px</code>（<code>:500-501</code>）。</p></div>
+          </div>
+          <div class="impact"><b>影响</b>　面向 2–6 岁与祖辈陪读的界面，反而用了全站最小的一档字。</div>
+        </article>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>编号</th><th>承诺</th><th>实际与证据</th><th>类型</th></tr></thead>
+          <tbody>
+            <tr data-sev="p2"><td><span class="gid">E5</span><span class="chip p2">P2</span></td><td>儿童空间有天空 / 草地 / 太阳 / 彩虹</td><td>DOM 里有 <code>.rainbow</code>（<code>child.js:51</code>），CSS 却是 <code>display:none</code>（<code>theme.css:399</code>）。</td><td>未实现</td></tr>
+            <tr data-sev="p2"><td><span class="gid">E6</span><span class="chip p2">P2</span></td><td>庆祝层由「孩子的伙伴」跳舞</td><td>课时完成用真实 species（<code>learn.js:147</code>），计划完成固定 <code>petSvg('bunny', …)</code>（<code>plans.js:315</code>）——养狐狸/龙也跳兔子。</td><td>行为不符</td></tr>
+            <tr data-sev="p2"><td><span class="gid">E7</span><span class="chip p2">P2</span></td><td>计划完成送「限定」披风</td><td><code>star-cape</code> 在小铺公开售卖 120 金币（<code>shop-data.ts:16</code>），描述还写「完成一份计划才能拥有」。</td><td>行为不符</td></tr>
+            <tr data-sev="p2"><td><span class="gid">E8</span><span class="chip p2">P2</span></td><td>计划完成有「证书」</td><td>只有庆祝层一句 <code>note</code>（<code>plans.js:316</code>）与 badge 派生标题（<code>pet.ts:166</code>），没有独立证书视图或可保存凭证。</td><td>仅文案</td></tr>
+            <tr data-sev="p2"><td><span class="gid">E9</span><span class="chip p2">P2</span></td><td>重复学习「只给宠物心情反馈」</td><td><code>firstTime=false</code> 时 <code>addCoins</code> 与 <code>gainPet</code> 全跳过（<code>pet.ts:454-457</code>），重复完成没有任何宠物反应。</td><td>部分</td></tr>
+            <tr data-sev="p2"><td><span class="gid">E10</span><span class="chip p2">P2</span></td><td>儿童界面展示星星与金币</td><td>顶栏 <code>⭐ ${stickers.length}</code> 是徽章数（<code>child.js:56</code>），不是星星数。</td><td>行为不符</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="t-cap">已验证无差距：衰减封顶 18/14/12 与下限 35/38/30、免费小饼干、5 种互动、首通幂等、计划奖励需 ≥3 项且跨 ≥3 天、服务端判分、无排行榜、庆祝层焦点陷阱 + Esc + reduced-motion。</p>
+    </section>
+
+    <!-- ============ F ============ -->
+    <section class="doc domain" id="d-design">
+      <div class="domain-head">
+        <div class="t">
+          <h2><span class="num">F</span>设计系统 / PWA / 证据链</h2>
+          <div class="verdict-line">组件大多在，证据与离线不在。</div>
+        </div>
+        <div class="score">
+          <div class="lab"><span>承诺兑现度</span><span>52%</span></div>
+          <div class="bar"><i style="width:52%"></i></div>
+          <div class="note">10 个差距 · 1 P0 / 2 P1 / 7 P2</div>
+        </div>
+      </div>
+
+      <p>导航结构、庆祝层、空状态、Toast、焦点陷阱、reduced-motion 都真实存在；卡片、统计、趋势、时间线、小铺网格、衣橱也都能在代码里找到。问题集中在两处：一是「证据」——三份文档引用浏览器 E2E，仓库里却没有；二是「离线」——PWA 壳不全，平板端根本不注册 Service Worker。</p>
+
+      <div class="gap-list">
+        <article class="gap p0" data-sev="p0">
+          <div class="gap-head"><span class="gid">F1</span><h4>文档反复引用的「浏览器 E2E / Chrome 157 CDP」在仓库里不存在</h4><span class="chip p0">P0</span><span class="tag">证据缺失</span></div>
+          <div class="kv">
+            <div class="k">承诺</div><div class="v"><p>「桌面端、移动端、平板学习端与照片流程均通过 CDP 实测，无未捕获异常」「Chrome 157 · CDP」<span class="ref">qa.html §04；product.html §16；README.md:98</span></p></div>
+            <div class="k">实现</div><div class="v"><p>全仓搜索 <code>playwright / puppeteer / CDP / *.spec</code> <b>零命中</b>；<code>package.json</code> 的 test 只有 <code>node --test test/*.test.ts</code>；<code>scripts/smoke.sh</code> 是 curl 冒烟；仓库里没有任何截图。qa 报告中依赖浏览器实测的体验类「通过」结论<b>无法复现</b>。</p></div>
+          </div>
+          <div class="impact"><b>影响</b>　质量报告的可信度受损；体验类回归没有自动化防线，改前端只能靠人工「点一遍」。</div>
+        </article>
+
+        <article class="gap p1" data-sev="p1">
+          <div class="gap-head"><span class="gid">F2</span><h4>离线壳 preCache 不完整，冷启动断网会白屏</h4><span class="chip p1">P1</span><span class="tag">部分实现</span></div>
+          <div class="kv">
+            <div class="k">承诺</div><div class="v"><p>「PWA manifest + service worker（网络优先 + 离线壳）」<span class="ref">product.html §15</span></p></div>
+            <div class="k">实现</div><div class="v"><p><code>sw.js:2</code> 的 <code>SHELL</code> 只有 8 个文件，缺少 <code>js/views/*.js</code>（13 个视图）、<code>assets.js</code>、<code>device.*</code>。安装后若未在线访问过全部模块就断网，ES module 404 → 白屏。网络优先只缓存「访问过的」资源。</p></div>
+          </div>
+          <div class="impact"><b>影响</b>　「离线可用」在真实冷启动场景不成立；弱网/校园网的首次打开体验不可控。</div>
+        </article>
+
+        <article class="gap p1" data-sev="p1">
+          <div class="gap-head"><span class="gid">F3</span><h4>平板学习端不注册 Service Worker，「独立 PWA」不可安装</h4><span class="chip p1">P1</span><span class="tag">未实现</span></div>
+          <div class="kv">
+            <div class="k">承诺</div><div class="v"><p>「平板学习端是独立的极简应用」「手机 / 平板 / Mac 共用一套 PWA」<span class="ref">product.html §04、§15</span></p></div>
+            <div class="k">实现</div><div class="v"><p><code>device.html</code> 引用了 manifest，但注册只发生在 <code>app.js:537</code>（家长端入口）；<code>device.js</code> 与 <code>device.html</code> 全无 <code>serviceWorker.register</code>。平板端没有离线壳，也无法可靠触发安装。</p></div>
+          </div>
+          <div class="impact"><b>影响</b>　这正是「把平板交给孩子」的主场景：断网或弱网时学习端直接不可用。</div>
+        </article>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>编号</th><th>承诺</th><th>实际与证据</th><th>类型</th></tr></thead>
+          <tbody>
+            <tr data-sev="p2"><td><span class="gid">F4</span><span class="chip p2">P2</span></td><td>「抽屉式模态」组件</td><td>模态统一是全屏居中的 <code>translate(-50%,-50%)</code>（<code>styles.css:597-604</code>）；grep <code>drawer</code> / bottom sheet 零命中。</td><td>未实现</td></tr>
+            <tr data-sev="p2"><td><span class="gid">F5</span><span class="chip p2">P2</span></td><td>「骨架屏」组件</td><td><code>.skeleton</code> 只用于设备照片占位（<code>styles.css:630</code>、<code>devices.js:87</code>）；视图加载统一用 spinner（<code>ui.js:228</code>）。</td><td>退化</td></tr>
+            <tr data-sev="p2"><td><span class="gid">F6</span><span class="chip p2">P2</span></td><td>「可见焦点」</td><td>焦点环 <code>#a5b4fc</code> on <code>#fffdf9</code> 对比度 <b>1.96:1</b>（<code>styles.css:57</code>），低于 WCAG 1.4.11 的 3:1。</td><td>部分</td></tr>
+            <tr data-sev="p2"><td><span class="gid">F7</span><span class="chip p2">P2</span></td><td>「颜色对比」</td><td><code>--muted #747784</code> on <code>#fffdf9</code> 为 <b>4.38:1</b>（<code>styles.css:10,127</code>），低于正文 4.5:1；在奶油底 <code>#f8f5ee</code> 上更低（4.09:1）。</td><td>部分</td></tr>
+            <tr data-sev="p2"><td><span class="gid">F8</span><span class="chip p2">P2</span></td><td>设备端字号与触控目标放大</td><td>全局 <code>.btn</code> 无 <code>min-height</code>（<code>styles.css:60-66</code>，约 40px &lt; 44px）；只有儿童空间的 <code>kid-big-btn</code> / <code>kid-stop</code> 达标（<code>theme.css:487-489</code>）。</td><td>部分</td></tr>
+            <tr data-sev="p2"><td><span class="gid">F9</span><span class="chip p2">P2</span></td><td>PWA 安装</td><td>无 <code>beforeinstallprompt</code>、无安装引导 UI；manifest 只有 SVG 图标，<code>index.html:11</code> 的 <code>apple-touch-icon</code> 也指向 SVG（iOS 不识别）。</td><td>部分</td></tr>
+            <tr data-sev="p2"><td><span class="gid">F10</span><span class="chip p2">P2</span></td><td>320px / 390px 适配</td><td>断点只有 1180 / 1020 / 860 / 620（<code>styles.css:635-680</code>）与 380 的儿童空间微调；没有 320 专项规则，也没有可复现的截图或脚本。</td><td>仅文案</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="t-cap">已验证无差距：5 入口底栏 + 桌面分组 + 右上角菜单、平板四功能、庆祝层焦点陷阱与 reduced-motion、模态 Esc + 焦点回退、空/错误状态、Toast、摄像头权限兜底。</p>
+    </section>
+
+    <!-- ============ PATTERNS ============ -->
+    <section class="doc" id="patterns">
+      <h2><span class="num">04</span>五个系统性模式</h2>
+      <p class="lede">把 55 条差距放在一起看，会发现它们不是随机缺陷，而是五种反复出现的生产方式。</p>
+
+      <div class="grid2">
+        <div class="card"><span class="num">PATTERN 01</span><h4>演示态与生产态混在一起</h4><p>公开课种子 <code>autoApprove:true</code> 与 demo 开关无关；「隔离审核」只在后续同步里成立。演示用的宽松路径没有在生产开关下被重新收紧。同类：影子账号、假 checksum。</p></div>
+        <div class="card"><span class="num">PATTERN 02</span><h4>文案先行，能力后置</h4><p>「AI 辅助生成」「布置房间」「证书」「六种情绪」「不是实时监控」——文案先写进了界面与文档，但对应的数据、组件或行为没有跟上。用户读到的比系统能做到的多。</p></div>
+        <div class="card"><span class="num">PATTERN 03</span><h4>影子实现：代码在，路径不通</h4><p><code>sha256</code> 导入了但没调用；<code>occupied</code> 构造了但从没读取；<code>sad</code> 有类型但永远不可达；<code>ring()</code> 有实现但零调用；技能 <code>definition</code> 查出来但只用了名字。这类「死代码」会让静态阅读误判为已实现。</p></div>
+        <div class="card"><span class="num">PATTERN 04</span><h4>测试覆盖契约，不覆盖体验</h4><p>83 个用例几乎都是 HTTP 契约与状态机断言：跨家庭 403、幂等、超时、422。没有一条断言「每课都有听说读写」「儿童字号 ≥16px」「审核能拦住变体」——所以文档里的体验承诺没有任何防线。</p></div>
+        <div class="card"><span class="num">PATTERN 05</span><h4>降级不声明</h4><p>「离线可用」实际是「无 API Key 时用本地规则」；「浏览器 E2E」实际是人工点检；「SSE + 轮询兜底」在不支持 SSE 时反而没有轮询。降级路径没有被诚实地写进文档。</p></div>
+        <div class="card"><span class="num">PATTERN 06</span><h4>安全集中在「读」，薄弱在「写入口」</h4><p>越权读取、照片隔离、沙箱逃逸都做得不错；但内容入口（社区、评论、公开专家）与审核规范化是薄弱面。攻击者不需要绕过 JWT，只需要在违禁词里加一个斜杠。</p></div>
+      </div>
+    </section>
+
+    <!-- ============ DOC CONFLICTS ============ -->
+    <section class="doc" id="doc-conflicts">
+      <h2><span class="num">05</span>文档自相矛盾</h2>
+      <p class="lede">除了「文档 vs 实现」，文档之间也互相打架。这些不一致会直接影响验收判断，建议与代码修复一起收敛。</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>冲突</th><th>位置</th><th>事实</th></tr></thead>
+          <tbody>
+            <tr><td>情绪数量：6 还是 5？</td><td><code>product.html</code> §11 标题「六种情绪」，正文只列 5 种；<code>companion-design.md:18</code> 也列 5 种</td><td>代码里有 6 个枚举，但 <code>sad</code> 不可达，实际可观察 5 种。三处说法各不相同。</td></tr>
+            <tr><td>AI 到底做什么？</td><td><code>DESIGN.md:73</code> 写「AI 辅助排课、冲突检测（同日超时、跨学科失衡）」；<code>product.html §07</code> 写「AI 仅补全理由」</td><td>实现是后者。DESIGN.md 是 v1.0 旧稿，未随修订更新。</td></tr>
+            <tr><td>测试规模</td><td><code>DESIGN.md:110</code>「67 个集成测试」；README / product / qa 均写 83</td><td>实际 83 个用例、9 个 suite。DESIGN.md 停留在 v1.1 的旧数字。</td></tr>
+            <tr><td>路由规模</td><td><code>DESIGN.md:46</code>「120 行路由」；README 与 architecture 写「~300 行」</td><td><code>src/core/http.ts</code> 为 291 行，README 正确，DESIGN.md 过时。</td></tr>
+            <tr><td>首次启动是否写演示数据</td><td><code>DESIGN.md:95</code>「首次启动……写入体系化课程与演示数据」；同文件 §11.1 与 README 写「默认关闭，需显式开启」</td><td>实现为默认关闭。同一文件前后矛盾。</td></tr>
+            <tr><td>E2E 证据</td><td><code>qa.html</code>「Chrome 157 CDP」；<code>product.html</code> §16「浏览器 E2E」；README 第 98 行</td><td>仓库无任何浏览器测试或截图（见 F1）。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout warn">
+        <b>建议</b>　把 <code>DESIGN.md</code> 标记为「历史设计稿」，在文首加一行指向 product.html 当前版本；否则每次评审都要重新判断哪份文档有效。
+      </div>
+    </section>
+
+    <!-- ============ ROADMAP ============ -->
+    <section class="doc" id="roadmap">
+      <h2><span class="num">06</span>修复路线与验收标准</h2>
+      <p class="lede">不建议「一次全修」。按「可信度 → 核心体验 → 细节」三阶段推进，每阶段都有可执行的验收断言，而不是再写一遍文档。</p>
+
+      <h3>阶段 0 · 先止血（3–5 天，P0）</h3>
+      <div class="table-wrap">
+        <table class="roadmap">
+          <thead><tr><th>动作</th><th>改什么</th><th>验收断言</th></tr></thead>
+          <tbody>
+            <tr><td><span class="badge-phase p0">P0</span> 统一审核规范化</td><td><code>normalizeText</code> 增加：删除全部 Unicode 格式字符（含 U+00AD）、分隔符压缩（<code>/ \ | · •</code> 等）、简繁归一、补充形近字；评论走同一规则并进入审核队列（或至少记录 + 可复核）。</td><td>新增负向用例：<code>色/情</code>、<code>加/微信</code>、<code>138/0013/8000</code>、<code>色­情</code>、<code>賭博</code> 全部 422；评论不再直接 approved。</td></tr>
+            <tr><td><span class="badge-phase p0">P0</span> 教学模态对齐</td><td>要么为思维/蒙氏补 listen/speak/trace 中至少两类；要么把文档改为「不同学科覆盖不同模态」并更新课程卡说明。二选一，不能继续宣称每课全覆盖。</td><td>新增断言：每个学科至少 2 类互动模态；或文档承诺与数据一致（人工验收清单）。</td></tr>
+            <tr><td><span class="badge-phase p0">P0</span> E2E 证据落地或撤销</td><td>把浏览器流程做成可运行的 <code>e2e/</code>（Playwright 或 CDP 脚本）并接入 CI；做不到就从 product / qa / README 删除「CDP 实测」表述，改为「人工点检记录」。</td><td><code>npm run e2e</code> 可在本地跑通 3 条主链路；或文档中无 E2E 声称。</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>阶段 1 · 补核心体验（2–3 周，P1）</h3>
+      <div class="table-wrap">
+        <table class="roadmap">
+          <thead><tr><th>动作</th><th>改什么</th><th>验收断言</th></tr></thead>
+          <tbody>
+            <tr><td><span class="badge-phase p1">P1</span> 公开课管线真实化</td><td>checksum 用 <code>sha256(blocks + meta)</code>；版本化课时（ID 含版本或独立版本表），approve 前旧版保持在线；种子不再 <code>autoApprove</code>，改为显式 bootstrap 标记。</td><td>导入新版本 → 旧课仍 200；checksum 变化可追踪；首次启动 12 个课时为 quarantined 或标记 bootstrap。</td></tr>
+            <tr><td><span class="badge-phase p1">P1</span> 课时元数据与前置</td><td>新增 <code>key_points / hard_points / home_extension / prereq_lesson_id</code>，课时页展示；课程页渲染关键词。</td><td>每个课时 API 返回四字段且 UI 可见；计划排课尊重 prereq。</td></tr>
+            <tr><td><span class="badge-phase p1">P1</span> AI 标签诚实化</td><td><code>source</code> 按 engine 写 <code>local</code> / <code>ai</code>；前端按 engine 显示「本地规则」或「AI 辅助」；<code>engine</code> 不再从 source 反推。</td><td>无 Key 环境下生成计划，UI 与 API 均不出现「AI」字样。</td></tr>
+            <tr><td><span class="badge-phase p1">P1</span> 时长约束修正</td><td>首项也受 <code>minutesPerDay</code> 约束；若单课时超限，给出显式提示或拆课，不写「不超过」的假理由。</td><td>任何 <code>minutesPerDay</code> 下，当日总分钟 ≤ 上限（或返回可解释的例外）。</td></tr>
+            <tr><td><span class="badge-phase p1">P1</span> 生态接线</td><td>连接器按安装/权限生成动态 tool 注入 <code>AGENT_TOOLS</code>；技能 <code>definition</code> 拼入系统提示；专家表单支持选择技能；公开 registry 内容过 <code>moderateContent</code>。</td><td><code>/api/agent/tools</code> 出现已安装连接器；系统提示含技能定义；公开专家带联系方式 → 422。</td></tr>
+            <tr><td><span class="badge-phase p1">P1</span> 温度与儿童可用性</td><td><code>moodLine</code> 补 <code>missing</code>；房间按 inventory 渲染；<code>sad</code> 要么可达要么删除；儿童字号 ≥16px、触控 ≥48px；彩虹解除 <code>display:none</code>。</td><td>48h 缺席台词为「想你」；购买装饰后房间变化；CSS 静态断言字号/尺寸。</td></tr>
+            <tr><td><span class="badge-phase p1">P1</span> PWA 离线</td><td>构建期生成完整 precache 清单（含 views/assets）；<code>device.js</code> 注册 SW；补安装引导与 PNG 图标。</td><td>冷启动断网可进入首页与 /device；Lighthouse PWA 可安装。</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>阶段 2 · 清理与度量（持续）</h3>
+      <ul>
+        <li><b>指标最小集</b>：新增 <code>product_events(date, household, child, type, meta)</code>，先埋 5 个：生成计划、激活计划、完成课时、完成计划、逾期纠偏；后台出 D7 留存与周计划完成率。这是让 §17 可验收的最低成本。</li>
+        <li><b>审核 KPI</b>：<code>post_reviews</code> 已有 <code>created_at</code>，补「提交→首次审核」时长聚合与通过率；队列加「隐藏」按钮。</li>
+        <li><b>文档一致性</b>：DESIGN.md 归档；product.html 的「六种情绪」「E2E」按实际修正；qa.html 的通过项标注证据类型（自动化 / 人工 / 未复现）。</li>
+        <li><b>可访问性</b>：焦点环换深色（≥3:1）、muted 加深到 4.5:1、按钮补 <code>min-height:44px</code>、菜单补 Esc 与方向键。</li>
+        <li><b>死代码清理</b>：<code>occupied</code>、<code>ring()</code>、<code>sha256</code>、<code>sad</code>、<code>adherenceFor</code> 的日期参数等，统一在重构中删除或接线。</li>
+      </ul>
+
+      <div class="callout mint">
+        <b>建议的验收方式</b>　每个 P0/P1 修复都配一条可执行断言（测试用例或脚本）。文档里的「已通过」必须能指向一条具体命令或一个具体文件；否则视为未完成。
+      </div>
+    </section>
+
+    <!-- ============ APPENDIX ============ -->
+    <section class="doc" id="appendix">
+      <h2><span class="num">07</span>附录：验证记录</h2>
+
+      <h3>本机复现（摘要）</h3>
+      <pre><code># 1. 运行时取数（临时 DATA_DIR，不污染仓库）
+DATA_DIR=/tmp/starsprout-audit PORT=8096 node src/server.ts
+curl -s localhost:8096/api/health
+# {"ok":true,"data":{"status":"ok","checks":{"db":true,"lessons":192,"ai":"local-fallback"}}}
+
+# 2. SQLite 统计
+lessons: 192 | blocks/lesson: min 6, max 8, avg 6.64
+分布: {6:108, 7:45, 8:39}
+unit: 64 | framework: 20 | course_packs: 4
+block 类型覆盖: listen 36, speak 36, trace 39, read 39, piano 39, rhythm 39
+
+# 3. 审核负向探测
+node --input-type=module -e 'import { moderateContent } from "./src/modules/moderation.ts"; …'
+"色/情" → blocked=false | "加/微信" → blocked=false | "138/0013/8000" → blocked=false
+
+# 4. 质量门禁
+./node_modules/.bin/tsc --noEmit          # exit 0
+NODE_ENV=test node --test test/*.test.ts  # tests 83 / pass 81 / fail 2（并行沙箱超时）
+NODE_ENV=test node --test test/agent.test.ts  # 10/10
+
+# 5. 部署
+docker build -t starsprout-academy:verify .
+docker run -d -p 8098:8080 starsprout-academy:verify
+# 容器 healthy；/api/meta 显示 setupRequired=true, demoMode=false</code></pre>
+
+      <h3>证据索引</h3>
+      <div class="grid2">
+        <div class="card"><h4>课程与公开课</h4><p><code>src/infra/lesson-blocks.ts</code>、<code>curriculum-data.ts</code>、<code>public-courses.ts</code>、<code>seed.ts</code>、<code>migrations.ts</code>；<code>src/web/js/views/{learn,curriculum}.js</code></p></div>
+        <div class="card"><h4>计划与 AI</h4><p><code>src/modules/plans.ts</code>、<code>ai.ts</code>、<code>analytics.ts</code>；<code>src/web/js/views/plans.js</code>、<code>app.js</code></p></div>
+        <div class="card"><h4>智能体与生态</h4><p><code>src/modules/agent.ts</code>、<code>sandbox.ts</code>、<code>sandbox-runner.ts</code>、<code>registry.ts</code>；<code>src/web/js/views/{agent,registry,admin}.js</code></p></div>
+        <div class="card"><h4>社区与隐私</h4><p><code>src/modules/{moderation,community,privacy,shared,device}.ts</code>；<code>src/web/js/{device.js,views/{community,devices}.js}</code></p></div>
+        <div class="card"><h4>伙伴与温度</h4><p><code>src/modules/pet.ts</code>、<code>src/infra/{warmth-data,shop-data}.ts</code>；<code>src/web/js/{assets.js,views/{pet,child,home,plans}.js}</code>、<code>theme.css</code></p></div>
+        <div class="card"><h4>设计系统与 PWA</h4><p><code>src/web/{index.html,device.html,sw.js,manifest.webmanifest,styles.css}</code>、<code>js/{app,ui}.js</code>、<code>scripts/</code>、<code>test/</code></p></div>
+      </div>
+
+      <h3>如何保持这份评审有效</h3>
+      <ul>
+        <li>修复 P0/P1 后，优先把对应断言写进 <code>test/</code>；否则下一次评审仍会复现同样的结论。</li>
+        <li>文档里的每个「已通过」都应该注明证据类型：自动化用例名 / 命令 / 人工记录（带日期与环境）。</li>
+        <li>本报告中的行号基于当前工作区快照（2026-11-26）；代码变更后以语义与证据为准，不依赖行号。</li>
+      </ul>
+
+      <div class="callout">
+        <b>一句话总结</b>　星芽学堂的「工程骨架」值得信任：数据模型、隔离、判分、沙箱、部署都经得起看。真正要补的是<b>把承诺做到底</b>——内容深度、治理严格度、生态接线、情感细节，以及一份能被别人复现的验收证据。
+      </div>
+    </section>
+
+    <footer>
+      <span>星芽学堂 · 实现 × 产品文档差距评审 · v1.0 · 2026-11-26</span>
+      <span>55 gaps · 3 P0 / 19 P1 / 33 P2 · 证据截止当前工作区快照</span>
+    </footer>
+  </main>
+</div>
+
+<script>
+(function () {
+  var buttons = Array.prototype.slice.call(document.querySelectorAll('.fbtn'));
+  var items = Array.prototype.slice.call(document.querySelectorAll('[data-sev]'));
+
+  function apply(filter) {
+    items.forEach(function (el) {
+      var sev = el.getAttribute('data-sev');
+      var show = filter === 'all' || sev === filter;
+      el.classList.toggle('hide', !show);
+    });
+    buttons.forEach(function (btn) {
+      btn.setAttribute('aria-pressed', String(btn.getAttribute('data-filter') === filter));
+    });
+  }
+
+  buttons.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      apply(btn.getAttribute('data-filter'));
+    });
+  });
+
+  // 目录高亮
+  var links = Array.prototype.slice.call(document.querySelectorAll('nav.toc a'));
+  var map = {};
+  links.forEach(function (link) {
+    var id = link.getAttribute('href').slice(1);
+    var section = document.getElementById(id);
+    if (section) map[id] = link;
+  });
+  if ('IntersectionObserver' in window) {
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        links.forEach(function (l) { l.classList.remove('active'); });
+        var link = map[entry.target.id];
+        if (link) link.classList.add('active');
+      });
+    }, { rootMargin: '-15% 0px -70% 0px', threshold: 0.01 });
+    Object.keys(map).forEach(function (id) {
+      var section = document.getElementById(id);
+      if (section) observer.observe(section);
+    });
+  }
+})();
+</script>
+</body>
+</html>

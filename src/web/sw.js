@@ -1,5 +1,8 @@
-const CACHE = 'starsprout-v3';
-const SHELL = ['/', '/styles.css', '/theme.css', '/js/app.js', '/js/api.js', '/js/ui.js', '/manifest.webmanifest', '/icon.svg'];
+const CACHE = 'starsprout-v4';
+const SHELL = ['/', '/device', '/device.html', '/styles.css', '/theme.css', '/device.css', '/manifest.webmanifest', '/icon.svg', '/icon-192.png', '/icon-512.png',
+  '/js/app.js', '/js/api.js', '/js/ui.js', '/js/assets.js', '/js/device.js',
+  '/js/views/home.js', '/js/views/curriculum.js', '/js/views/learn.js', '/js/views/plans.js', '/js/views/agent.js', '/js/views/registry.js',
+  '/js/views/community.js', '/js/views/devices.js', '/js/views/account.js', '/js/views/admin.js', '/js/views/pet.js', '/js/views/child.js', '/js/views/childModal.js'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE).then(cache => Promise.allSettled(SHELL.map(asset => cache.add(asset)))).then(() => self.skipWaiting()));
@@ -26,7 +29,7 @@ self.addEventListener('fetch', (event) => {
     }).catch(async () => {
       const cached = await caches.match(request);
       if (cached) return cached;
-      if (request.mode === 'navigate') return caches.match('/');
+      if (request.mode === 'navigate') return caches.match(url.pathname.startsWith('/device') ? '/device' : '/');
       return new Response('离线内容暂不可用', { status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
     })
   );

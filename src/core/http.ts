@@ -250,10 +250,10 @@ export class Router {
     if (pathname === '/') filePath = path.join(config.webDir, 'index.html');
     else if (pathname === '/device' || pathname === '/device/') filePath = path.join(config.webDir, 'device.html');
     else if (pathname === '/docs' || pathname === '/docs/') filePath = path.join(process.cwd(), 'docs', 'index.html');
-    else if (/^\/docs\/(?:reviews\/)?[a-z0-9-]+\.(?:html|md)$/.test(pathname)) filePath = path.join(process.cwd(), 'docs', pathname.replace(/^\/docs\//, ''));
+    else if (/^\/docs\/(?:(?:reviews|e2e)\/)?[a-z0-9-]+\.(?:html|md)$/.test(pathname)) filePath = path.join(process.cwd(), 'docs', pathname.replace(/^\/docs\//, ''));
     else if (/^\/(app|device)\.html$/.test(pathname)) filePath = path.join(config.webDir, pathname.slice(1));
     else if (/^\/(js|assets)\/[A-Za-z0-9._/-]+$/.test(pathname)) filePath = path.join(config.webDir, pathname.slice(1));
-    else if (/^\/(styles\.css|theme\.css|device\.css|manifest\.webmanifest|sw\.js|favicon\.svg|icon(?:-[0-9]+)?\.svg)$/.test(pathname)) {
+    else if (/^\/(styles\.css|theme\.css|device\.css|manifest\.webmanifest|sw\.js|favicon\.svg|icon(?:-[0-9]+)?\.(?:svg|png))$/.test(pathname)) {
       filePath = path.join(config.webDir, pathname.slice(1));
     }
     if (!filePath) throw notFound('页面不存在');

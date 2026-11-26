@@ -45,6 +45,8 @@ export async function renderAdmin(root, ctx) {
       ${stat('📚', '已发布课时', overview.lessons, `${overview.sources} 个公开课源`)}
       ${stat('🛡️', '待审核', overview.pendingPosts + overview.pendingExperts + overview.pendingSkills, `社区 ${overview.pendingPosts} · 生态 ${overview.pendingExperts + overview.pendingSkills} · 课程包 ${overview.pendingPacks}`)}
       ${stat('🤖', 'AI 运行（24h）', overview.aiRuns24h, `${overview.reports} 份报告 · ${overview.snapshots} 张照片`)}
+      ${stat('🌱', '近 7 天活跃家庭', overview.activeHouseholds7d || 0, `计划完成 ${overview.planCompletion || 0} 份`)}
+      ${stat('🧾', '审核质量', overview.reviewApprovalRate == null ? '—' : `${overview.reviewApprovalRate}%`, overview.reviewAvgHours == null ? '暂无审核' : `平均 ${overview.reviewAvgHours} 小时`)}
     </section>
 
     <div class="grid two-col">

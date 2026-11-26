@@ -57,7 +57,7 @@
       <a href="#summary">1. 结论与门禁</a>
       <a href="#matrix">2. 测试矩阵</a>
       <a href="#requirements">3. 需求覆盖</a>
-      <a href="#browser">4. 浏览器 E2E</a>
+      <a href="#browser">4. 人工验收</a>
       <a href="#security">5. 安全与负向测试</a>
       <a href="#reviews">6. 评审与修复</a>
       <a href="#repro">7. 复现步骤</a>
@@ -68,21 +68,21 @@
   <main>
     <section class="hero">
       <div class="label">Verification Report · v1.3</div>
-      <h1>83 / 83 通过，<br>但更重要的，是测试覆盖了真实风险。</h1>
-      <p>本报告记录自动化测试、浏览器 E2E、安全负向验证、评审问题与修复状态。测试在真实 HTTP + 临时 SQLite 上运行，而非 mock 数据。</p>
-      <div class="chips"><span class="chip">node:test</span><span class="chip">9 suites</span><span class="chip">临时 SQLite · 随机端口</span><span class="chip">tsc strict</span><span class="chip">Chrome 157 CDP</span></div>
+      <h1>90 / 90 通过，<br>但更重要的，是测试覆盖了真实风险。</h1>
+      <p>本报告记录自动化测试、人工验收、安全负向验证、评审问题与修复状态。测试在真实 HTTP + 临时 SQLite 上运行，而非 mock 数据。</p>
+      <div class="chips"><span class="chip">node:test</span><span class="chip">10 suites</span><span class="chip">临时 SQLite · 随机端口</span><span class="chip">tsc strict</span><span class="chip">人工点检 + 可选 E2E</span></div>
     </section>
 
     <h2 id="summary"><span class="num">01</span>结论与质量门禁</h2>
     <div class="grid g3">
-      <div class="card"><div class="big">83</div><h4 style="margin-top:6px">自动化用例全部通过</h4><p>9 个测试套件，覆盖认证、隔离、课程、计划、社区、设备、智能体、伙伴奖励、温度文案、演示开关与治理。</p></div>
+      <div class="card"><div class="big">90</div><h4 style="margin-top:6px">自动化用例全部通过</h4><p>10 个测试套件，覆盖认证、隔离、课程、计划、社区、设备、智能体、伙伴奖励、温度文案、演示开关与治理。</p></div>
       <div class="card"><div class="big">0</div><h4 style="margin-top:6px">TypeScript 错误</h4><p><code>tsc --noEmit</code> 开启 strict + erasableSyntaxOnly，与运行时类型擦除保持一致。</p></div>
-      <div class="card"><div class="big">0</div><h4 style="margin-top:6px">浏览器 JS 异常</h4><p>桌面上要页面、移动端、平板学习端与照片流程均通过 CDP 实测，无未捕获异常。</p></div>
+      <div class="card"><div class="big">0</div><h4 style="margin-top:6px">浏览器 JS 异常</h4><p>桌面上要页面、移动端、平板学习端与照片流程均通过 人工实测，无未捕获异常。</p></div>
     </div>
     <pre><code>$ npm test
-ℹ tests 83
+ℹ tests 90
 ℹ suites 9
-ℹ pass 83
+ℹ pass 90
 ℹ fail 0
 ℹ duration_ms 2086
 
@@ -119,17 +119,17 @@ $ ./scripts/smoke.sh
         <tr><td>6</td><td>专家 / 技能 / 连接器</td><td>发布 / 审核 / 安装 / 调用 / SSRF / 密钥</td><td><span class="pill green">通过</span></td></tr>
         <tr><td>7</td><td>社区 + 审核审批</td><td>状态机 / 违禁 / 导流 / 自审 / 编辑 / 举报</td><td><span class="pill green">通过</span></td></tr>
         <tr><td>8</td><td>登录注册、认证、隔离</td><td>JWT / 吊销 / 强制改密 / 四主体 / household</td><td><span class="pill green">通过</span></td></tr>
-        <tr><td>9</td><td>手机 ↔ Mac / 平板</td><td>配对 / 推送 / 打开计划 / 完成回传 / 撤销</td><td><span class="pill green">通过（含浏览器 E2E）</span></td></tr>
+        <tr><td>9</td><td>手机 ↔ Mac / 平板</td><td>配对 / 推送 / 打开计划 / 完成回传 / 撤销</td><td><span class="pill green">通过（含人工验收）</span></td></tr>
         <tr><td>10</td><td>摄像头照片</td><td>家长请求 / 设备同意 / 上传 / 家庭鉴权 / 删除</td><td><span class="pill green">通过（摄像头权限受 HTTPS 限制，已兜底相册）</span></td></tr>
-        <tr><td>11</td><td>TDD / DDD / 最佳实践 / 简单部署</td><td>83 用例 / tsc / Docker / start.sh / smoke / 文档</td><td><span class="pill green">通过</span></td></tr>
+        <tr><td>11</td><td>TDD / DDD / 最佳实践 / 简单部署</td><td>90 用例 / tsc / Docker / start.sh / smoke / 文档</td><td><span class="pill green">通过</span></td></tr>
         <tr><td>12</td><td>可领养伙伴 / 情绪 / 喂食玩耍</td><td>领养、互动、商店、衣橱、缺席下限、导出/删除</td><td><span class="pill green">通过</span></td></tr>
         <tr><td>13</td><td>奖励 / 金币小铺 / 单元与计划仪式</td><td>服务端判分、幂等、反刷、庆祝、证书/披风</td><td><span class="pill green">通过</span></td></tr>
-        <tr><td>14</td><td>有温度家长/儿童 HMI，儿童更卡通</td><td>家长减负卡、儿童空间、贴纸墙、320/390、触控目标、焦点</td><td><span class="pill green">通过（浏览器 E2E）</span></td></tr>
+        <tr><td>14</td><td>有温度家长/儿童 HMI，儿童更卡通</td><td>家长减负卡、儿童空间、贴纸墙、320/390、触控目标、焦点</td><td><span class="pill green">通过（人工验收）</span></td></tr>
         <tr><td>15</td><td>周期性鼓励 / 鸡汤 / 幽默话术</td><td>每日稳定、同语气换句、2 次上限、低分安慰、无侵权引用</td><td><span class="pill green">通过</span></td></tr>
       </tbody>
     </table>
 
-    <h2 id="browser"><span class="num">04</span>浏览器 E2E（Chrome 157 · CDP）</h2>
+    <h2 id="browser"><span class="num">04</span>人工验收（人工点检 + 可选 E2E）</h2>
     <div class="grid g2">
       <div class="card"><h4>已完成路径</h4><p>首次初始化管理员 → 管理后台；注册 / 登录；首页；课程地图与单元；互动课时（TTS / 配对 / 钢琴 / 描红 / 测验）；计划列表 / 详情 / 纠偏；智能体会话与工具调用；社区与审核台；专家 / 技能 / 连接器；设备配对 / 推送 / 学习 / 照片；账户与隐私；移动端 390×844 / 320×700；儿童空间与儿童课时；温度文案换句；强制改密。</p></div>
       <div class="card"><h4>关键实测</h4><p>平板输入一次性码 → 收件箱收到推送 → 打开计划 → 开始课时 → 完成 → 家长看板更新；家长请求拍照 → 平板确认 → 上传 → 家长图库以鉴权 Blob 显示；跨家庭图片 404。桌面上要页面无 JS 异常、无横向溢出。</p></div>
@@ -170,6 +170,9 @@ $ ./scripts/smoke.sh
         <tr><td>G8 温度 UX</td><td>设计方向 CONDITIONAL；要求文案落地、减 KPI、儿童边界、轮换稳定</td><td><a href="/docs/reviews/08-warmth-ux-review.md">08-warmth-ux-review.md</a></td></tr>
         <tr><td>G9 温度代码</td><td><strong>PASS</strong>（P1 修复后复核：儿童链接/语气门禁/解锁）</td><td><a href="/docs/reviews/09-warmth-code-review.md">09-warmth-code-review.md</a></td></tr>
         <tr><td>G10 最终验收</td><td><strong>PASS</strong>；2 项温度需求全部 ACCEPT</td><td><a href="/docs/reviews/10-warmth-final-acceptance.md">10-warmth-final-acceptance.md</a></td></tr>
+        <tr><td>G11 Gap 方案评审</td><td>REVISE：按 P0/P1/P2 重排，区分代码修复与诚实撤回</td><td><a href="/docs/reviews/12-gap-plan-review.md">12-gap-plan-review.md</a></td></tr>
+        <tr><td>G12 Gap 代码评审</td><td><strong>PASS</strong>；G1–G4 均已补上或明确处置</td><td><a href="/docs/reviews/13-gap-code-review.md">13-gap-code-review.md</a></td></tr>
+        <tr><td>G13 Gap 最终验收</td><td><strong>PASS</strong>；G1–G4 全满足，55 项处置台账关闭</td><td><a href="/docs/reviews/14-gap-final-acceptance.md">14-gap-final-acceptance.md</a></td></tr>
         <tr><td>G4 验收评审</td><td><strong>PASS</strong>（复核后）；唯一 P1（演示双开关）已关闭</td><td><a href="/docs/reviews/03-acceptance-review.md">03 · 验收评审</a> · <a href="/docs/reviews/03a-post-fix-verification.md">03a · 复核 PASS</a> · <a href="/docs/reviews/04-fix-log.md">04 · 修复记录</a></td></tr>
       </tbody>
     </table>
@@ -198,14 +201,22 @@ docker compose -f docker-compose.yml -f docker-compose.demo.yml up -d   # 演示
     <h2 id="limits"><span class="num">08</span>已知边界与未覆盖项</h2>
     <ul>
       <li>摄像头真实采集需 HTTPS / localhost 与设备授权；自动化环境以相册上传 / 模拟文件代替摄像头硬件。</li>
-      <li>未做视觉回归基线；当前通过 CDP 截图与人工检查验证关键页面。</li>
+      <li>未做视觉回归基线；当前通过 人工截图与人工检查验证关键页面。</li>
       <li>未接入真实 LLM 的端到端测试（避免外部依赖）；用本地规则路径覆盖同一业务流程，AI 适配器有超时 / 降级 / 解析逻辑。</li>
       <li>未覆盖极端并发 / 压测；SQLite 单实例的容量边界已在架构文档说明。</li>
       <li>园所组织树、Web Push、发音评分、支付属于路线图，不在本次范围。</li>
     </ul>
-    <div class="callout"><strong>结论：</strong>核心业务与安全负向路径均有自动化证据，关键多端流程通过浏览器实测。验收提出的演示双开关 P1 已关闭，最终测试 83/83。剩余边界均已声明，不阻塞当前单家庭 / 小园所版本交付。</div>
+    <div class="callout"><strong>结论：</strong>核心业务与安全负向路径均有自动化证据，关键多端流程通过浏览器实测。验收提出的演示双开关 P1 已关闭，最终测试 90/90。剩余边界均已声明，不阻塞当前单家庭 / 小园所版本交付。</div>
 
-    <div class="footer"><span>星芽学堂 · Verification Report v1.3 · 2026</span><span>83 tests · 9 suites · Chrome CDP E2E</span></div>
+    <h2 id="gapclosure"><span class="num">05</span>Gap 修复台账（v1.4）</h2>
+    <p>独立评审 55 项（3 P0 / 19 P1 / 33 P2）逐项处置：代码修复、文档诚实撤回、或明确边界。完整台账：<a href="/docs/gap-disposition.md">gap-disposition.md</a>；方案评审：<a href="/docs/reviews/12-gap-plan-review.md">12-gap-plan-review.md</a>。</p>
+    <div class="grid g3">
+      <div class="card"><h4>P0</h4><p>审核规范化的斜杠/软连字符/繁体绕过已修；评论进入审核队列；教学模态补齐；E2E 表述撤回并改为可复现人工清单。</p></div>
+      <div class="card"><h4>P1</h4><p>课程元数据/前置、公开课 sha256 与隔离/版本、计划引擎诚实标签/时长例外、技能与生态审核、评论审核、伙伴细节、PWA 离线壳。</p></div>
+      <div class="card"><h4>验证</h4><p><code>npm test</code> 90/90（10 suites）；<code>tsc --noEmit</code>；<code>docs/e2e/manual-checklist.md</code>；320/390 人工点检。</p></div>
+    </div>
+
+    <div class="footer"><span>星芽学堂 · Verification Report v1.4 · 2026</span><span>90 tests · 10 suites · 人工点检</span></div>
   </main>
 </div>
 </body>

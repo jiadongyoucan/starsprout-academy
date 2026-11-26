@@ -11,7 +11,7 @@
 - **默认安全**：演示账号、沙箱都需显式开启；首次打开会引导创建管理员。
 - **陪伴与奖励**：3 种伙伴、6 种情绪、5 种互动；服务端判分、首通奖励、单元/计划里程碑、金币小铺与衣橱。
 - **有温度的 HMI**：家长首页「照顾自己」小纸条、儿童空间天空/草地/贴纸路径、设备端儿童悄悄话；原创文案每日稳定、可换句不换语气。
-- **测试即验收**：`npm test`，83 个集成测试覆盖认证、隔离、计划、审核、设备、智能体、伙伴奖励与看板。
+- **测试即验收**：`npm test`，90 个集成测试覆盖认证、隔离、计划、审核、设备、智能体、伙伴奖励与看板。
 
 ---
 
@@ -95,9 +95,9 @@ services:
 | 6 | 专家智能体、技能、连接器，发布与获取 | 公开需教师身份 + 审核；家庭私有即时可用；安装 / 卸载；内置与 HTTP 连接器；调用审计 | `test/platform.test.ts` |
 | 7 | 社区广场，发布心得 / 课程，审核审批 | 全部内容先审后发；课程必须关联已发布课时；规范化 + 违禁词 + 导流 / PII 检测；不能自审；举报与隐藏 | `test/community.test.ts` |
 | 8 | 登录注册、权限认证、权限隔离 | scrypt + JWT + 会话吊销；parent/teacher/admin/device 四类主体；household 全链路隔离 | `test/auth.test.ts`、`test/device.test.ts` |
-| 9 | 手机 ↔ Mac / 平板联动 | 6 位一次性配对码（10 分钟）→ 设备令牌 → 推送 → SSE 实时 + 轮询兜底 → 学习 → 进度回传 | 浏览器 E2E + `test/device.test.ts` |
+| 9 | 手机 ↔ Mac / 平板联动 | 6 位一次性配对码（10 分钟）→ 设备令牌 → 推送 → SSE 实时 + 轮询兜底 → 学习 → 进度回传 | 人工验收清单 + `test/device.test.ts` |
 | 10 | 摄像头抓取学习照片供家长查看 | 家长请求 → 设备明确同意 → 拍照 / 相册 → 家长授权校验 → 家庭内鉴权读取 → 可删除 / 30 天清理 | `test/device.test.ts` |
-| 11 | TDD / DDD / 最佳实践 / 简单部署 | 9 个测试套件 83 用例；按限界上下文拆分模块；零依赖部署；Docker + 一键脚本 + 健康检查 | 本文、`docs/architecture.html` |
+| 11 | TDD / DDD / 最佳实践 / 简单部署 | 10 个测试套件 90 用例；按限界上下文拆分模块；零依赖部署；Docker + 一键脚本 + 健康检查 | 本文、`docs/architecture.html` |
 | 12 | 可领养伙伴、多情绪、喂食/玩耍 | 3 种伙伴、6 种情绪、温和离线衰减、免费基础食物、5 种互动、学习联动 | `docs/companion-design.md`、`src/modules/pet.ts` |
 | 13 | 答题/课时奖励、金币兑换、单元/计划仪式 | 服务端判分、首通幂等、单元 +30 / 计划 +100、小铺/衣橱、庆祝与证书 | `test/pet.test.ts`、`docs/product.html#pet` |
 | 14 | 有温度的家长 / 儿童 HMI，儿童更卡通 | 独立儿童空间（天空/草地/路径/贴纸/伙伴）、家长「照顾自己」卡、设备儿童语气、家长密码解锁 | `test/warmth.test.ts`、浏览器 320/390 |
@@ -203,7 +203,7 @@ src/
   modules/               限界上下文（auth、curriculum、plans、agent、ai、sandbox、registry、community、device、analytics、privacy、models）
   routes/                HTTP 接口层
   web/                   index.html、device.html、styles.css、device.css、js/{api,ui,app,device}.js、js/views/*
-test/                    83 个集成测试
+test/                    90 个集成测试
 docs/                    产品 / 架构 / QA HTML 文档、评审记录
 scripts/                 start / smoke / backup / gen-cert
 ```
@@ -216,6 +216,7 @@ scripts/                 start / smoke / backup / gen-cert
 npm test          # NODE_ENV=test node --test test/*.test.ts
 npx tsc --noEmit  # 严格类型检查
 ./scripts/smoke.sh
+npm run e2e       # 可选：本机 Chrome 开 --remote-debugging-port=9223
 ```
 
 | 套件 | 重点 |
@@ -227,8 +228,12 @@ npx tsc --noEmit  # 严格类型检查
 | `agent.test.ts` | 会话隔离、本地排课、记忆、工作区路径穿越、沙箱输出 / 超时、模型权限 |
 | `device.test.ts` | 一次性配对、推送 / 收件箱、计划学习、拍照同意、跨家庭图片隔离、批量删除 |
 | `platform.test.ts` | 专家审核 / 安装、连接器 SSRF 白名单、真实看板、周期报告、模型密钥不回传、管理员重置 |
+| `pet.test.ts` | 领养、情绪、喂食/玩耍、小铺/衣橱、首通奖励、单元/计划幂等、缺席下限、导出/删除 |
+| `warmth.test.ts` | 温度文案稳定/换句不换语气、低分安慰、登录/跨家庭权限、完成鼓励 |
+| `gaps.test.ts` | 审核变体、听说模态、课时元数据、评论审核、计划诚实性、checksum、披风限定 |
+| `seed.test.ts` | 演示双开关与生产种子门禁 |
 
-> 测试使用临时 SQLite + 随机端口 + 真实 HTTP；`NODE_ENV=test` 关闭限流以便批量用例，业务限流在生产启用。83/83 通过，`tsc --noEmit` 通过。
+> 测试使用临时 SQLite + 随机端口 + 真实 HTTP；`NODE_ENV=test` 关闭限流以便批量用例，业务限流在生产启用。90/90 通过，`tsc --noEmit` 通过；`npm run e2e` 为可选 Chrome CDP 验收，不作为 CI 必跑。
 
 ---
 
@@ -319,6 +324,9 @@ npx tsc --noEmit  # 严格类型检查
 - 温度代码评审：`docs/reviews/09-warmth-code-review.md`
 - 温度最终验收：`docs/reviews/10-warmth-final-acceptance.md`
 - 最终验收（PASS）：`docs/reviews/07-final-acceptance.md`
+- Gap 方案评审：`docs/reviews/12-gap-plan-review.md`
+- Gap 代码评审：`docs/reviews/13-gap-code-review.md`
+- Gap 最终验收：`docs/reviews/14-gap-final-acceptance.md`
 
 启动后可直接访问 `http://localhost:8080/docs/`。
 

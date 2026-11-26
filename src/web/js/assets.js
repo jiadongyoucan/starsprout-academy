@@ -92,6 +92,7 @@ export function moodLine(mood, name = '伙伴') {
     hungry: [`${name}的肚子咕咕叫了，喂它一点好吃的吧`, '吃饱了才有力气一起玩'],
     sleepy: [`${name}打了个小哈欠，想睡觉了`, '学完这一小节，就陪它休息吧'],
     sad: [`${name}有点想你，抱抱它吧`, '没关系，慢慢来，我在这里陪你'],
+    missing: [`好久不见，${name}有点想你`, '它没有生气，只是想和你待一会儿'],
   };
   const list = lines[mood] || lines.happy;
   return list[Math.floor(Math.random() * list.length)];

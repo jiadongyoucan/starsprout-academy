@@ -45,7 +45,7 @@ export async function renderPlans(root, ctx) {
               <div>
                 <div class="row" style="gap:8px;margin-bottom:5px">
                   ${badge(plan.status)}
-                  <span class="pill">${plan.source === 'ai' ? 'AI 辅助生成' : '家长创建'}</span>
+                  <span class="pill">${plan.engine === 'ai-assisted' ? 'AI 辅助生成' : plan.engine === 'local-rules' ? '本地规则生成' : '家长创建'}</span>
                   ${plan.engine === 'ai-assisted' ? '' : ''}
                 </div>
                 <h3>${esc(plan.title)}</h3>
@@ -205,7 +205,7 @@ export async function renderPlanDetail(root, ctx) {
     <section class="card" style="background:linear-gradient(135deg,#eef0ff,#fffdf9 65%)">
       <div class="row between top">
         <div>
-          <div class="row" style="gap:8px;margin-bottom:6px">${badge(plan.status)}<span class="pill">${plan.source === 'ai' ? 'AI 辅助' : '家长创建'}</span>
+          <div class="row" style="gap:8px;margin-bottom:6px">${badge(plan.status)}<span class="pill">${plan.engine === 'ai-assisted' ? 'AI 辅助' : plan.engine === 'local-rules' ? '本地规则' : '家长创建'}</span>
             <span class="pill">${esc(data.child.name)} · ${esc(childClassLabel(data.child.class_code))}</span></div>
           <h2 style="font-size:23px;letter-spacing:-.02em">${esc(plan.title)}</h2>
           <p class="muted small" style="margin-top:5px">${esc(plan.goal)}</p>
@@ -261,7 +261,7 @@ export async function renderPlanDetail(root, ctx) {
 
       <div class="stack">
         <section class="card soft">
-          <div class="card-title"><div><h3>计划理由</h3><span class="hint">${plan.engine === 'ai-assisted' ? 'AI + 真实数据' : '家长创建'}</span></div><span class="pill primary">✨</span></div>
+          <div class="card-title"><div><h3>计划理由</h3><span class="hint">${plan.engine === 'ai-assisted' ? 'AI + 真实数据' : plan.engine === 'local-rules' ? '本地规则 + 真实数据' : '家长创建'}</span></div><span class="pill primary">✨</span></div>
           <p style="font-size:12.5px;line-height:1.75">${esc(plan.ai_rationale || '')}</p>
           <p class="tiny muted" style="margin-top:10px">计划会跳过已完成课时，并优先补充进度较少的学科。</p>
         </section>
@@ -307,12 +307,13 @@ export async function renderPlanDetail(root, ctx) {
       const result = await request(`/api/plans/${encodeURIComponent(plan.id)}/items/${encodeURIComponent(itemId)}`, { method: 'PATCH', body: { status } });
       const milestones = result.rewards?.milestones || [];
       if (status === 'done' && milestones.length) {
+        const companion = await request(`/api/pet?childId=${encodeURIComponent(plan.child_id)}`).catch(() => null);
         celebrate({
           title: '整份计划完成啦！',
           subtitle: `「${plan.title}」`,
           emoji: '🏆',
           rewards: result.rewards,
-          petHtml: petSvg('bunny', 'excited', [], 120),
+          petHtml: petSvg(companion?.pet?.species || 'bunny', 'excited', companion?.pet?.equipped || [], 120),
           note: '这是属于你们的坚持证书。',
           onClose: () => renderPlanDetail(root, ctx),
         });

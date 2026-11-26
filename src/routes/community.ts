@@ -1,7 +1,7 @@
 import type { Router } from '../core/http.ts';
 import type { Db } from '../infra/db.ts';
 import {
-  addComment, deletePost, getPost, listFeed, listReportsForAdmin, moderationQueue, myPosts,
+  addComment, commentQueue, deletePost, getPost, listFeed, listReportsForAdmin, moderationQueue, myPosts, reviewComment,
   reportPost, resolveReport, reviewPost, communityStats, submitPost, toggleLike, updatePost,
 } from '../modules/community.ts';
 
@@ -18,6 +18,8 @@ export function registerCommunityRoutes(router: Router, db: Db): void {
 
   router.get('/api/admin/community/queue', 'staff', ctx => moderationQueue(db, ctx.user!, ctx.query.get('status')));
   router.post('/api/admin/community/posts/:id/review', 'staff', ctx => reviewPost(db, ctx.user!, ctx.params.id!, ctx.body));
+  router.get('/api/admin/community/comments', 'staff', ctx => commentQueue(db, ctx.user!, ctx.query.get('status')));
+  router.post('/api/admin/community/comments/:id/review', 'staff', ctx => reviewComment(db, ctx.user!, ctx.params.id!, ctx.body));
   router.get('/api/admin/community/reports', 'staff', ctx => listReportsForAdmin(db));
   router.post('/api/admin/community/reports/:id/resolve', 'staff', ctx => resolveReport(db, ctx.user!, ctx.params.id!, ctx.body));
   router.get('/api/admin/community/stats', 'staff', () => communityStats(db));

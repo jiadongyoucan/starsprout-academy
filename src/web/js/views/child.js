@@ -53,7 +53,7 @@ export async function renderChild(root, ctx) {
     <header class="kid-top">
       <button class="kid-parent-link" id="kidExit" type="button">← 家长空间</button>
       <div class="kid-top-badge">今日小冒险</div>
-      <div class="kid-top-right"><span>🪙 ${petState?.wallet?.coins ?? 0}</span><span>⭐ ${stickers.length}</span></div>
+      <div class="kid-top-right"><span>🪙 ${petState?.wallet?.coins ?? 0}</span><span>🏅 ${stickers.length}</span></div>
     </header>
     <main class="kid-main">
       <section class="kid-hero">
@@ -124,7 +124,7 @@ export async function renderChild(root, ctx) {
   root.querySelector('#kidPlay')?.addEventListener('click', async () => {
     if (!pet) return;
     try {
-      const result = await request('/api/pet/interact', { method: 'POST', body: { childId: child.id, action: 'play' } });
+      const result = await request('/api/pet/interact', { method: 'POST', body: { childId: child.id, action: 'play', itemCode: (petState?.inventory || []).find(item => item.kind === 'toy')?.item_code } });
       toast(result.reaction?.text || '你们玩得很开心', 'success');
       await renderChild(root, ctx);
     } catch (error) { toast(error.message, 'error'); }

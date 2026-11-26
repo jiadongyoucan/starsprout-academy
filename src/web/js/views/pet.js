@@ -43,7 +43,7 @@ export async function renderPet(root, ctx) {
     <div class="pet-page">
       <div class="stack">
         <section class="pet-room">
-          <div class="room-sun"></div><div class="room-plant">🪴</div><div class="room-rug"></div>
+          <div class="room-sun"></div><div class="room-plant">🪴</div><div class="room-rug"></div>${state.inventory.filter(item => item.kind === 'decor').map(item => `<span class="room-decor" title="${esc(item.name)}">${esc(item.emoji)}</span>`).join('')}
           <div class="pet-stage">
             <div class="pet-speech">${esc(speech)}</div>
             <div class="pet-figure" id="petFigure">${petSvg(pet.species, pet.mood, pet.equipped, 220)}</div>
@@ -158,7 +158,7 @@ export async function renderPet(root, ctx) {
   document.querySelectorAll('[data-action]').forEach(button => button.addEventListener('click', () => {
     const action = button.dataset.action;
     if (action === 'feed') return openFeedChooser();
-    void interact(action);
+    void interact(action, action === 'play' ? (state.inventory.find(item => item.kind === 'toy')?.item_code) : undefined);
   }));
   document.querySelectorAll('[data-feed-item]').forEach(button => button.addEventListener('click', () => interact('feed', button.dataset.feedItem)));
   document.querySelectorAll('[data-buy]').forEach(button => button.addEventListener('click', async () => {

@@ -162,9 +162,34 @@ export function addComment(db: Db, user: AuthUser, postId: string, body: any) {
     throw new AppError(422, 'CONTENT_REJECTED', '评论未通过安全审核', { reasons: moderation.reasons.map(r => r.label) });
   }
   const id = newId();
-  db.run('INSERT INTO comments(id, post_id, user_id, content, status, created_at) VALUES(?,?,?,?,?,?)',
-    [id, postId, user.id, content, 'approved', nowIso()]);
-  return { id, status: 'approved' };
+  db.run('INSERT INTO comments(id, post_id, user_id, content, status, moderation_reasons, created_at) VALUES(?,?,?,?,?,?,?)',
+    [id, postId, user.id, content, 'pending', JSON.stringify(moderation.reasons), nowIso()]);
+  return { id, status: 'pending', message: '评论已提交，审核通过后展示' };
+}
+
+export function commentQueue(db: Db, user: AuthUser, statusRaw?: string | null) {
+  if (!['teacher', 'admin'].includes(user.role)) throw forbidden('需要审核权限');
+  const status = statusRaw && ['pending', 'approved', 'rejected', 'hidden'].includes(statusRaw) ? statusRaw : 'pending';
+  return db.all<any>(
+    `SELECT c.id, c.post_id, c.content, c.status, c.created_at, c.moderation_reasons,
+       u.name AS author_name, p.title AS post_title, p.status AS post_status
+     FROM comments c JOIN users u ON u.id = c.user_id JOIN community_posts p ON p.id = c.post_id
+     WHERE c.status = ? ORDER BY c.created_at ASC LIMIT 100`, [status],
+  ).map(row => ({ ...row, moderationReasons: parseJson(row.moderation_reasons, []) }));
+}
+
+export function reviewComment(db: Db, reviewer: AuthUser, commentId: string, body: any) {
+  if (!['teacher', 'admin'].includes(reviewer.role)) throw forbidden('需要审核权限');
+  const comment = db.get<any>('SELECT * FROM comments WHERE id = ?', [commentId]);
+  if (!comment) throw notFound('评论不存在');
+  if (comment.user_id === reviewer.id) throw forbidden('不能审核自己的评论');
+  if (!['pending', 'rejected'].includes(comment.status)) throw validation('当前状态不可审核');
+  const decision = oneOf(body?.decision, ['approve', 'reject', 'hide'] as const, '审核决定');
+  const note = str(body?.note, { optional: true, max: 300, label: '审核意见' });
+  const nextStatus = decision === 'approve' ? 'approved' : decision === 'reject' ? 'rejected' : 'hidden';
+  db.run('UPDATE comments SET status = ?, reviewed_at = ?, reviewed_by = ? WHERE id = ?', [nextStatus, nowIso(), reviewer.id, commentId]);
+  audit(db, { householdId: reviewer.householdId, actorId: reviewer.id, action: `community.comment.${decision}`, entity: 'comment', entityId: commentId, detail: { note } });
+  return { id: commentId, status: nextStatus };
 }
 
 export function myPosts(db: Db, user: AuthUser) {
@@ -234,7 +259,18 @@ export function reviewPost(db: Db, reviewer: AuthUser, postId: string, body: any
 
 export function communityStats(db: Db) {
   const rows = db.all<{ status: string; c: number }>('SELECT status, COUNT(*) AS c FROM community_posts GROUP BY status');
-  return Object.fromEntries(rows.map(r => [r.status, Number(r.c)]));
+  const base = Object.fromEntries(rows.map(r => [r.status, Number(r.c)]));
+  const reviewed = Number(db.get<{ c: number }>('SELECT COUNT(*) AS c FROM post_reviews')?.c || 0);
+  const approvedReviews = Number(db.get<{ c: number }>("SELECT COUNT(*) AS c FROM post_reviews WHERE decision = 'approve'")?.c || 0);
+  const avgHours = Number(db.get<{ h: number }>(
+    `SELECT AVG((julianday(r.created_at) - julianday(p.created_at)) * 24) AS h
+     FROM post_reviews r JOIN community_posts p ON p.id = r.post_id`, [])?.h || 0);
+  return {
+    ...base,
+    pendingComments: Number(db.get<{ c: number }>("SELECT COUNT(*) AS c FROM comments WHERE status = 'pending'")?.c || 0),
+    reviewApprovalRate: reviewed ? Math.round((approvedReviews / reviewed) * 100) : null,
+    reviewAvgHours: reviewed ? Math.round(avgHours * 10) / 10 : null,
+  };
 }
 
 export function listReportsForAdmin(db: Db) {

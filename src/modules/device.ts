@@ -7,7 +7,7 @@ import { forbidden, notFound, validation } from '../core/errors.ts';
 import { newId, nowIso, randomCode, sha256, signToken } from '../core/security.ts';
 import { oneOf, str } from '../core/validate.ts';
 import type { AuthDevice, AuthUser } from '../core/http.ts';
-import { assertChildAccess, audit, consentGranted, getHousehold, listChildren } from './shared.ts';
+import { assertChildAccess, audit, consentGranted, getHousehold, listChildren, trackEvent } from './shared.ts';
 import { awardLessonCompletion } from './pet.ts';
 import { scoreLesson } from './scoring.ts';
 
@@ -222,14 +222,18 @@ export function devicePlan(db: Db, device: AuthDevice, planId: string) {
 export function deviceLesson(db: Db, device: AuthDevice, lessonId: string) {
   const lesson = db.get<any>(
     `SELECT l.*, un.title AS unit_title, f.title AS framework_title, f.subject_code, f.class_code,
-       s.name AS subject_name, s.icon, s.color, c.name AS class_name
+       s.name AS subject_name, s.icon, s.color, c.name AS class_name,
+       ps.name AS source_name, ps.url AS source_url, ps.license AS source_license
      FROM lessons l JOIN units un ON un.id = l.unit_id JOIN frameworks f ON f.id = un.framework_id
      JOIN subjects s ON s.code = f.subject_code JOIN class_levels c ON c.code = f.class_code
+     LEFT JOIN public_sources ps ON ps.code = l.source_code
      WHERE l.id = ? AND l.is_published = 1`, [lessonId],
   );
   if (!lesson) throw notFound('课时不存在');
   return {
-    lesson: { ...lesson, blocks: parse(lesson.blocks, []), tags: parse(lesson.tags, []) },
+    lesson: { ...lesson, blocks: parse(lesson.blocks, []), tags: parse(lesson.tags, []),
+      source: lesson.source_code ? { name: lesson.source_name, url: lesson.source_url, license: lesson.source_license } : null,
+      keyPoints: undefined, hardPoints: undefined, homeExtension: undefined, prereqLessonId: undefined },
     householdId: device.householdId,
   };
 }
@@ -376,6 +380,7 @@ export function completeLessonOnDevice(db: Db, device: AuthDevice, body: any) {
     }
     audit(db, { householdId: device.householdId, actorId: null, action: 'learning.device_complete', entity: 'lesson', entityId: lessonId, detail: { childId, deviceId: device.id, score } });
   });
+  trackEvent(db, { householdId: device.householdId, childId, type: 'lesson_completed', meta: { lessonId, score, deviceId: device.id } });
   const rewards = awardLessonCompletion(db, childId, lessonId, score, matchedPlanItem, dynamic.correct, dynamic.total);
   return { progress: db.get('SELECT * FROM progress WHERE child_id = ? AND lesson_id = ?', [childId, lessonId]), childId, rewards, scoring: dynamic };
 }

@@ -172,14 +172,14 @@ export type BuildLessonInput = {
 };
 
 export function buildBlocks(input: BuildLessonInput): Block[] {
-  const { subject, title, focus, objective, unitTitle, index, pool, resource } = input;
+  const { subject, title, focus, objective, unitTitle, index, pool, resource, level } = input;
   const seed = index + title.length;
   const blocks: Block[] = [];
   const first = focus[0] || title;
 
   blocks.push({
     type: 'intro', title, emoji: emojiFor(first),
-    text: `今天的探索目标：${objective}。我们会在「${unitTitle}」里玩 4 个小环节，大约 20 分钟。`,
+    text: `今天的探索目标：${objective}。我们会在「${unitTitle}」里玩几个小环节，大约 ${lessonMinutes(subject, level)} 分钟。`,
   });
   blocks.push({
     type: 'story', title: '星芽小剧场',
@@ -188,6 +188,17 @@ export function buildBlocks(input: BuildLessonInput): Block[] {
   });
 
   if (subject === 'thinking') {
+    blocks.push({
+      type: 'listen', title: '听一听小线索',
+      text: `今天的探索是「${focus.join('、')}」。先听一遍，再想一想它们有什么共同点。`,
+      translation: '听清楚关键词，不急着回答。',
+    });
+    blocks.push({
+      type: 'speak', title: '说一说你的发现',
+      text: `我发现${focus[0] || '它'}和${focus[1] || '另一个'}有点像，因为……`,
+      translation: '把“为什么”说出来，比只说答案更重要。',
+      tips: '可以先说给伙伴听，再按住麦克风说一遍。',
+    });
     blocks.push({
       type: 'cards', title: '发现卡', items: focus.map(f => ({ label: f, emoji: emojiFor(f), note: '今天的关键词' })),
     });
@@ -234,6 +245,17 @@ export function buildBlocks(input: BuildLessonInput): Block[] {
       type: 'quiz', title: 'Quick Quiz', questions: englishQuiz(focus, pool, seed),
     });
   } else if (subject === 'hanzi') {
+    blocks.push({
+      type: 'listen', title: '听字音',
+      text: `请听：${focus.join('、')}。听完后，跟着读一遍。`,
+      translation: '先听清楚声调，再看字形。',
+    });
+    blocks.push({
+      type: 'speak', title: '读一读',
+      text: `我认识${focus.filter(t => /[\u4e00-\u9fa5]/.test(t)).join('、') || '这个字'}。`,
+      translation: '读出声音，也可以只做口型。',
+      tips: '读错没关系，再听一遍。',
+    });
     const char = focus.find(t => /^[\u4e00-\u9fa5]$/.test(t)) || '日';
     const gloss = HANZI_GLOSSARY[char] || '';
     const [pinyin] = gloss.split('|');
@@ -250,6 +272,17 @@ export function buildBlocks(input: BuildLessonInput): Block[] {
     });
     blocks.push({ type: 'quiz', title: '识字小关卡', questions: hanziQuiz(focus, pool, seed) });
   } else if (subject === 'piano') {
+    blocks.push({
+      type: 'listen', title: '听一听旋律',
+      text: `先听今天的${focus.join('、')}，再跟着拍手。`,
+      translation: '听清快慢，不急着弹。',
+    });
+    blocks.push({
+      type: 'speak', title: '唱一唱',
+      text: `请跟着唱：${focus.join('、')}。`,
+      translation: '唱出来会更容易记住旋律。',
+      tips: '小声唱也可以，舒服最重要。',
+    });
     const notes = focus.map(f => PIANO_NOTES[f]).filter(Boolean).slice(0, 6);
     const sequence = notes.length >= 2
       ? [...notes, ...notes.slice(0, 2)]
@@ -273,6 +306,17 @@ export function buildBlocks(input: BuildLessonInput): Block[] {
       )],
     });
   } else {
+    blocks.push({
+      type: 'listen', title: '听老师示范',
+      text: `今天的工作是「${focus.join('、')}」。先听清楚步骤，再看老师慢慢做一遍。`,
+      translation: '听清楚顺序：先做什么，再做什么。',
+    });
+    blocks.push({
+      type: 'speak', title: '说出你的步骤',
+      text: `我先把${focus[0] || '材料'}准备好，然后……`,
+      translation: '用自己的话说出下一步，成人只示范不代劳。',
+      tips: '说错也没关系，可以边做边改。',
+    });
     blocks.push({
       type: 'cards', title: '工作展示', items: focus.map(f => ({ label: f, emoji: emojiFor(f), note: '观察并说出你的发现' })),
     });

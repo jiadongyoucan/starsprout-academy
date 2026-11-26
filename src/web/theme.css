@@ -383,7 +383,7 @@ body.kid-mode .bg-scene,body.kid-mode .sidebar,body.kid-mode .topbar,body.kid-mo
 body.kid-mode .shell{display:block;grid-template-columns:1fr;min-height:100vh}
 body.kid-mode .view{padding:0;max-width:none;min-height:100vh}
 body.kid-mode .main{min-height:100vh}
-.kid-world{position:relative;min-height:100vh;overflow:hidden;background:
+.kid-world{position:relative;min-height:100vh;overflow:hidden;font-size:16px;background:
   linear-gradient(180deg,#a9ddff 0%,#c8ecff 34%,#e6f8ff 55%,#d8f3cf 56%,#b8e6a8 100%);
   color:#283146;font-family:"Yuanti SC","PingFang SC","Hiragino Sans GB",sans-serif}
 .kid-sky{position:absolute;inset:0;pointer-events:none;overflow:hidden}
@@ -396,7 +396,7 @@ body.kid-mode .main{min-height:100vh}
 .c2::before{width:48px;height:48px;left:18px;top:-23px}.c2::after{width:34px;height:34px;right:16px;top:-16px}
 .c3{width:90px;height:24px;left:78%;top:27%;opacity:.6;animation:cloudDrift 42s linear infinite}
 .c3::before{width:38px;height:38px;left:15px;top:-18px}.c3::after{width:28px;height:28px;right:12px;top:-13px}
-.rainbow{position:absolute;left:50%;top:15%;width:320px;height:160px;transform:translateX(-50%);border-radius:320px 320px 0 0;border:16px solid rgba(255,255,255,.0);border-top-color:rgba(255,151,151,.38);box-shadow:0 -14px 0 rgba(255,214,130,.28),0 -28px 0 rgba(164,222,160,.22),0 -42px 0 rgba(164,198,255,.22);opacity:.8;display:none}
+.rainbow{position:absolute;left:50%;top:15%;width:320px;height:160px;transform:translateX(-50%);border-radius:320px 320px 0 0;border:16px solid rgba(255,255,255,.0);border-top-color:rgba(255,151,151,.38);box-shadow:0 -14px 0 rgba(255,214,130,.28),0 -28px 0 rgba(164,222,160,.22),0 -42px 0 rgba(164,198,255,.22);opacity:.8}
 .hill{position:absolute;bottom:-12%;border-radius:50% 50% 0 0;background:#8ed17a}
 .h1{width:70%;height:30%;left:-10%;background:#9bda86;opacity:.9}
 .h2{width:70%;height:36%;right:-12%;background:#79c76a;opacity:.95}
@@ -422,13 +422,13 @@ body.kid-mode .main{min-height:100vh}
 .kid-soft-btn{display:inline-flex;align-items:center;justify-content:center;border:2px solid #4d7997;color:#345a73;background:rgba(255,255,255,.72);border-radius:16px;padding:12px 16px;font-size:14px;font-weight:800;box-shadow:0 4px 0 rgba(77,121,151,.5);cursor:pointer}
 .kid-soft-btn:hover{transform:translateY(-1px);text-decoration:none;color:#23465c}
 .kid-pet-card{position:relative;background:rgba(255,255,255,.72);border:3px solid #fff;border-radius:30px;padding:14px 16px 16px;box-shadow:0 12px 30px rgba(43,91,125,.18);text-align:center;transform:rotate(.8deg)}
-.kid-speech{position:relative;background:#fffdf2;border:2px dashed #e5c77c;border-radius:16px;padding:9px 11px;font-size:12.5px;line-height:1.6;color:#5c513c;margin:0 auto 2px;max-width:280px}
+.kid-speech{position:relative;background:#fffdf2;border:2px dashed #e5c77c;border-radius:16px;padding:10px 12px;font-size:15px;line-height:1.7;color:#5c513c;margin:0 auto 2px;max-width:280px}
 .kid-speech::after{content:"";position:absolute;left:50%;bottom:-7px;width:12px;height:12px;background:#fffdf2;border-right:2px dashed #e5c77c;border-bottom:2px dashed #e5c77c;transform:translateX(-50%) rotate(45deg)}
 .kid-pet-stage{height:190px;display:grid;place-items:center}
 .kid-pet-stage .pet-svg{width:190px;height:190px;animation:petBreathe 3.8s ease-in-out infinite;filter:drop-shadow(0 10px 10px rgba(40,70,90,.15))}
 .kid-pet-name{font-size:14px;font-weight:900;color:#3b4e60;margin-top:-2px}
 .kid-pet-actions{display:flex;gap:7px;justify-content:center;margin-top:9px;flex-wrap:wrap}
-.kid-chip{border:2px solid #8bb1c8;background:#fff;border-radius:999px;padding:7px 11px;font-size:11px;font-weight:800;color:#3f6b86;cursor:pointer}
+.kid-chip{border:2px solid #8bb1c8;background:#fff;border-radius:999px;padding:9px 13px;font-size:13px;font-weight:800;color:#3f6b86;cursor:pointer}
 .kid-chip:hover{background:#f2fbff;text-decoration:none}
 .kid-map-card{background:rgba(255,255,255,.86);border:3px solid #fff;border-radius:28px;padding:20px;box-shadow:0 14px 34px rgba(43,91,125,.16);margin-top:12px;transform:rotate(-.2deg)}
 .kid-map-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:13px}
@@ -457,13 +457,13 @@ body.kid-mode .main{min-height:100vh}
 .kid-sticker{width:84px;min-height:84px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:7px;background:#fff6d8;border:2.5px dashed #e6bf5b;transform:rotate(-3deg);box-shadow:0 4px 0 rgba(180,140,60,.18)}
 .kid-sticker:nth-child(even){transform:rotate(3deg);background:#eaf7dd;border-color:#9ac784}
 .kid-sticker span{font-size:26px}
-.kid-sticker small{font-size:8.5px;line-height:1.25;color:#6f5d42;margin-top:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.kid-sticker small{font-size:11px;line-height:1.25;color:#6f5d42;margin-top:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .kid-sticker-empty p{font-size:12px;color:#7b6b56;line-height:1.7}
 .kid-empty-stickers{display:flex;gap:8px;margin-top:8px}
 .kid-empty-stickers span{width:42px;height:42px;border:2px dashed #c9b58f;border-radius:50%;display:grid;place-items:center;color:#b8a077;font-size:20px}
 .kid-empty-map{text-align:center;padding:14px;color:#6f5e49}
 .kid-empty-map span{font-size:38px}.kid-empty-map p{font-size:12px;line-height:1.7;margin:4px 0 10px}
-.kid-footer{text-align:center;font-size:11px;color:#43683f;margin-top:22px;font-weight:700}
+.kid-footer{text-align:center;font-size:13px;color:#43683f;margin-top:22px;font-weight:700}
 .kid-error{margin:60px auto;max-width:420px;text-align:center;background:#fff;border-radius:20px;padding:24px;font-size:14px;color:#5c4b37}
 .kid-error .btn{margin-top:12px}
 @keyframes kidFloat{50%{transform:translateY(-7px)}}
@@ -497,11 +497,11 @@ body.kid-mode .learn-head h1,body.kid-mode .block h3{font-family:var(--font-disp
 body.kid-mode .quiz-option{min-height:52px;font-size:15px;border-width:2px}
 body.kid-mode .learn-card{min-height:52px}
 body.kid-mode .piano-key{min-height:120px}
-.kid-parent-link{min-height:44px;display:inline-flex;align-items:center;font-size:13px}
-.kid-chip{min-height:44px;display:inline-flex;align-items:center;justify-content:center;font-size:12px}
+.kid-parent-link{min-height:48px;display:inline-flex;align-items:center;font-size:14px}
+.kid-chip{min-height:48px;display:inline-flex;align-items:center;justify-content:center;font-size:13px}
 .kid-hello p{font-size:16px}
 .kid-stop-copy small{font-size:12px;color:#796a54}
-.kid-sticker small{font-size:9.5px}
+.kid-sticker small{font-size:11px}
 .warm-refresh{min-height:36px;padding:6px 4px}
 @media(prefers-reduced-motion:reduce){
   .kid-sun,.cloud,.kid-pet-stage .pet-svg,.kid-sticker{animation:none!important}
@@ -516,3 +516,11 @@ body.kid-mode .story-text{font-size:16px}
 body.kid-mode .learn-foot .btn{min-height:48px;font-size:15px}
 .stat-strip{grid-template-columns:repeat(3,minmax(0,1fr))}
 @media(max-width:900px){.stat-strip{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.lesson-meta-card{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:0 0 14px;padding:13px 15px;border-radius:16px;background:linear-gradient(135deg,#fff8e6,#fffdf6);border:1px dashed rgba(180,140,75,.3)}
+.lesson-meta-card span{font-size:10px;letter-spacing:.08em;color:#9a7b45;font-weight:800}
+.lesson-meta-card p{font-size:11.5px;line-height:1.6;color:#5e5141;margin:4px 0 0}
+@media(max-width:700px){.lesson-meta-card{grid-template-columns:1fr}}
+.room-decor{position:absolute;z-index:1;font-size:30px;filter:drop-shadow(0 4px 6px rgba(90,60,20,.15))}
+.room-decor:nth-of-type(1){right:16%;bottom:22%}
+.room-decor:nth-of-type(2){left:12%;bottom:26%;font-size:24px}
+.room-decor:nth-of-type(3){right:30%;top:34%;font-size:22px}

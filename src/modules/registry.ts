@@ -6,6 +6,7 @@ import { AppError, forbidden, notFound, upstream, validation } from '../core/err
 import { newId, nowIso, openSecret, maskSecret, sealSecret } from '../core/security.ts';
 import { int, jsonArray, jsonObject, oneOf, str } from '../core/validate.ts';
 import type { AuthUser } from '../core/http.ts';
+import { moderateContent } from './moderation.ts';
 import { audit, listChildren, subjectMap } from './shared.ts';
 import { dashboard } from './analytics.ts';
 import { searchLessons } from './curriculum.ts';
@@ -88,6 +89,8 @@ export function createExpert(db: Db, user: AuthUser, body: any, ip?: string) {
   if (visibility === 'public' && !['teacher', 'admin'].includes(user.role)) {
     throw forbidden('公开专家发布需要教师或管理员身份；你也可以创建仅家庭可用的专家');
   }
+  const moderation = moderateContent(`${name}\n${title}\n${description}\n${systemPrompt}`, { onTopicHint: true });
+  if (moderation.blocked) throw new AppError(422, 'CONTENT_REJECTED', '公开内容未通过安全审核，请修改后再提交', { reasons: moderation.reasons.map(r => r.label) });
   const id = newId();
   const status = publicStatus(visibility);
   const now = nowIso();
@@ -122,6 +125,8 @@ export function createSkill(db: Db, user: AuthUser, body: any, ip?: string) {
   if (visibility === 'public' && !['teacher', 'admin'].includes(user.role)) {
     throw forbidden('公开技能发布需要教师或管理员身份');
   }
+  const moderation = moderateContent(`${name}\n${description}\n${JSON.stringify(definition)}`, { onTopicHint: true });
+  if (moderation.blocked) throw new AppError(422, 'CONTENT_REJECTED', '技能内容未通过安全审核', { reasons: moderation.reasons.map(r => r.label) });
   const id = newId();
   const status = publicStatus(visibility);
   db.run(
@@ -184,6 +189,8 @@ export function createConnector(db: Db, user: AuthUser, body: any, ip?: string) 
   if (visibility === 'public' && !['teacher', 'admin'].includes(user.role)) {
     throw forbidden('公开连接器需要教师或管理员身份');
   }
+  const moderation = moderateContent(`${name}\n${description}\n${JSON.stringify(tools)}`, { onTopicHint: true });
+  if (moderation.blocked) throw new AppError(422, 'CONTENT_REJECTED', '连接器说明未通过安全审核', { reasons: moderation.reasons.map(r => r.label) });
   const id = newId();
   const status = visibility === 'public' ? 'pending_review' : 'published';
   db.run(

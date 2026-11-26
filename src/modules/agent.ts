@@ -67,7 +67,7 @@ function buildSystemPrompt(db: Db, user: AuthUser, session: SessionRow, userText
   if (session.expert_id) {
     try {
       const { expert, skills } = expertFor(db, user, session.expert_id);
-      extra = `\n\n当前专家人格：${expert.name}（${expert.title}）\n${expert.system_prompt}\n专家技能：${skills.map(s => s.name).join('、') || '无'}`;
+      extra = `\n\n当前专家人格：${expert.name}（${expert.title}）\n${expert.system_prompt}\n专家技能（请按定义执行）：${skills.map(s => `\n- ${s.name}：${JSON.stringify(s.definition).slice(0, 1200)}`).join('') || '无'}`;
     } catch { extra = ''; }
   }
   return `${SYSTEM_BASE}
@@ -167,7 +167,8 @@ async function executeTool(db: Db, user: AuthUser, session: SessionRow, name: st
   switch (name) {
     case 'search_curriculum': {
       const query = str(args.query, { label: '关键词', min: 1, max: 40 });
-      return { lessons: searchLessons(db, query, 8) };
+      const classCode = args.classCode ? oneOf(args.classCode, ['nursery', 'junior', 'middle', 'senior'] as const, '学段') : undefined;
+      return { lessons: searchLessons(db, query, 8, classCode) };
     }
     case 'create_plan': {
       const childId = assertChildAccess(db, user, str(args.childId, { label: '孩子', max: 64 })).id;
@@ -232,12 +233,14 @@ async function executeTool(db: Db, user: AuthUser, session: SessionRow, name: st
       const path = sanitizePath(str(args.path, { label: '路径', min: 1, max: 120 }));
       const content = str(args.content, { label: '内容', min: 1, max: 40_000 });
       const saved = saveFile(db, user.householdId, session.id, path, content);
+      audit(db, { householdId: user.householdId, actorId: user.id, action: 'agent.file.save', entity: 'agent_file', entityId: `${session.id}:${saved.path}`, detail: { version: saved.version } });
       return { path: saved.path, version: saved.version };
     }
     case 'remember': {
       const key = str(args.key, { label: '记忆标题', min: 1, max: 40 });
       const value = str(args.value, { label: '记忆内容', min: 1, max: 800 });
       saveMemory(db, user.householdId, session.id, key, value);
+      audit(db, { householdId: user.householdId, actorId: user.id, action: 'agent.memory.save', entity: 'agent_memory', entityId: key });
       return { saved: true, key };
     }
     case 'submit_community_post': {
@@ -252,6 +255,7 @@ async function executeTool(db: Db, user: AuthUser, session: SessionRow, name: st
       const result = await runSandbox(code);
       db.run('INSERT INTO sandbox_executions(id, session_id, household_id, code, output, status, duration_ms, created_at) VALUES(?,?,?,?,?,?,?,?)',
         [newId(), session.id, user.householdId, code, result.output, result.status, result.durationMs, nowIso()]);
+      audit(db, { householdId: user.householdId, actorId: user.id, action: 'agent.sandbox.run', entity: 'sandbox', entityId: session.id, detail: { status: result.status, durationMs: result.durationMs } });
       return result;
     }
     default:

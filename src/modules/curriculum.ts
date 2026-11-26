@@ -4,7 +4,7 @@ import { nowIso } from '../core/security.ts';
 import { int, oneOf, optionalIsoDate, str } from '../core/validate.ts';
 import type { AuthUser } from '../core/http.ts';
 import { approvePack, syncPublicCourses } from '../infra/public-courses.ts';
-import { assertChildAccess, audit, listChildren, resolveChildId, subjectMap } from './shared.ts';
+import { assertChildAccess, audit, listChildren, resolveChildId, subjectMap, trackEvent } from './shared.ts';
 import { awardLessonCompletion } from './pet.ts';
 import { scoreLesson } from './scoring.ts';
 
@@ -62,7 +62,7 @@ export function frameworkDetail(db: Db, user: AuthUser, frameworkId: string, chi
     [frameworkId],
   );
   const lessons = db.all<any>(
-    `SELECT l.id, l.unit_id, l.code, l.title, l.seq, l.minutes, l.objective, l.tags, l.source_code, l.version, l.is_published,
+    `SELECT l.id, l.unit_id, l.code, l.title, l.seq, l.minutes, l.objective, l.tags, l.key_points, l.hard_points, l.home_extension, l.prereq_lesson_id, l.source_code, l.version, l.is_published,
        p.status AS progress_status, p.score, p.completed_at
      FROM lessons l JOIN units un ON un.id = l.unit_id
      LEFT JOIN progress p ON p.lesson_id = l.id AND p.child_id = ?
@@ -118,6 +118,8 @@ export function getLesson(db: Db, user: AuthUser, lessonId: string, childIdRaw?:
     lesson: {
       id: lesson.id, code: lesson.code, title: lesson.title, minutes: lesson.minutes, objective: lesson.objective,
       blocks: safeParse(lesson.blocks, []), tags: safeParse(lesson.tags, []), version: lesson.version,
+      keyPoints: lesson.key_points || '', hardPoints: lesson.hard_points || '', homeExtension: lesson.home_extension || '',
+      prereqLessonId: lesson.prereq_lesson_id || null,
       source: lesson.source_code ? { code: lesson.source_code, name: lesson.source_name, url: lesson.source_url, license: lesson.source_license } : null,
       isForChild: lesson.class_code === db.get<{ class_code: string }>('SELECT class_code FROM children WHERE id = ?', [childId])?.class_code,
     },
@@ -173,6 +175,7 @@ export function saveProgress(db: Db, user: AuthUser, lessonId: string, body: any
     }
     audit(db, { householdId: user.householdId, actorId: user.id, action: 'learning.progress', entity: 'lesson', entityId: lessonId, detail: { childId, status, score } });
   });
+  if (status === 'completed') trackEvent(db, { householdId: user.householdId, childId, userId: user.id, type: 'lesson_completed', meta: { lessonId, score } });
   const rewards = status === 'completed'
     ? awardLessonCompletion(db, childId, lessonId, score ?? 80, matchedPlanItem, dynamic.correct, dynamic.total)
     : null;
@@ -184,15 +187,16 @@ export function saveProgress(db: Db, user: AuthUser, lessonId: string, body: any
   };
 }
 
-export function searchLessons(db: Db, query: string, limit = 8) {
+export function searchLessons(db: Db, query: string, limit = 8, classCode?: string) {
   const q = `%${query.trim()}%`;
+  const classFilter = classCode ? ' AND f.class_code = ?' : '';
   return db.all<any>(
     `SELECT l.id, l.title, l.minutes, l.objective, l.tags, f.subject_code, f.class_code, s.name AS subject_name, c.name AS class_name
      FROM lessons l JOIN units un ON un.id = l.unit_id JOIN frameworks f ON f.id = un.framework_id
      JOIN subjects s ON s.code = f.subject_code JOIN class_levels c ON c.code = f.class_code
-     WHERE l.is_published = 1 AND (l.title LIKE ? OR l.tags LIKE ? OR l.objective LIKE ?)
+     WHERE l.is_published = 1 AND (l.title LIKE ? OR l.tags LIKE ? OR l.objective LIKE ?)${classFilter}
      ORDER BY f.class_code, f.subject_code LIMIT ?`,
-    [q, q, q, Math.min(limit, 20)],
+    classCode ? [q, q, q, classCode, Math.min(limit, 20)] : [q, q, q, Math.min(limit, 20)],
   ).map(row => ({ ...row, tags: safeParse(row.tags, []) }));
 }
 
