@@ -148,12 +148,12 @@ describe('AI 辅助计划、提醒与纠偏', () => {
     const foreign = await api(ctx.base, 'POST', '/api/plans/generate', {
       token: user.token, body: { childId: otherChild.id, weeks: 1, daysPerWeek: 3, minutesPerDay: 20 },
     });
-    assert.equal(foreign.status, 403);
+    assert.equal(foreign.status, 404);
     const plan = await api(ctx.base, 'POST', '/api/plans/manual', {
       token: user.token, body: { childId: child.id, weeks: 1, daysPerWeek: 2, minutesPerDay: 20 },
     });
     const peek = await api(ctx.base, 'GET', `/api/plans/${plan.data.plan.plan.id}`, { token: other.token });
-    assert.equal(peek.status, 403);
+    assert.equal(peek.status, 404);
   });
 
   test('未来提醒接口不包含已发送的提醒', async () => {

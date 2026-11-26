@@ -53,8 +53,8 @@ export function assertHousehold(db: Db, user: AuthUser, householdId: string): vo
 
 export function assertChildAccess(db: Db, user: AuthUser, childId: string): ChildRow {
   const child = db.get<ChildRow>('SELECT * FROM children WHERE id = ?', [childId]);
-  if (!child) throw notFound('孩子档案不存在');
-  assertHousehold(db, user, child.household_id);
+  // 统一 404：不向其他家庭泄露某个孩子 ID 是否存在
+  if (!child || child.household_id !== user.householdId) throw notFound('孩子档案不存在');
   return child;
 }
 
@@ -67,8 +67,7 @@ export function resolveChildId(db: Db, user: AuthUser, requested?: unknown): str
 
 export function assertPlanAccess(db: Db, user: AuthUser, planId: string): Record<string, any> {
   const plan = db.get<any>('SELECT * FROM plans WHERE id = ?', [planId]);
-  if (!plan) throw notFound('学习计划不存在');
-  assertHousehold(db, user, plan.household_id);
+  if (!plan || plan.household_id !== user.householdId) throw notFound('学习计划不存在');
   return plan;
 }
 

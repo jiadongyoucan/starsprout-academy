@@ -41,7 +41,7 @@ describe('温度文案：稳定、可换、场景相关且不越权', () => {
     assert.equal(anon.status, 401);
     const stranger = await newUser(ctx.base);
     const cross = await api(ctx.base, 'GET', `/api/warmth?audience=parent&context=home&childId=${child.id}`, { token: stranger.token });
-    assert.equal(cross.status, 403);
+    assert.equal(cross.status, 404);
   });
 
   test('活动不足时不说幽默段子，家长密码可用于解锁儿童空间', async () => {

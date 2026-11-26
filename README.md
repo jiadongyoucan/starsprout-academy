@@ -90,7 +90,7 @@ services:
 | 1 | 四学段 × 五模块，分级课程，互动听说读写 | 192 个已发布课时；每个课时 6–8 个 block：故事 / 词卡 / 听 / 说 / 描红 / 钢琴 / 节奏 / 配对 / 测验；`src/infra/curriculum-data.ts`、`lesson-blocks.ts` | `test/curriculum.test.ts` |
 | 2 | 对接优质公开课，持续更新，体系化不零散 | 4 个公开来源（OER Commons、StoryWeaver、国家智慧教育平台、MuseScore），带 license/attribution/版本；同步 → 隔离区 → 管理员审核 → 原子替换 | 课程页「公开课程来源」；Admin 同步；`test/curriculum.test.ts` |
 | 3 | Plan 模块 + AI 辅助 + 纠正 / 提醒 | AI 读取真实进度排课；逾期检测、一键顺延 / 跳过、调整留痕、到期提醒；`src/modules/plans.ts` | `test/plans.test.ts` |
-| 4 | 完整智能体（会话 / 记忆 / 沙箱 / 模型 / 工作区） | 会话、消息、长期记忆、工作区文件版本、模型配置（AES 加密）、权限隔离子进程沙箱、8 个工具、OpenAI-compatible 适配 + 本地引擎 | `test/agent.test.ts`、`test/platform.test.ts` |
+| 4 | 完整智能体（会话 / 记忆 / 沙箱 / 模型 / 工作区） | 会话、消息、长期记忆、工作区文件版本、模型配置（AES 加密）、权限隔离子进程沙箱、9 个工具、OpenAI-compatible 适配 + 本地引擎 | `test/agent.test.ts`、`test/platform.test.ts` |
 | 5 | 综合分析 Dashboard + 日 / 周 / 月汇报 | 真实聚合：完成数、分钟、连续天数、学科均衡、计划坚持度、趋势；本地 / LLM 报告并落库 | `test/platform.test.ts`、看板截图 |
 | 6 | 专家智能体、技能、连接器，发布与获取 | 公开需教师身份 + 审核；家庭私有即时可用；安装 / 卸载；内置与 HTTP 连接器；调用审计 | `test/platform.test.ts` |
 | 7 | 社区广场，发布心得 / 课程，审核审批 | 全部内容先审后发；课程必须关联已发布课时；规范化 + 违禁词 + 导流 / PII 检测；不能自审；举报与隐藏 | `test/community.test.ts` |
@@ -217,6 +217,7 @@ npm test          # NODE_ENV=test node --test test/*.test.ts
 npx tsc --noEmit  # 严格类型检查
 ./scripts/smoke.sh
 npm run e2e       # 可选：本机 Chrome 开 --remote-debugging-port=9223
+npm run a11y      # 可选：Accessibility Tree 命名审计
 ```
 
 | 套件 | 重点 |
@@ -329,6 +330,7 @@ npm run e2e       # 可选：本机 Chrome 开 --remote-debugging-port=9223
 - Gap 最终验收：`docs/reviews/14-gap-final-acceptance.md`
 - Family UX 审查（common-family-ux）：`docs/reviews/15-family-ux-audit.md`
 - Family UX 独立复核：`docs/reviews/16-family-ux-review.md`
+- 残余差距关闭：`docs/reviews/17-residual-closure.md`
 - 本地技能来源与说明：`skills/README.md`
 
 启动后可直接访问 `http://localhost:8080/docs/`。

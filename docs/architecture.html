@@ -293,7 +293,7 @@
         <tr><td>照片上传</td><td>—</td><td>—</td><td>—</td><td>✓（需 camera 授权 + consent）</td></tr>
       </tbody>
     </table>
-    <p><strong>隔离实现：</strong><code>assertHousehold</code>、<code>assertChildAccess</code>、<code>assertPlanAccess</code>、<code>sessionRow</code> 等函数在每个用例开头执行；跨家庭读取统一 403/404，不返回资源是否存在。审计记录 actor / action / entity / ip。</p>
+    <p><strong>隔离实现：</strong><code>assertHousehold</code>、<code>assertChildAccess</code>、<code>assertPlanAccess</code>、<code>sessionRow</code> 等函数在每个用例开头执行；跨家庭读取统一 404，不返回资源是否存在。审计记录 actor / action / entity / ip。</p>
 
     <h2 id="ai"><span class="num">10 / AI</span>AI 子系统</h2>
     <div class="grid g2">
@@ -401,7 +401,7 @@
     <table>
       <thead><tr><th>威胁</th><th>场景</th><th>缓解</th></tr></thead>
       <tbody>
-        <tr><td>越权访问</td><td>改 childId / planId / sessionId 读取他人数据</td><td>household 守卫 + 资源归属校验 + 403/404；测试覆盖跨家庭</td></tr>
+        <tr><td>越权访问</td><td>改 childId / planId / sessionId 读取他人数据</td><td>household 守卫 + 资源归属校验 + 404；测试覆盖跨家庭</td></tr>
         <tr><td>会话劫持</td><td>旧 token 在改密 / 停用后继续使用</td><td>jti 会话表 + revoked_at；登录只接受未吊销会话</td></tr>
         <tr><td>设备滥用</td><td>令牌泄露 / 设备丢失</td><td>家长撤销 → token_hash 清空；设备仅限设备端点</td></tr>
         <tr><td>XSS</td><td>社区内容 / 专家简介注入脚本</td><td>前端统一 esc / textContent；CSP 禁止内联脚本；Markdown 只允许粗体与代码</td></tr>
@@ -421,13 +421,13 @@
     <div class="grid g3">
       <div class="card"><h4>90 / 90 通过</h4><p>10 个测试套件（含 pet/warmth/seed）；真实 HTTP + 临时 SQLite + 随机端口；并行执行约 2s。</p></div>
       <div class="card"><h4>严格类型</h4><p><code>tsc --noEmit</code> 开启 strict + erasableSyntaxOnly；CI 可同时跑测试与类型检查。</p></div>
-      <div class="card"><h4>浏览器验收</h4><p><code>npm run e2e</code> 可选运行 Chrome CDP 的 15 项断言（家长首页、温度卡、儿童空间、390/320 无溢出、无异常）；另配 <a href="/docs/e2e/manual-checklist.md">人工清单</a>。E2E 依赖本机 Chrome，不作为 CI 必跑。</p></div>
+      <div class="card"><h4>浏览器验收</h4><p><code>npm run e2e</code> 可选运行 Chrome CDP 的 19 项断言（家长首页、温度卡、儿童空间、390/320 无溢出、无异常）；另配 <a href="/docs/e2e/manual-checklist.md">人工清单</a>。E2E 依赖本机 Chrome，不作为 CI 必跑。</p></div>
     </div>
     <table>
       <thead><tr><th>层</th><th>策略</th><th>例子</th></tr></thead>
       <tbody>
         <tr><td>领域规则</td><td>通过服务 API 断言结果</td><td>纠偏只移动逾期项；自审 403；SSRF 403；沙箱 timeout</td></tr>
-        <tr><td>HTTP 契约</td><td>真实 fetch + 状态码 + envelope</td><td>401 / 403 / 404 / 422 / 429；跨家庭不泄露</td></tr>
+        <tr><td>HTTP 契约</td><td>真实 fetch + 状态码 + envelope</td><td>401 / 403 / 404 / 422 / 429；跨家庭统一 404</td></tr>
         <tr><td>数据不变量</td><td>直接查 DB 断言</td><td>进度唯一、计划项状态、审计记录、待审队列</td></tr>
         <tr><td>前端</td><td>人工清单验证</td><td>响应式、无 JS 异常、图片鉴权、移动端</td></tr>
         <tr><td>部署</td><td>smoke.sh</td><td>健康 → 登录 → 课程 → 生成计划 → 配对 → 收件箱</td></tr>
@@ -505,6 +505,7 @@ cp /backups/2026-11-25/starsprout.db data/</code></pre>
         <tr><td>G13 Gap 验收</td><td><strong>PASS</strong>；处置台账 + 全量回归 + 文档一致性</td><td><a href="/docs/reviews/14-gap-final-acceptance.md">14-gap-final-acceptance.md</a></td></tr>
         <tr><td>G14 Family UX</td><td>common-family-ux 六轴：受众/可访问性/安全/舒适/一致性/人味</td><td><a href="/docs/reviews/15-family-ux-audit.md">15-family-ux-audit.md</a></td></tr>
         <tr><td>G15 Family UX 复核</td><td>设备家长密码门、静音、交还卡、本地化</td><td><a href="/docs/reviews/16-family-ux-review.md">16-family-ux-review.md</a></td></tr>
+        <tr><td>G16 残余差距</td><td><strong>PASS</strong>；14px、AX/ VoiceOver 清单、平板 rail、404、连接器</td><td><a href="/docs/reviews/17-residual-closure.md">17-residual-closure.md</a></td></tr>
       </tbody>
     </table>
     <div class="callout mint"><strong>工程结论：</strong>在“零依赖 + 单机 + 低 token 成本”的约束下，用清晰的限界上下文、可验证的测试与显式的安全取舍，交付了完整可运行的产品，而不是演示页面。</div>
@@ -514,7 +515,7 @@ cp /backups/2026-11-25/starsprout.db data/</code></pre>
       <div class="card"><h4>迁移 v6</h4><p>lessons 增加 key_points / hard_points / home_extension / prereq_lesson_id；comments 增加审核字段；lesson_versions 保存待审版本；product_events 采集 5 类事件；shop_items 增加 available。</p></div>
       <div class="card"><h4>治理</h4><p>moderation 删除所有 Unicode 格式字符并压缩所有标点/符号；评论默认 pending，管理员评论队列可 approve/reject/hide；审核通过率与平均时长进入后台。</p></div>
       <div class="card"><h4>课程管线</h4><p>公开包使用真实 sha256；生产非 demo/test 首次导入 quarantine；新版本写入 lesson_versions，旧课时保持在线，approve 原子切换；设备课时返回来源/许可证。</p></div>
-      <div class="card"><h4>运行时与 PWA</h4><p>技能 definition 注入系统提示；私有专家可选；连接器保持手动调用（不进入儿童模型工具表）。SW 预缓存全部视图/资产/device，设备端注册；PNG 图标。</p></div>
+      <div class="card"><h4>运行时与 PWA</h4><p>技能 definition 注入系统提示；私有专家可选；连接器通过 <code>invoke_connector</code> 工具进入家长会话模型工具表（儿童端不注入；SSRF/密钥/审计仍生效）。SW 预缓存全部视图/资产/device，设备端注册；PNG 图标。</p></div>
     </div>
     <p>完整逐项处置：<a href="/docs/gap-disposition.md">gap-disposition.md</a>。浏览器证据改为 <a href="/docs/e2e/manual-checklist.md">人工验收清单</a>；不宣称自动化 E2E。</p>
 

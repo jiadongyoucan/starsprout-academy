@@ -122,7 +122,7 @@ describe('多端联动：配对、推送、学习与摄像头照片', () => {
     const forbidden = await fetch(`${ctx.base}${list.data[0].imageUrl}`, { headers: { authorization: `Bearer ${stranger.token}` } });
     assert.equal(forbidden.status, 404);
     const strangerList = await api(ctx.base, 'GET', `/api/snapshots?childId=${child.id}`, { token: stranger.token });
-    assert.equal(strangerList.status, 403);
+    assert.equal(strangerList.status, 404);
 
     const deleted = await api(ctx.base, 'DELETE', `/api/snapshots/${saved.data.id}`, { token: user.token });
     assert.equal(deleted.status, 200);

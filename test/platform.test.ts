@@ -154,7 +154,7 @@ describe('专家生态、连接器、看板与平台治理', () => {
     assert.equal(list.data.length, 3);
     const stranger = await newUser(ctx.base);
     const forbidden = await api(ctx.base, 'GET', `/api/analytics/reports?childId=${child.id}`, { token: stranger.token });
-    assert.equal(forbidden.status, 403);
+    assert.equal(forbidden.status, 404);
   });
 
   test('管理员可配置模型，看板与管理统计可用', async () => {

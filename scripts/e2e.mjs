@@ -40,6 +40,7 @@ async function main() {
   check(await evaluate("!!document.querySelector('.warm-card')"), 'warmth card renders');
   check((await evaluate("document.querySelectorAll('.stat-card-v2').length")) === 3, 'three calm stats');
   check(await evaluate("!document.querySelector('#quickFeed')"), 'no duplicate quick-feed button');
+  check(parseFloat(await evaluate("getComputedStyle(document.querySelector('.warm-foot')).fontSize")) >= 14, 'parent captions >=14px');
   await evaluate("location.hash = '#/child'"); await sleep(1600);
   check(await evaluate("document.body.classList.contains('kid-mode')"), 'child mode isolates parent chrome');
   check((await evaluate("document.querySelectorAll('.kid-stop').length")) >= 1, 'child adventure path renders');
@@ -48,6 +49,11 @@ async function main() {
   check((await evaluate("document.querySelector('.kid-chip').getBoundingClientRect().height")) >= 64, 'kid chip target >=64px');
   check(parseFloat(await evaluate("getComputedStyle(document.body).fontSize")) >= 16, 'body >=16px');
   check((await evaluate("getComputedStyle(document.querySelector('.rainbow')).display")) !== 'none', 'rainbow rendered');
+  await evaluate("sessionStorage.removeItem('starsprout.kidLocked'); location.hash = '#/home'"); await sleep(1200);
+  await send('Emulation.setDeviceMetricsOverride', { width: 1024, height: 768, deviceScaleFactor: 1, mobile: false }); await sleep(700);
+  check((await evaluate("getComputedStyle(document.querySelector('.sidebar')).display")) !== 'none', 'tablet navigation rail visible');
+  check((await evaluate("document.querySelector('.sidebar').getBoundingClientRect().width")) >= 80, 'tablet rail width >=80');
+  check((await evaluate("getComputedStyle(document.querySelector('.bottom-nav')).display")) === 'none', 'tablet hides bottom nav');
   await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true }); await sleep(700);
   check((await evaluate("document.documentElement.scrollWidth")) <= 390, '390px no horizontal overflow');
   await send('Emulation.setDeviceMetricsOverride', { width: 320, height: 700, deviceScaleFactor: 2, mobile: true }); await sleep(700);

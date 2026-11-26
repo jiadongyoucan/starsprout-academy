@@ -127,7 +127,7 @@ describe('体系化课程与互动内容', () => {
     assert.ok(packs.data.sources.every((s: any) => s.license));
   });
 
-  test('不存在的课时返回 404，未授权孩子返回 403', async () => {
+  test('不存在的课时与未授权孩子统一返回 404', async () => {
     const user = await newUser(ctx.base);
     await addChild(ctx.base, user.token);
     const missing = await api(ctx.base, 'GET', '/api/curriculum/lessons/not-a-lesson', { token: user.token });
@@ -135,6 +135,6 @@ describe('体系化课程与互动内容', () => {
     const other = await newUser(ctx.base);
     const otherChild = await addChild(ctx.base, other.token);
     const forbidden = await api(ctx.base, 'GET', `/api/curriculum/lessons/lsn_english_junior_u1_l1?childId=${otherChild.id}`, { token: user.token });
-    assert.equal(forbidden.status, 403);
+    assert.equal(forbidden.status, 404);
   });
 });

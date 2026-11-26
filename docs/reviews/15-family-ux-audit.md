@@ -29,6 +29,6 @@
 
 ## Re-run
 ```bash
-npm run e2e   # 15 checks incl. child 64px/16px, 390/320, no exceptions
+npm run e2e   # 19 checks incl. child 64px/16px, 390/320, no exceptions
 npm test      # 90/90
 ```

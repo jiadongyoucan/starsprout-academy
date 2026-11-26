@@ -22,7 +22,7 @@
 | B7 | code | 顺延叠加其他 active 计划占用 |
 | B8 | code/doc | 提醒按计划/日期；跨计划聚合为已知边界 |
 | B9 | code | adherence 按报告起止日期 |
-| C1 | delete-claim | 连接器改为「家长手动调用，不进入儿童模型工具表」 |
+| C1 | code | 新增受控 `invoke_connector` 工具，仅家长会话；SSRF/密钥/审计沿用；儿童设备端不注入 |
 | C2 | code | 技能 definition 进入系统提示；专家表单可选技能 |
 | C3 | code | 公开专家/技能/连接器过 moderateContent |
 | C4 | doc | 两种 agent_kind 提示词相同，文档不再暗示不同人格 |
@@ -35,7 +35,7 @@
 | D2 | code | 评论 pending + 管理员评论队列 |
 | D3 | code | 审核台隐藏按钮；通过率/平均时长 KPI |
 | D4 | code | 域名识别（taobao.com 等）进入复核 |
-| D5 | doc | 跨租户孩子存在性返回 403；统一 404 为后续边界 |
+| D5 | code | assertChildAccess/PlanAccess 统一 404，跨租户不泄露存在性 |
 | D6 | code | 无 EventSource 时也启动 30s 轮询 |
 | D7 | partial | 批量 API 已存在；Web 批量选择为后续；设备文案已去「实时监控」暗示 |
 | D8 | code | 常见繁体/形近字归一 |
@@ -49,7 +49,7 @@
 | E8 | delete-claim | 改为庆祝层纪念卡，删除独立证书宣称 |
 | E9 | code | 重复学习给伙伴心情反应 |
 | E10 | code | 儿童顶栏改「🏅 贴纸数」 |
-| F1 | code + doc | 新增可选 `scripts/e2e.mjs`（15 项 CDP 断言）+ 人工清单；不再宣称 CI 必跑 |
+| F1 | code + doc | 新增可选 `scripts/e2e.mjs`（19 项 CDP 断言）+ 人工清单；不再宣称 CI 必跑 |
 | F2 | code | SW precache 视图/资产/device；网络优先 |
 | F3 | code | device.js 注册 SW；独立设备壳可缓存 |
 | F4 | delete-claim | 文档改为居中模态，不再宣称抽屉 |
@@ -58,11 +58,11 @@
 | F7 | code | muted 加深到 #5b5f6c |
 | F8 | code | .btn min-height 44px；儿童 48–56px |
 | F9 | partial | PNG 图标 + manifest；beforeinstallprompt 引导为后续 |
-| F10 | partial | 320/390 实测；专项截图脚本为后续 |
+| F10 | code | 768–1180 平板导航 rail；320/390 E2E 断言 |
 
 ## 剩余边界（诚实声明）
 - 生产公开课需管理员审核；演示/测试自动发布。
-- 连接器手动调用；不注入儿童模型工具。
-- 跨租户孩子 ID 仍返回 403（不泄露内容，但泄露存在性）；统一 404 需改动现有 API 契约。
-- 批量照片删除 API 有、Web 批量 UI 未做；Web Push/离线课时包在路线图。
+- 连接器在家长会话由受控工具调用；儿童端不注入。
+- 跨租户孩子/计划统一 404，不泄露存在性。
+- 批量照片“清理全部”已接入；Web Push/离线课时包在路线图。
 - 浏览器证据为人工清单，不是自动化；CI 可后续加 Playwright。

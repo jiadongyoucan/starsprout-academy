@@ -97,9 +97,9 @@ $ ./scripts/smoke.sh
     <table>
       <thead><tr><th>套件</th><th>覆盖行为</th><th>代表性断言</th></tr></thead>
       <tbody>
-        <tr><td><code>auth.test.ts</code></td><td>初始化、注册、登录、登出、改密、账号停用、家庭隔离、孩子删除、分析授权</td><td>首次初始化仅一次；临时密码强制改密；跨家庭 403；删除需 confirm；撤回分析授权 403</td></tr>
+        <tr><td><code>auth.test.ts</code></td><td>初始化、注册、登录、登出、改密、账号停用、家庭隔离、孩子删除、分析授权</td><td>首次初始化仅一次；临时密码强制改密；跨家庭 404；删除需 confirm；撤回分析授权 403</td></tr>
         <tr><td><code>curriculum.test.ts</code></td><td>4×5 框架、学段差异、互动 block、公开来源 / 许可、进度联动、同步幂等</td><td>每学科 ≥9 课时；英语有 listen/speak；汉字 trace；钢琴 piano；公开课带 license；重复完成不重复计数</td></tr>
-        <tr><td><code>plans.test.ts</code></td><td>离线排课、周末留白、激活提醒、纠偏 shift / skip、手动计划、提醒消费、隔离</td><td>逾期项顺延到未来工作日；skip 保留记录；GET due 只读；dispatch 只消费一次；跨家庭 403</td></tr>
+        <tr><td><code>plans.test.ts</code></td><td>离线排课、周末留白、激活提醒、纠偏 shift / skip、手动计划、提醒消费、隔离</td><td>逾期项顺延到未来工作日；skip 保留记录；GET due 只读；dispatch 只消费一次；跨家庭 404</td></tr>
         <tr><td><code>community.test.ts</code></td><td>待审状态机、导流 / 手机号 / 变体绕过、课程关联、自审禁止、编辑重审、举报隐藏</td><td>「加 v x」422；课程无 ref 422；教师不能自审；拒绝必须写理由；隐藏后普通用户 404</td></tr>
         <tr><td><code>agent.test.ts</code></td><td>会话隔离、本地排课、记忆、工作区穿越、沙箱输出 / 逃逸 / 超时 / 默认关闭</td><td>路径 <code>../evil</code> 422；Math/console/global 逃逸均 BLOCKED；默认关闭 403</td></tr>
         <tr><td><code>device.test.ts</code></td><td>一次性配对、推送、收件箱、学习、拍照同意、家庭隔离、保留期清理</td><td>码复用 422；撤销后 401；跨家庭图片 404；清理同时删文件；未授权 camera 403</td></tr>
@@ -140,7 +140,7 @@ $ ./scripts/smoke.sh
     <table>
       <thead><tr><th>检查</th><th>预期</th><th>结果</th></tr></thead>
       <tbody>
-        <tr><td>跨家庭读取孩子 / 计划 / 照片 / 会话</td><td>403 / 404，不泄露存在性</td><td><span class="pill green">通过</span></td></tr>
+        <tr><td>跨家庭读取孩子 / 计划 / 照片 / 会话</td><td>统一 404，不泄露存在性</td><td><span class="pill green">通过</span></td></tr>
         <tr><td>设备令牌访问家长接口</td><td>401</td><td><span class="pill green">通过</span></td></tr>
         <tr><td>撤销设备后继续访问</td><td>401</td><td><span class="pill green">通过</span></td></tr>
         <tr><td>社区导流 / 手机号 / 变体绕过</td><td>422，不落库</td><td><span class="pill green">通过</span></td></tr>
@@ -175,6 +175,7 @@ $ ./scripts/smoke.sh
         <tr><td>G13 Gap 最终验收</td><td><strong>PASS</strong>；G1–G4 全满足，55 项处置台账关闭</td><td><a href="/docs/reviews/14-gap-final-acceptance.md">14-gap-final-acceptance.md</a></td></tr>
         <tr><td>G14 Family UX</td><td><strong>PASS with minor findings</strong>；common-family-ux 六轴审查，儿童 64px/16px</td><td><a href="/docs/reviews/15-family-ux-audit.md">15-family-ux-audit.md</a></td></tr>
         <tr><td>G15 Family UX 复核</td><td><strong>PASS</strong>；设备家长密码门、静音、交还卡、英文标题本地化</td><td><a href="/docs/reviews/16-family-ux-review.md">16-family-ux-review.md</a></td></tr>
+        <tr><td>G16 残余差距关闭</td><td><strong>PASS</strong>；14px 文案、AX/VoiceOver 清单、平板 rail、统一 404、连接器工具</td><td><a href="/docs/reviews/17-residual-closure.md">17-residual-closure.md</a></td></tr>
         <tr><td>G4 验收评审</td><td><strong>PASS</strong>（复核后）；唯一 P1（演示双开关）已关闭</td><td><a href="/docs/reviews/03-acceptance-review.md">03 · 验收评审</a> · <a href="/docs/reviews/03a-post-fix-verification.md">03a · 复核 PASS</a> · <a href="/docs/reviews/04-fix-log.md">04 · 修复记录</a></td></tr>
       </tbody>
     </table>

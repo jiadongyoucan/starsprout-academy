@@ -191,7 +191,7 @@ describe('星芽伙伴：领养、情绪、小铺与学习奖励', () => {
     assert.equal(playAgain.status, 422);
     const stranger = await newUser(ctx.base);
     const peek = await api(ctx.base, 'GET', `/api/pet?childId=${child.id}`, { token: stranger.token });
-    assert.equal(peek.status, 403);
+    assert.equal(peek.status, 404);
   });
 
   test('小计划不发放计划金币，防止刷奖励（仍然保持完成记录）', async () => {

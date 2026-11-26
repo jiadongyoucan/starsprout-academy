@@ -150,6 +150,7 @@ describe('智能体会话、记忆、工作区与沙箱', () => {
     const tools = await api(ctx.base, 'GET', '/api/agent/tools', { token: user.token });
     assert.ok(tools.data.some((t: any) => t.name === 'create_plan'));
     assert.ok(tools.data.some((t: any) => t.name === 'sandbox_run'));
+    assert.ok(tools.data.some((t: any) => t.name === 'invoke_connector'));
     const create = await api(ctx.base, 'POST', '/api/admin/models', {
       token: user.token,
       body: { name: '我的模型', provider: 'openai', baseUrl: 'https://api.example.com', model: 'gpt-x', apiKey: 'sk-test' },

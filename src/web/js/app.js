@@ -242,15 +242,15 @@ function renderNav() {
   const role = session.user?.role || 'parent';
   const groups = NAV.map(group => {
     const items = group.items.map(item => `
-      <a class="nav-link" href="${item.href}" data-route="${item.route}">
+      <a class="nav-link" href="${item.href}" data-route="${item.route}" aria-label="${item.label}" title="${item.label}">
         <span class="ni" aria-hidden="true">${item.icon}</span><span>${item.label}</span>
       </a>`).join('');
     return `<div class="nav-group-label">${group.group}</div>${items}`;
   }).join('');
   const staff = ['teacher', 'admin'].includes(role);
   const extra = `${staff ? `<div class="nav-group-label">治理</div>
-    <a class="nav-link" href="#/community?tab=review" data-route="review"><span class="ni">🛡️</span><span>审核台</span></a>` : ''}
-    ${role === 'admin' ? `<a class="nav-link" href="#/admin" data-route="admin"><span class="ni">🧭</span><span>管理后台</span></a>` : ''}`;
+    <a class="nav-link" href="#/community?tab=review" data-route="review" aria-label="审核台" title="审核台"><span class="ni">🛡️</span><span>审核台</span></a>` : ''}
+    ${role === 'admin' ? `<a class="nav-link" href="#/admin" data-route="admin" aria-label="管理后台" title="管理后台"><span class="ni">🧭</span><span>管理后台</span></a>` : ''}`;
   sideNav.innerHTML = groups + extra;
 
   const bottom = document.getElementById('bottomNav');

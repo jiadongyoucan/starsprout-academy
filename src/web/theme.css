@@ -544,3 +544,24 @@ body{font-size:16px}
 .device-footer-note,.device-muted,.device-plan-item small,.device-inbox small,.device-card p,.device-card .kv dd,.device-card .kv dt{font-size:14px;line-height:1.7}
 .device-top .btn{min-height:44px}
 .device-lesson .lesson-meta-card{display:none}
+/* common-family-ux: informative labels/captions >=14px on parent surfaces */
+.tiny,.small,.hint,.muted.small,.warm-foot,.warm-refresh,.stat-card-v2 .lab,.stat-card-v2 .foot,
+.today-item small,.mini-quest,.quest-item,.shop-item p,.inv-item small,.card-title .hint,
+.post-card .tiny,.post-card .small,.reminder-row,.device-muted{font-size:14px}
+.btn.small{font-size:14px}
+/* Tablet: navigation rail instead of stretched phone / bottom nav */
+@media(min-width:768px) and (max-width:1180px){
+  .shell{grid-template-columns:84px minmax(0,1fr)}
+  .sidebar{display:flex;width:84px;min-width:84px;padding:16px 8px 12px;gap:10px;align-items:stretch;overflow:hidden}
+  .brand{justify-content:center;padding:0 0 8px}
+  .brand-text,.nav-group-label,.nav-link>span:not(.ni),.side-tip,.side-pet,.user-card .meta,.user-card .chev{display:none !important}
+  .nav-link{justify-content:center;padding:11px 0;border-radius:14px;min-height:48px}
+  .nav-link .ni{width:32px;height:32px;font-size:20px;background:rgba(255,255,255,.5)}
+  .side-nav{gap:4px;overflow-y:auto}
+  .side-foot{margin-top:auto;align-items:center}
+  .side-foot .user-card{justify-content:center;padding:8px;width:100%}
+  .side-foot .user-card .avatar{margin:0}
+  .bottom-nav{display:none !important}
+  .view{padding:24px 24px 60px}
+  .topbar{margin:0;padding:12px 20px}
+}

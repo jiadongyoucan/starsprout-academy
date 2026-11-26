@@ -94,13 +94,13 @@ describe('身份认证、RBAC 与家庭隔离', () => {
     assert.equal(plan.status, 200);
 
     const dash = await api(ctx.base, 'GET', `/api/analytics/dashboard?childId=${child.id}`, { token: bob.token });
-    assert.equal(dash.status, 403);
+    assert.equal(dash.status, 404);
     const snapshotList = await api(ctx.base, 'GET', `/api/snapshots?childId=${child.id}`, { token: bob.token });
-    assert.equal(snapshotList.status, 403);
+    assert.equal(snapshotList.status, 404);
     const readPlan = await api(ctx.base, 'GET', `/api/plans/${plan.data.plan.plan.id}`, { token: bob.token });
-    assert.equal(readPlan.status, 403);
+    assert.equal(readPlan.status, 404);
     const curriculum = await api(ctx.base, 'GET', `/api/curriculum/lessons/lsn_thinking_junior_u1_l1?childId=${child.id}`, { token: bob.token });
-    assert.equal(curriculum.status, 403);
+    assert.equal(curriculum.status, 404);
   });
 
   test('孩子档案创建、更新与授权开关', async () => {
