@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#4f46e5" />
+  <meta name="description" content="星芽学堂学习端：接收家长推送的计划，专注学习，并可将学习瞬间分享给家长。" />
+  <title>星芽学堂 · 学习端</title>
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/icon.svg" />
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="/device.css" />
+  <link rel="stylesheet" href="/theme.css" />
+</head>
+<body class="device-body">
+  <div id="deviceApp" class="device-app">
+    <div class="loading"><div class="spinner"></div><span>正在唤醒学习端…</span></div>
+  </div>
+  <div id="modalRoot" class="modal-root" aria-live="polite"></div>
+  <div id="toastRoot" class="toast-root" aria-live="polite"></div>
+  <script type="module" src="/js/device.js"></script>
+</body>
+</html>

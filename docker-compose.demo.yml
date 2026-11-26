@@ -1,0 +1,8 @@
+# 演示覆盖：仅用于本地展示，不要部署到公网。
+# 用法：docker compose -f docker-compose.yml -f docker-compose.demo.yml up -d
+services:
+  starsprout:
+    environment:
+      SEED_DEMO: "true"
+      DEMO_MODE: "true"
+      ENABLE_SANDBOX: "true"

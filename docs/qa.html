@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>星芽学堂 · 测试与验收报告</title>
+<style>
+  :root{--ink:#20242e;--muted:#6f7280;--line:#e8e1d3;--bg:#f8f5ee;--surface:#fffdf9;--primary:#4f46e5;--primary-soft:#eef0ff;--mint:#0f9f7a;--accent:#f97316;--code:#f4f0e6}
+  *{box-sizing:border-box}html{scroll-behavior:smooth}
+  body{margin:0;font-family:"PingFang SC","Hiragino Sans GB","Noto Sans SC",system-ui,sans-serif;color:var(--ink);background:var(--bg);line-height:1.75;font-size:15px}
+  a{color:var(--primary);text-decoration:none}a:hover{text-decoration:underline}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--code);padding:1px 5px;border-radius:5px;font-size:.88em}
+  pre{background:#1f2430;color:#e8e6df;border-radius:14px;padding:16px 18px;overflow:auto;font-size:12.5px;line-height:1.65}
+  pre code{background:none;padding:0;color:inherit}
+  .layout{display:grid;grid-template-columns:230px minmax(0,1fr);max-width:1160px;margin:0 auto}
+  .side{position:sticky;top:0;height:100vh;padding:26px 16px;border-right:1px solid var(--line);overflow:auto;font-size:12.5px}
+  .side .brand{display:flex;gap:8px;align-items:center;font-weight:800;margin-bottom:16px;font-size:14px}
+  .side .brand svg{width:30px;height:30px}
+  .side nav{display:flex;flex-direction:column;gap:1px}
+  .side nav a{color:var(--muted);padding:5px 8px;border-radius:7px}
+  .side nav a:hover{background:var(--surface);color:var(--ink);text-decoration:none}
+  .side .doclinks{margin-top:18px;display:flex;flex-wrap:wrap;gap:5px}.side .doclinks a{font-size:10.5px;border:1px solid var(--line);border-radius:999px;padding:4px 8px;color:var(--muted)}
+  main{padding:42px 52px 90px;min-width:0;background:var(--surface)}
+  .hero{border-radius:24px;padding:34px;color:#fff;background:radial-gradient(520px 260px at 100% 0%,rgba(167,243,208,.25),transparent 60%),linear-gradient(135deg,#065f46,#0f766e 55%,#0f9f7a);margin-bottom:30px;position:relative;overflow:hidden}
+  .hero:after{content:"";position:absolute;right:-60px;bottom:-100px;width:260px;height:260px;border-radius:50%;border:38px solid rgba(255,255,255,.08)}
+  .hero .label{font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.65);font-weight:700}
+  .hero h1{font-size:34px;line-height:1.2;letter-spacing:-.035em;margin:9px 0}
+  .hero p{color:rgba(255,255,255,.8);max-width:44em;margin:0;font-size:14.5px}
+  .hero .chips{display:flex;gap:7px;flex-wrap:wrap;margin-top:18px}
+  .hero .chip{border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.12);border-radius:999px;padding:4px 11px;font-size:11px}
+  h2{font-size:23px;letter-spacing:-.025em;margin:42px 0 12px;scroll-margin-top:14px}
+  h2 .num{display:block;color:var(--mint);font-size:11px;font-weight:800;letter-spacing:.1em;margin-bottom:2px}
+  h3{font-size:16px;margin:24px 0 8px}
+  p{margin:8px 0;color:#3a4050}.muted{color:var(--muted)}.small{font-size:12.5px}
+  ul,ol{margin:8px 0 8px 1.1em;padding-left:1em}li{margin:4px 0;color:#3a4050}
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:12.5px}
+  th,td{border-bottom:1px solid var(--line);padding:9px 10px;text-align:left;vertical-align:top}
+  th{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);background:#fbf7ef;border-top:1px solid var(--line)}
+  .pill{display:inline-block;border-radius:999px;padding:2px 8px;font-size:10.5px;font-weight:700;background:var(--primary-soft);color:#3730a3;margin:2px 3px 2px 0}
+  .pill.green{background:#e6f7f0;color:#08705a}.pill.amber{background:#fff2d8;color:#8a5a00}.pill.red{background:#fdecec;color:#b42318}
+  .grid{display:grid;gap:13px;margin:16px 0}.g2{grid-template-columns:repeat(2,minmax(0,1fr))}.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .card{border:1px solid var(--line);border-radius:15px;padding:15px 16px;background:linear-gradient(160deg,#fffdf9,#fbf7ef)}
+  .card h4{margin:0 0 4px;font-size:13.5px}.card p{margin:0;font-size:12px;color:var(--muted)}
+  .callout{border-left:3px solid var(--mint);background:#eafaf4;border-radius:0 13px 13px 0;padding:12px 15px;margin:14px 0;font-size:13px;color:#065f46}
+  .callout.warn{border-color:var(--accent);background:#fff5e8;color:#8a4b08}
+  .big{font-size:52px;font-weight:800;letter-spacing:-.04em;line-height:1;color:var(--mint)}
+  .footer{margin-top:50px;padding-top:16px;border-top:1px solid var(--line);font-size:11px;color:var(--muted);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  @media(max-width:900px){.layout{grid-template-columns:1fr}.side{position:relative;height:auto;border-right:0;border-bottom:1px solid var(--line);padding:16px}.side nav{flex-direction:row;flex-wrap:wrap}main{padding:24px 18px 70px}.g2,.g3{grid-template-columns:1fr}}
+  @media print{.side{display:none}.layout{display:block}main{padding:0}.hero{background:#065f46!important;-webkit-print-color-adjust:exact}}
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="side">
+    <a class="brand" href="/docs/"><svg viewBox="0 0 64 64"><rect width="64" height="64" rx="18" fill="#4f46e5"/><path d="M32 50V29" stroke="#fff" stroke-width="4.5" stroke-linecap="round"/><path d="M32 33c-9 0-14-5-14-13 8 0 14 5 14 13Z" fill="#c7f9d8"/><path d="M32 38c8 0 13-4.5 13-12-7.5 0-13 4.5-13 12Z" fill="#fde68a"/></svg>星芽学堂 · 质量</a>
+    <nav>
+      <a href="#summary">1. 结论与门禁</a>
+      <a href="#matrix">2. 测试矩阵</a>
+      <a href="#requirements">3. 需求覆盖</a>
+      <a href="#browser">4. 浏览器 E2E</a>
+      <a href="#security">5. 安全与负向测试</a>
+      <a href="#reviews">6. 评审与修复</a>
+      <a href="#repro">7. 复现步骤</a>
+      <a href="#limits">8. 已知边界</a>
+    </nav>
+    <div class="doclinks"><a href="/docs/">索引</a><a href="/docs/product.html">产品</a><a href="/docs/architecture.html">架构</a><a href="/">打开产品</a></div>
+  </aside>
+  <main>
+    <section class="hero">
+      <div class="label">Verification Report · v1.3</div>
+      <h1>83 / 83 通过，<br>但更重要的，是测试覆盖了真实风险。</h1>
+      <p>本报告记录自动化测试、浏览器 E2E、安全负向验证、评审问题与修复状态。测试在真实 HTTP + 临时 SQLite 上运行，而非 mock 数据。</p>
+      <div class="chips"><span class="chip">node:test</span><span class="chip">9 suites</span><span class="chip">临时 SQLite · 随机端口</span><span class="chip">tsc strict</span><span class="chip">Chrome 157 CDP</span></div>
+    </section>
+
+    <h2 id="summary"><span class="num">01</span>结论与质量门禁</h2>
+    <div class="grid g3">
+      <div class="card"><div class="big">83</div><h4 style="margin-top:6px">自动化用例全部通过</h4><p>9 个测试套件，覆盖认证、隔离、课程、计划、社区、设备、智能体、伙伴奖励、温度文案、演示开关与治理。</p></div>
+      <div class="card"><div class="big">0</div><h4 style="margin-top:6px">TypeScript 错误</h4><p><code>tsc --noEmit</code> 开启 strict + erasableSyntaxOnly，与运行时类型擦除保持一致。</p></div>
+      <div class="card"><div class="big">0</div><h4 style="margin-top:6px">浏览器 JS 异常</h4><p>桌面上要页面、移动端、平板学习端与照片流程均通过 CDP 实测，无未捕获异常。</p></div>
+    </div>
+    <pre><code>$ npm test
+ℹ tests 83
+ℹ suites 9
+ℹ pass 83
+ℹ fail 0
+ℹ duration_ms 2086
+
+$ npx tsc --noEmit
+# exit 0
+
+$ ./scripts/smoke.sh
+▸ 健康检查 … ▸ 演示家长登录 … ▸ 课程体系 … ▸ AI 计划 … ▸ 设备配对 … 全部通过 ✅</code></pre>
+    <div class="callout">测试默认使用 <code>NODE_ENV=test</code>，会关闭限流以便批量用例；业务限流在生产启用，登录 10 次 / 5 分钟。测试不会连接外部 AI / 网络，结果可重复。</div>
+
+    <h2 id="matrix"><span class="num">02</span>测试矩阵</h2>
+    <table>
+      <thead><tr><th>套件</th><th>覆盖行为</th><th>代表性断言</th></tr></thead>
+      <tbody>
+        <tr><td><code>auth.test.ts</code></td><td>初始化、注册、登录、登出、改密、账号停用、家庭隔离、孩子删除、分析授权</td><td>首次初始化仅一次；临时密码强制改密；跨家庭 403；删除需 confirm；撤回分析授权 403</td></tr>
+        <tr><td><code>curriculum.test.ts</code></td><td>4×5 框架、学段差异、互动 block、公开来源 / 许可、进度联动、同步幂等</td><td>每学科 ≥9 课时；英语有 listen/speak；汉字 trace；钢琴 piano；公开课带 license；重复完成不重复计数</td></tr>
+        <tr><td><code>plans.test.ts</code></td><td>离线排课、周末留白、激活提醒、纠偏 shift / skip、手动计划、提醒消费、隔离</td><td>逾期项顺延到未来工作日；skip 保留记录；GET due 只读；dispatch 只消费一次；跨家庭 403</td></tr>
+        <tr><td><code>community.test.ts</code></td><td>待审状态机、导流 / 手机号 / 变体绕过、课程关联、自审禁止、编辑重审、举报隐藏</td><td>「加 v x」422；课程无 ref 422；教师不能自审；拒绝必须写理由；隐藏后普通用户 404</td></tr>
+        <tr><td><code>agent.test.ts</code></td><td>会话隔离、本地排课、记忆、工作区穿越、沙箱输出 / 逃逸 / 超时 / 默认关闭</td><td>路径 <code>../evil</code> 422；Math/console/global 逃逸均 BLOCKED；默认关闭 403</td></tr>
+        <tr><td><code>device.test.ts</code></td><td>一次性配对、推送、收件箱、学习、拍照同意、家庭隔离、保留期清理</td><td>码复用 422；撤销后 401；跨家庭图片 404；清理同时删文件；未授权 camera 403</td></tr>
+        <tr><td><code>platform.test.ts</code></td><td>专家审核 / 安装、连接器 SSRF、看板、报告、模型密钥、管理员重置</td><td>公开专家待审；自审 403；HTTP 连接器允许列表 403；API Key 不回传；临时密码强制改密</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="requirements"><span class="num">03</span>15 项需求覆盖</h2>
+    <table>
+      <thead><tr><th>#</th><th>需求</th><th>验证方式</th><th>状态</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>四学段 × 五模块 / 分级 / 互动听说读写</td><td>框架与课时数量、学段差异、block 类型、进度联动</td><td><span class="pill green">通过</span></td></tr>
+        <tr><td>2</td><td>公开课程、持续更新、体系化</td><td>来源 / license / 版本 / checksum / 隔离审核 / 幂等同步</td><td><span class="pill green">通过</span></td></tr>
+        <tr><td>3</td><td>Plan + AI + 纠正 + 提醒</td><td>草稿 / 激活 / 提醒 / shift / skip / 跨家庭</td><td><span class="pill green">通过</span></td></tr>
+        <tr><td>4</td><td>完整智能体</td><td>会话 / 记忆 / 工作区 / 模型 / 沙箱 / 工具 / 降级</td><td><span class="pill green">通过</span></td></tr>
+        <tr><td>5</td><td>看板 + 日 / 周 / 月报告</td><td>真实聚合、周期报告、落库、隔离</td><td><span class="pill green">通过</span></td></tr>
+        <tr><td>6</td><td>专家 / 技能 / 连接器</td><td>发布 / 审核 / 安装 / 调用 / SSRF / 密钥</td><td><span class="pill green">通过</span></td></tr>
+        <tr><td>7</td><td>社区 + 审核审批</td><td>状态机 / 违禁 / 导流 / 自审 / 编辑 / 举报</td><td><span class="pill green">通过</span></td></tr>
+        <tr><td>8</td><td>登录注册、认证、隔离</td><td>JWT / 吊销 / 强制改密 / 四主体 / household</td><td><span class="pill green">通过</span></td></tr>
+        <tr><td>9</td><td>手机 ↔ Mac / 平板</td><td>配对 / 推送 / 打开计划 / 完成回传 / 撤销</td><td><span class="pill green">通过（含浏览器 E2E）</span></td></tr>
+        <tr><td>10</td><td>摄像头照片</td><td>家长请求 / 设备同意 / 上传 / 家庭鉴权 / 删除</td><td><span class="pill green">通过（摄像头权限受 HTTPS 限制，已兜底相册）</span></td></tr>
+        <tr><td>11</td><td>TDD / DDD / 最佳实践 / 简单部署</td><td>83 用例 / tsc / Docker / start.sh / smoke / 文档</td><td><span class="pill green">通过</span></td></tr>
+        <tr><td>12</td><td>可领养伙伴 / 情绪 / 喂食玩耍</td><td>领养、互动、商店、衣橱、缺席下限、导出/删除</td><td><span class="pill green">通过</span></td></tr>
+        <tr><td>13</td><td>奖励 / 金币小铺 / 单元与计划仪式</td><td>服务端判分、幂等、反刷、庆祝、证书/披风</td><td><span class="pill green">通过</span></td></tr>
+        <tr><td>14</td><td>有温度家长/儿童 HMI，儿童更卡通</td><td>家长减负卡、儿童空间、贴纸墙、320/390、触控目标、焦点</td><td><span class="pill green">通过（浏览器 E2E）</span></td></tr>
+        <tr><td>15</td><td>周期性鼓励 / 鸡汤 / 幽默话术</td><td>每日稳定、同语气换句、2 次上限、低分安慰、无侵权引用</td><td><span class="pill green">通过</span></td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="browser"><span class="num">04</span>浏览器 E2E（Chrome 157 · CDP）</h2>
+    <div class="grid g2">
+      <div class="card"><h4>已完成路径</h4><p>首次初始化管理员 → 管理后台；注册 / 登录；首页；课程地图与单元；互动课时（TTS / 配对 / 钢琴 / 描红 / 测验）；计划列表 / 详情 / 纠偏；智能体会话与工具调用；社区与审核台；专家 / 技能 / 连接器；设备配对 / 推送 / 学习 / 照片；账户与隐私；移动端 390×844 / 320×700；儿童空间与儿童课时；温度文案换句；强制改密。</p></div>
+      <div class="card"><h4>关键实测</h4><p>平板输入一次性码 → 收件箱收到推送 → 打开计划 → 开始课时 → 完成 → 家长看板更新；家长请求拍照 → 平板确认 → 上传 → 家长图库以鉴权 Blob 显示；跨家庭图片 404。桌面上要页面无 JS 异常、无横向溢出。</p></div>
+    </div>
+    <div class="callout warn"><strong>缓存注意：</strong>PWA Service Worker 会缓存静态资源。验证最新前端时请使用无痕窗口 / DevTools 的 Bypass for network，或等待 SW 更新（网络优先策略）。</div>
+
+    <h2 id="security"><span class="num">05</span>安全与负向测试</h2>
+    <table>
+      <thead><tr><th>检查</th><th>预期</th><th>结果</th></tr></thead>
+      <tbody>
+        <tr><td>跨家庭读取孩子 / 计划 / 照片 / 会话</td><td>403 / 404，不泄露存在性</td><td><span class="pill green">通过</span></td></tr>
+        <tr><td>设备令牌访问家长接口</td><td>401</td><td><span class="pill green">通过</span></td></tr>
+        <tr><td>撤销设备后继续访问</td><td>401</td><td><span class="pill green">通过</span></td></tr>
+        <tr><td>社区导流 / 手机号 / 变体绕过</td><td>422，不落库</td><td><span class="pill green">通过</span></td></tr>
+        <tr><td>审核自己的内容</td><td>403</td><td><span class="pill green">通过</span></td></tr>
+        <tr><td>HTTP 连接器未配置白名单 / 私网</td><td>403，不发起请求</td><td><span class="pill green">通过</span></td></tr>
+        <tr><td>沙箱访问 process / require / 逃逸</td><td>BLOCKED / undefined</td><td><span class="pill green">通过</span></td></tr>
+        <tr><td>沙箱死循环</td><td>超时终止</td><td><span class="pill green">通过</span></td></tr>
+        <tr><td>临时密码未修改访问业务</td><td>403 PASSWORD_CHANGE_REQUIRED</td><td><span class="pill green">通过</span></td></tr>
+        <tr><td>孩子删除无确认</td><td>422</td><td><span class="pill green">通过</span></td></tr>
+        <tr><td>照片清理</td><td>DB 与文件同时删除；非法天数 422</td><td><span class="pill green">通过</span></td></tr>
+        <tr><td>模型 API Key 回传</td><td>列表只返回掩码 / 不回传明文</td><td><span class="pill green">通过</span></td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="reviews"><span class="num">06</span>评审与修复状态</h2>
+    <table>
+      <thead><tr><th>门禁</th><th>结论</th><th>处理</th></tr></thead>
+      <tbody>
+        <tr><td>G1 设计评审</td><td>条件通过；4 个 P0（隐私同意、演示后门、HTTPS/推送、沙箱）</td><td>已落地 consent / 清理 / 演示显式开关 / SSE + 证书脚本 / 子进程沙箱</td></tr>
+        <tr><td>G2 代码安全评审</td><td>不通过；P0 演示后门 + 沙箱逃逸，P1 删除 / 同意 / 保留期 / 提醒 / 强制改密</td><td><a href="/docs/reviews/04-fix-log.md">04-fix-log.md</a> 逐项关闭，76 测试通过</td></tr>
+        <tr><td>G3 修复记录</td><td>全部 must-fix 已处理</td><td>见修复记录；残余风险已在文档声明</td></tr>
+        <tr><td>伙伴 / 奖励</td><td>首通发币、重复不发、单元/计划幂等、小铺/喂食/穿衣、48h 缺席下限、导出与删除</td><td><span class="pill green">通过</span></td><td><code>pet.test.ts</code>（10 用例）</td></tr>
+        <tr><td>温度文案</td><td>每日稳定、低分 retry / 高分 praise、换句不换语气、登录与跨家庭边界、完成响应带鼓励</td><td><span class="pill green">通过</span></td><td><code>warmth.test.ts</code>（4 用例）</td></tr>
+        <tr><td>G5 伙伴 UX</td><td>方向正确；指出愧疚经济、客户端判分、仪式分级；实现已按修订落地</td><td><a href="/docs/reviews/05-ux-pet-review.md">05-ux-pet-review.md</a></td></tr>
+        <tr><td>G6 伙伴代码</td><td><strong>PASS</strong>（修复 P0 计划刷币 / P1 空答案计分后复核）</td><td><a href="/docs/reviews/06-pet-code-review.md">06-pet-code-review.md</a></td></tr>
+        <tr><td>G7 最终验收</td><td><strong>PASS</strong>；3 项新增需求全部 ACCEPT，原 11 项无回归</td><td><a href="/docs/reviews/07-final-acceptance.md">07-final-acceptance.md</a></td></tr>
+        <tr><td>G8 温度 UX</td><td>设计方向 CONDITIONAL；要求文案落地、减 KPI、儿童边界、轮换稳定</td><td><a href="/docs/reviews/08-warmth-ux-review.md">08-warmth-ux-review.md</a></td></tr>
+        <tr><td>G9 温度代码</td><td><strong>PASS</strong>（P1 修复后复核：儿童链接/语气门禁/解锁）</td><td><a href="/docs/reviews/09-warmth-code-review.md">09-warmth-code-review.md</a></td></tr>
+        <tr><td>G10 最终验收</td><td><strong>PASS</strong>；2 项温度需求全部 ACCEPT</td><td><a href="/docs/reviews/10-warmth-final-acceptance.md">10-warmth-final-acceptance.md</a></td></tr>
+        <tr><td>G4 验收评审</td><td><strong>PASS</strong>（复核后）；唯一 P1（演示双开关）已关闭</td><td><a href="/docs/reviews/03-acceptance-review.md">03 · 验收评审</a> · <a href="/docs/reviews/03a-post-fix-verification.md">03a · 复核 PASS</a> · <a href="/docs/reviews/04-fix-log.md">04 · 修复记录</a></td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="repro"><span class="num">07</span>复现步骤</h2>
+    <pre><code># 1. 自动化
+npm test
+npx tsc --noEmit
+
+# 2. 本机演示（显式演示数据）
+./scripts/start.sh --demo
+# 打开 http://localhost:8080 ，使用 parent@demo.com / Parent123!
+
+# 3. 生产式首次运行（无演示账号）
+rm -rf data
+./scripts/start.sh
+# 打开首页 → 首次初始化管理员
+
+# 4. 端到端冒烟
+./scripts/smoke.sh
+
+# 5. Docker
+docker compose up -d                       # 安全默认
+docker compose -f docker-compose.yml -f docker-compose.demo.yml up -d   # 演示</code></pre>
+
+    <h2 id="limits"><span class="num">08</span>已知边界与未覆盖项</h2>
+    <ul>
+      <li>摄像头真实采集需 HTTPS / localhost 与设备授权；自动化环境以相册上传 / 模拟文件代替摄像头硬件。</li>
+      <li>未做视觉回归基线；当前通过 CDP 截图与人工检查验证关键页面。</li>
+      <li>未接入真实 LLM 的端到端测试（避免外部依赖）；用本地规则路径覆盖同一业务流程，AI 适配器有超时 / 降级 / 解析逻辑。</li>
+      <li>未覆盖极端并发 / 压测；SQLite 单实例的容量边界已在架构文档说明。</li>
+      <li>园所组织树、Web Push、发音评分、支付属于路线图，不在本次范围。</li>
+    </ul>
+    <div class="callout"><strong>结论：</strong>核心业务与安全负向路径均有自动化证据，关键多端流程通过浏览器实测。验收提出的演示双开关 P1 已关闭，最终测试 83/83。剩余边界均已声明，不阻塞当前单家庭 / 小园所版本交付。</div>
+
+    <div class="footer"><span>星芽学堂 · Verification Report v1.3 · 2026</span><span>83 tests · 9 suites · Chrome CDP E2E</span></div>
+  </main>
+</div>
+</body>
+</html>

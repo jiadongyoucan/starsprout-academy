@@ -1,0 +1,510 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>星芽学堂 · 架构与技术文档</title>
+<style>
+  :root{--ink:#20242e;--muted:#6f7280;--line:#e8e1d3;--bg:#f8f5ee;--surface:#fffdf9;--primary:#4f46e5;--primary-soft:#eef0ff;--accent:#f97316;--mint:#0f9f7a;--code:#f4f0e6}
+  *{box-sizing:border-box}html{scroll-behavior:smooth}
+  body{margin:0;font-family:"PingFang SC","Hiragino Sans GB","Noto Sans SC",system-ui,sans-serif;color:var(--ink);background:var(--bg);line-height:1.75;font-size:15px}
+  a{color:var(--primary);text-decoration:none}a:hover{text-decoration:underline}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--code);padding:1px 5px;border-radius:5px;font-size:.88em}
+  pre{background:#1f2430;color:#e8e6df;border-radius:14px;padding:16px 18px;overflow:auto;font-size:12px;line-height:1.6}
+  pre code{background:none;padding:0;color:inherit}
+  .layout{display:grid;grid-template-columns:245px minmax(0,1fr);max-width:1280px;margin:0 auto}
+  .side{position:sticky;top:0;height:100vh;padding:26px 16px;border-right:1px solid var(--line);overflow:auto;font-size:12.5px}
+  .side .brand{display:flex;gap:9px;align-items:center;font-weight:800;margin-bottom:16px;color:var(--ink);font-size:14.5px}
+  .side .brand svg{width:30px;height:30px;flex:none}
+  .side nav{display:flex;flex-direction:column;gap:1px}
+  .side nav a{color:var(--muted);padding:4px 8px;border-radius:7px}
+  .side nav a:hover{background:var(--surface);color:var(--ink);text-decoration:none}
+  .side .group{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:#a49b87;margin:14px 8px 3px;font-weight:700}
+  .side .doclinks{margin-top:18px;display:flex;flex-wrap:wrap;gap:6px}.side .doclinks a{font-size:10.5px;border:1px solid var(--line);border-radius:999px;padding:4px 8px;color:var(--muted)}
+  main{padding:42px 54px 100px;min-width:0;background:var(--surface)}
+  .hero{border-radius:24px;padding:36px;color:#fff;background:radial-gradient(520px 280px at 100% 0%,rgba(253,230,138,.28),transparent 60%),linear-gradient(135deg,#312e81,#4338ca 60%,#4f46e5);position:relative;overflow:hidden;margin-bottom:32px}
+  .hero .label{font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.6);font-weight:700}
+  .hero h1{font-size:35px;line-height:1.2;letter-spacing:-.035em;margin:10px 0}
+  .hero p{color:rgba(255,255,255,.78);max-width:44em;margin:0;font-size:14.5px}
+  .hero .chips{display:flex;gap:7px;flex-wrap:wrap;margin-top:18px}
+  .hero .chip{border:1px solid rgba(255,255,255,.24);background:rgba(255,255,255,.1);border-radius:999px;padding:4px 11px;font-size:11px;color:#fff}
+  h2{font-size:24px;letter-spacing:-.03em;margin:46px 0 12px;scroll-margin-top:14px}
+  h2 .num{display:block;color:var(--primary);font-size:12px;font-weight:800;letter-spacing:.1em;margin-bottom:3px}
+  h3{font-size:16.5px;margin:26px 0 8px}h4{font-size:13.5px;margin:18px 0 5px}
+  p{margin:8px 0;color:#3a4050}.muted{color:var(--muted)}.small{font-size:12.5px}
+  ul,ol{margin:8px 0 8px 1.1em;padding-left:1em}li{margin:4px 0;color:#3a4050}
+  table{width:100%;border-collapse:collapse;margin:14px 0 8px;font-size:12.5px;background:var(--surface)}
+  th,td{border-bottom:1px solid var(--line);padding:9px 10px;text-align:left;vertical-align:top}
+  th{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:#fbf7ef;border-top:1px solid var(--line)}
+  .grid{display:grid;gap:13px;margin:16px 0}.g2{grid-template-columns:repeat(2,minmax(0,1fr))}.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .card{border:1px solid var(--line);border-radius:15px;padding:15px 16px;background:linear-gradient(160deg,#fffdf9,#fbf7ef)}
+  .card h4{margin:0 0 5px}.card p{margin:0;font-size:12px;color:var(--muted);line-height:1.65}
+  .callout{border-left:3px solid var(--primary);background:var(--primary-soft);border-radius:0 13px 13px 0;padding:12px 15px;margin:14px 0;font-size:13px;color:#312e81}
+  .callout.warn{border-color:var(--accent);background:#fff5e8;color:#8a4b08}
+  .callout.mint{border-color:var(--mint);background:#eafaf4;color:#065f46}
+  .pill{display:inline-block;border-radius:999px;padding:2px 8px;background:var(--primary-soft);color:#3730a3;font-size:10.5px;font-weight:700;margin:2px 3px 2px 0}
+  .diagram{border:1px solid var(--line);border-radius:16px;background:#fcf9f2;padding:14px;margin:16px 0;overflow:auto}
+  .diagram svg{display:block;min-width:620px;width:100%;height:auto}
+  .caption{font-size:11px;color:var(--muted);margin-top:6px}
+  .flow{display:flex;gap:7px;flex-wrap:wrap;margin:14px 0}
+  .step{flex:1;min-width:125px;border:1px solid var(--line);border-radius:12px;padding:10px 11px;background:var(--surface)}
+  .step strong{display:block;font-size:12px}.step small{color:var(--muted);font-size:10.5px;line-height:1.5;display:block;margin-top:2px}
+  .step .n{font-family:ui-monospace,monospace;font-size:10px;color:var(--primary);font-weight:800}
+  .api{font-family:ui-monospace,monospace;font-size:11.5px;white-space:nowrap}
+  .footer{margin-top:50px;padding-top:16px;border-top:1px solid var(--line);font-size:11px;color:var(--muted);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .toplinks{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:16px}.toplinks a{font-size:11px;border:1px solid var(--line);padding:4px 9px;border-radius:999px;color:var(--muted);background:var(--surface)}
+  @media(max-width:1000px){.layout{grid-template-columns:1fr}.side{position:relative;height:auto;border-right:0;border-bottom:1px solid var(--line);padding:16px}.side nav{flex-direction:row;flex-wrap:wrap}.side .group{display:none}main{padding:26px 18px 70px}.hero{padding:24px 20px}.hero h1{font-size:27px}.g2,.g3{grid-template-columns:1fr}.diagram svg{min-width:560px}}
+  @media print{.side,.toplinks{display:none}.layout{display:block}main{padding:0}.diagram svg{min-width:0}.hero{background:#312e81!important;-webkit-print-color-adjust:exact}}
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="side">
+    <a class="brand" href="/docs/"><svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="18" fill="#4f46e5"/><path d="M32 50V29" stroke="#fff" stroke-width="4.5" stroke-linecap="round"/><path d="M32 33c-9 0-14-5-14-13 8 0 14 5 14 13Z" fill="#c7f9d8"/><path d="M32 38c8 0 13-4.5 13-12-7.5 0-13 4.5-13 12Z" fill="#fde68a"/></svg>星芽学堂 · 技术文档</a>
+    <div class="group">Architecture</div>
+    <nav>
+      <a href="#goals">1. 目标与约束</a>
+      <a href="#stack">2. 技术选型</a>
+      <a href="#context">3. 系统上下文</a>
+      <a href="#deploy">4. 部署视图</a>
+      <a href="#ddd">5. DDD 限界上下文</a>
+      <a href="#layers">6. 分层与依赖</a>
+      <a href="#data">7. 数据模型</a>
+      <a href="#api">8. API 参考</a>
+      <a href="#auth">9. 认证与授权</a>
+      <a href="#ai">10. AI 子系统</a>
+      <a href="#courses">11. 课程导入管线</a>
+      <a href="#moderation">12. 审核引擎</a>
+      <a href="#device">13. 多端与照片</a>
+      <a href="#companion">14. 伙伴与奖励运行时</a>
+      <a href="#warmth">15. 温度层与儿童空间</a>
+      <a href="#security">16. 威胁模型</a>
+      <a href="#testing">17. 测试与质量</a>
+      <a href="#ops">18. 部署与运维</a>
+      <a href="#scale">19. 性能与演进</a>
+      <a href="#tradeoffs">20. 取舍与限制</a>
+      <a href="#reviews">21. 评审门禁</a>
+    </nav>
+    <div class="doclinks"><a href="/docs/">索引</a><a href="/docs/product.html">产品</a><a href="/docs/qa.html">测试</a><a href="/">打开产品</a></div>
+  </aside>
+  <main>
+    <div class="toplinks"><a href="/docs/product.html">产品文档</a><a href="/docs/qa.html">测试与验收</a><a href="/docs/reviews/02-code-security-review.md">代码安全评审</a></div>
+    <section class="hero">
+      <div class="label">Architecture &amp; Engineering · v1.2</div>
+      <h1>零依赖单体，<br>撑起一个家庭的全部学习数据。</h1>
+      <p>技术选择服务于两个目标：<strong>把产品完整做出来</strong>，以及<strong>让一个家长也能安装、备份和理解</strong>。本文覆盖限界上下文、数据模型、API、AI 运行时、安全威胁模型、测试与部署。</p>
+      <div class="chips"><span class="chip">Node 24 · 原生 TS</span><span class="chip">node:sqlite · WAL</span><span class="chip">Vanilla PWA · 无构建</span><span class="chip">JWT + 会话吊销</span><span class="chip">83 integration tests</span></div>
+    </section>
+
+    <h2 id="goals"><span class="num">01 / GOALS</span>架构目标与约束</h2>
+    <table>
+      <thead><tr><th>质量属性</th><th>要求</th><th>架构回应</th></tr></thead>
+      <tbody>
+        <tr><td>可安装</td><td>家长 / 小园所一条命令可用，无外部中间件</td><td>单进程 + 单文件 SQLite + 静态资源；运行时零 npm 依赖；Docker 单容器</td></tr>
+        <tr><td>安全与隐私</td><td>家庭级隔离；儿童照片与 AI 数据可控</td><td>household 守卫、RBAC、consent、鉴权读取、保留期清理、审计</td></tr>
+        <tr><td>可维护</td><td>边界清楚、测试可读、后期可替换存储 / 模型</td><td>DDD 限界上下文、route → service → repo、AI provider 抽象、迁移版本化</td></tr>
+        <tr><td>可演进</td><td>先单机，后多实例</td><td>数据访问集中在 repo / SQL；无跨请求内存状态（除 SSE 与限流，均可外置）</td></tr>
+        <tr><td>可测试</td><td>TDD / 集成优先</td><td>buildApp 可注入临时 DB；真实 HTTP 测试；无 mock 框架</td></tr>
+        <tr><td>低成本内容</td><td>不依赖动画与 CDN</td><td>结构化 block、TTS / WebAudio / Canvas / emoji，公开课源带许可</td></tr>
+      </tbody>
+    </table>
+    <div class="callout warn"><strong>刻意约束：</strong>不引入 React / ORM / Redis / 消息队列 / 云存储。它们会提高交付与部署成本，而当前规模（单家庭到小型园所）不需要。替换路径已保留（见 §17）。</div>
+
+    <h2 id="stack"><span class="num">02 / STACK</span>技术选型与权衡</h2>
+    <table>
+      <thead><tr><th>选择</th><th>理由</th><th>代价 / 替代</th></tr></thead>
+      <tbody>
+        <tr><td>Node 24 原生 TypeScript 类型擦除</td><td>`node src/server.ts` 直接运行；不存在构建产物漂移</td><td>不能用 enum / 参数属性；由 `tsc --noEmit` 做类型门禁</td></tr>
+        <tr><td>`node:sqlite`（WAL）</td><td>零外部依赖；备份 = 文件；事务与索引足够</td><td>写并发有限；多实例时换 Postgres，repo 层不变</td></tr>
+        <tr><td>自研 HTTP 路由 / 中间件</td><td>~300 行、可读、无供应链风险；统一错误与安全头</td><td>无生态中间件；复杂鉴权需自己写（已覆盖）</td></tr>
+        <tr><td>原生 ES Modules + PWA</td><td>无打包器；手机可安装；一套代码适配手机 / 平板 / Mac</td><td>无框架响应式；通过明确的 view 模块与 CSS 设计系统约束</td></tr>
+        <tr><td>OpenAI-compatible AI 适配 + 本地规则</td><td>DeepSeek / OpenAI / 自建均可；无 Key 也能完整演示</td><td>本地引擎措辞固定；模型质量取决于供应商</td></tr>
+        <tr><td>`node:test` + 真实 HTTP</td><td>无框架；测试即接口契约；可并行临时 DB</td><td>无覆盖率工具；用清单与断言保证关键路径</td></tr>
+        <tr><td>独立子进程 + Node 权限模型</td><td>无依赖的隔离执行；无宿主对象注入；限制时间 / 内存 / 文件权限</td><td>非虚拟机级硬隔离；默认关闭，需显式开启</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="context"><span class="num">03 / CONTEXT</span>系统上下文</h2>
+    <div class="diagram">
+      <svg viewBox="0 0 900 420" role="img" aria-label="系统上下文图">
+        <defs><marker id="a" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8" fill="#9aa0ae"/></marker></defs>
+        <rect x="20" y="40" width="170" height="90" rx="16" fill="#eef0ff" stroke="#c7d2fe"/><text x="105" y="76" text-anchor="middle" font-size="13" font-weight="700" fill="#312e81">家长 · 手机 / Mac</text><text x="105" y="98" text-anchor="middle" font-size="10" fill="#6f7280">计划 / 看板 / 社区</text>
+        <rect x="20" y="180" width="170" height="90" rx="16" fill="#fff7df" stroke="#fde68a"/><text x="105" y="216" text-anchor="middle" font-size="13" font-weight="700" fill="#8a5a00">孩子 · 平板</text><text x="105" y="238" text-anchor="middle" font-size="10" fill="#8a5a00">收件箱 / 课时 / 拍照</text>
+        <rect x="20" y="320" width="170" height="70" rx="16" fill="#f1f1f4" stroke="#ddd"/><text x="105" y="350" text-anchor="middle" font-size="12.5" font-weight="700">教师 / 管理员</text><text x="105" y="370" text-anchor="middle" font-size="10" fill="#6f7280">审核 / 运营 / 模型</text>
+        <rect x="330" y="110" width="250" height="210" rx="22" fill="#4f46e5"/><text x="455" y="150" text-anchor="middle" font-size="16" font-weight="800" fill="#fff">星芽学堂</text><text x="455" y="172" text-anchor="middle" font-size="10.5" fill="#c7d2fe">Node 24 单体 · API + SPA</text>
+        <text x="455" y="205" text-anchor="middle" font-size="10.5" fill="#e0e7ff">认证 / 课程 / 计划 / 智能体</text><text x="455" y="222" text-anchor="middle" font-size="10.5" fill="#e0e7ff">生态 / 社区 / 设备 / 看板</text>
+        <rect x="455" y="245" width="100" height="52" rx="10" fill="#4338ca"/><text x="505" y="266" text-anchor="middle" font-size="10" fill="#fff">SQLite</text><text x="505" y="282" text-anchor="middle" font-size="9" fill="#c7d2fe">WAL + 文件</text>
+        <rect x="680" y="50" width="190" height="80" rx="16" fill="#eafaf4" stroke="#a7f3d0"/><text x="775" y="82" text-anchor="middle" font-size="12.5" font-weight="700" fill="#065f46">大模型（可选）</text><text x="775" y="102" text-anchor="middle" font-size="10" fill="#0f766e">DeepSeek / OpenAI 兼容</text>
+        <rect x="680" y="165" width="190" height="80" rx="16" fill="#fff5e8" stroke="#fed7aa"/><text x="775" y="197" text-anchor="middle" font-size="12.5" font-weight="700" fill="#8a4b08">连接器 / 公开课源</text><text x="775" y="217" text-anchor="middle" font-size="10" fill="#9a5b12">白名单 · 审计 · 许可</text>
+        <rect x="680" y="280" width="190" height="80" rx="16" fill="#f1f1f4" stroke="#ddd"/><text x="775" y="312" text-anchor="middle" font-size="12" font-weight="700">摄像头 / TTS / WebAudio</text><text x="775" y="332" text-anchor="middle" font-size="10" fill="#6f7280">浏览器本地能力</text>
+        <line x1="190" y1="85" x2="330" y2="170" stroke="#9aa0ae" stroke-width="1.5" marker-end="url(#a)"/>
+        <line x1="190" y1="225" x2="330" y2="225" stroke="#9aa0ae" stroke-width="1.5" marker-end="url(#a)"/>
+        <line x1="190" y1="355" x2="330" y2="280" stroke="#9aa0ae" stroke-width="1.5" marker-end="url(#a)"/>
+        <line x1="580" y1="160" x2="680" y2="95" stroke="#9aa0ae" stroke-width="1.5" marker-end="url(#a)" stroke-dasharray="4 3"/>
+        <line x1="580" y1="210" x2="680" y2="205" stroke="#9aa0ae" stroke-width="1.5" marker-end="url(#a)" stroke-dasharray="4 3"/>
+        <line x1="505" y1="245" x2="755" y2="245" stroke="#9aa0ae" stroke-width="1.5" marker-end="url(#a)"/>
+      </svg>
+      <div class="caption">单一可部署单元；外部依赖均可选。无模型时自动降级为本地规则引擎，无网络时前端仍可访问缓存壳。</div>
+    </div>
+
+    <h2 id="deploy"><span class="num">04 / DEPLOYMENT</span>部署视图</h2>
+    <pre><code>             ┌───────────────────────────────┐
+  :8080 ───▶ │  node src/server.ts            │
+             │  ├─ Router (CSP/限流/静态)     │
+             │  ├─ 业务模块 (route/service)   │
+             │  ├─ SQLite  data/starsprout.db │
+             │  ├─ 照片    data/snapshots/*   │
+             │  ├─ SSE 设备连接 (内存)         │
+             │  └─ 保留期清理 (启动 + 每日)    │
+             └───────────────────────────────┘
+                       │ 可选 HTTPS (TLS_CERT/KEY)
+                       ▼
+             浏览器 PWA / 平板学习端 / Mac</code></pre>
+    <p>Docker 只挂载 <code>/data</code>；镜像不执行 <code>npm install</code>，不包含开发依赖。健康检查为 <code>GET /api/health</code>，返回 DB、课时数、AI 模式。多实例时 SSE 与限流需外置（Redis），SQLite 换 Postgres。</p>
+
+    <h2 id="ddd"><span class="num">05 / DDD</span>限界上下文与模块</h2>
+    <table>
+      <thead><tr><th>限界上下文</th><th>职责</th><th>核心文件</th></tr></thead>
+      <tbody>
+        <tr><td>Identity &amp; Household</td><td>用户、家庭、成员、会话、设备令牌、RBAC</td><td><code>modules/auth.ts</code>、<code>shared.ts</code></td></tr>
+        <tr><td>Curriculum</td><td>学科、学段、框架、单元、课时、进度、公开来源</td><td><code>modules/curriculum.ts</code>、<code>infra/curriculum-data.ts</code>、<code>public-courses.ts</code></td></tr>
+        <tr><td>Planning</td><td>计划草稿、排课约束、激活、提醒、逾期纠偏</td><td><code>modules/plans.ts</code></td></tr>
+        <tr><td>Agent Workspace</td><td>会话、消息、记忆、工作区、模型、工具调用、沙箱</td><td><code>modules/agent.ts</code>、<code>ai.ts</code>、<code>sandbox*.ts</code></td></tr>
+        <tr><td>Ecosystem</td><td>专家、技能、连接器、安装、审核、调用审计</td><td><code>modules/registry.ts</code></td></tr>
+        <tr><td>Community</td><td>帖子、评论、点赞、举报、审核状态机</td><td><code>modules/community.ts</code>、<code>moderation.ts</code></td></tr>
+        <tr><td>Companion</td><td>设备配对、推送、学习会话、照片</td><td><code>modules/device.ts</code></td></tr>
+        <tr><td>Insight</td><td>看板聚合、周期报告、运营统计</td><td><code>modules/analytics.ts</code></td></tr>
+        <tr><td>Privacy &amp; Governance</td><td>监护授权、导出/删除、审计</td><td><code>modules/privacy.ts</code>、<code>shared.ts</code></td></tr>
+      </tbody>
+    </table>
+    <p>上下文之间只通过应用服务或明确的 repo 查询交互；例如计划模块调用课程 repo 获取候选课时，不直接操作课时 UI 结构；智能体通过工具白名单调用计划 / 课程 / 社区，不绕过审核。</p>
+
+    <h2 id="layers"><span class="num">06 / LAYERS</span>分层与依赖规则</h2>
+    <div class="diagram">
+      <svg viewBox="0 0 860 300" role="img" aria-label="分层架构">
+        <rect x="30" y="20" width="800" height="56" rx="12" fill="#eef0ff" stroke="#c7d2fe"/><text x="50" y="44" font-size="13" font-weight="700" fill="#312e81">Interfaces · routes/*</text><text x="50" y="63" font-size="10" fill="#6f7280">参数校验、HTTP 状态、限流入口、二进制/SSE 响应</text>
+        <rect x="30" y="90" width="800" height="56" rx="12" fill="#f5f3ff" stroke="#ddd6fe"/><text x="50" y="114" font-size="13" font-weight="700" fill="#4c1d95">Application · modules/*.ts</text><text x="50" y="133" font-size="10" fill="#6f7280">用例编排、权限/授权、状态机、AI 工具执行、审计</text>
+        <rect x="30" y="160" width="800" height="56" rx="12" fill="#eafaf4" stroke="#a7f3d0"/><text x="50" y="184" font-size="13" font-weight="700" fill="#065f46">Domain · 规则与类型</text><text x="50" y="203" font-size="10" fill="#0f766e">排课约束、审核状态、授权类型、计划偏差、课程 block</text>
+        <rect x="30" y="230" width="800" height="48" rx="12" fill="#f1f1f4" stroke="#ddd"/><text x="50" y="252" font-size="13" font-weight="700" fill="#374151">Infrastructure · infra/* + core/*</text><text x="50" y="270" font-size="10" fill="#6f7280">SQLite、迁移、种子、文件、JWT、口令、限流、日志</text>
+        <line x1="430" y1="76" x2="430" y2="90" stroke="#9aa0ae" stroke-dasharray="3 2"/><line x1="430" y1="146" x2="430" y2="160" stroke="#9aa0ae" stroke-dasharray="3 2"/><line x1="430" y1="216" x2="430" y2="230" stroke="#9aa0ae" stroke-dasharray="3 2"/>
+      </svg>
+      <div class="caption">依赖只向下；路由不写 SQL，repo 不产生 HTTP 语义。跨上下文调用走模块导出的应用函数。</div>
+    </div>
+    <ul>
+      <li><strong>路由</strong>只做 <code>ctx → service</code>；错误由 <code>AppError</code> 统一序列化为 <code>{ok:false,error:{code,message,details}}</code>。</li>
+      <li><strong>服务</strong>负责用例事务、家庭校验、审计；不依赖 <code>req/res</code>，便于测试与复用（如智能体工具直接调用 <code>generatePlan</code>）。</li>
+      <li><strong>repo/SQL</strong> 集中在模块底部；表名与索引随迁移管理；不使用 ORM。</li>
+      <li><strong>前端</strong>按 view 模块拆分，<code>api.js</code> 统一 token / 错误，<code>ui.js</code> 统一转义 / 模态 / 图表；<code>esc()</code> 是硬规则。</li>
+    </ul>
+
+    <h2 id="data"><span class="num">07 / DATA</span>数据模型</h2>
+    <div class="diagram">
+      <svg viewBox="0 0 900 470" role="img" aria-label="核心数据模型">
+        <defs><marker id="m" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7" fill="#9aa0ae"/></marker></defs>
+        <g font-size="10" fill="#374151">
+          <rect x="20" y="20" width="150" height="88" rx="9" fill="#fff" stroke="#ddd"/><text x="32" y="40" font-weight="700">households</text><text x="32" y="56">id / name</text><text x="32" y="70">owner_id</text><text x="32" y="84">created_at</text>
+          <rect x="20" y="135" width="150" height="100" rx="9" fill="#fff" stroke="#ddd"/><text x="32" y="155" font-weight="700">children</text><text x="32" y="171">household_id</text><text x="32" y="185">name / class_code</text><text x="32" y="199">birth_year</text><text x="32" y="213">created_at</text>
+          <rect x="20" y="262" width="150" height="90" rx="9" fill="#fff" stroke="#ddd"/><text x="32" y="282" font-weight="700">users</text><text x="32" y="298">email / role</text><text x="32" y="312">password_hash</text><text x="32" y="326">must_change_pw</text>
+          <rect x="20" y="380" width="150" height="70" rx="9" fill="#fff" stroke="#ddd"/><text x="32" y="400" font-weight="700">household_members</text><text x="32" y="416">household_id / user_id</text>
+
+          <rect x="215" y="20" width="170" height="112" rx="9" fill="#fff" stroke="#ddd"/><text x="227" y="40" font-weight="700">frameworks</text><text x="227" y="56">subject_code / class_code</text><text x="227" y="70">term / objectives</text><text x="227" y="84">source_code / version</text>
+          <rect x="215" y="158" width="170" height="92" rx="9" fill="#fff" stroke="#ddd"/><text x="227" y="178" font-weight="700">units</text><text x="227" y="194">framework_id / code</text><text x="227" y="208">title / seq / objective</text><text x="227" y="222">source_code</text>
+          <rect x="215" y="276" width="170" height="112" rx="9" fill="#fff" stroke="#ddd"/><text x="227" y="296" font-weight="700">lessons</text><text x="227" y="312">unit_id / code / title</text><text x="227" y="326">minutes / objective</text><text x="227" y="340">blocks JSON</text><text x="227" y="354">tags / version / published</text>
+          <rect x="215" y="414" width="170" height="44" rx="9" fill="#fefce8" stroke="#fde68a"/><text x="227" y="434" font-weight="700">public_sources / course_packs</text><text x="227" y="448">license / version / checksum / status</text>
+
+          <rect x="430" y="20" width="150" height="112" rx="9" fill="#fff" stroke="#ddd"/><text x="442" y="40" font-weight="700">progress</text><text x="442" y="56">child_id / lesson_id</text><text x="442" y="70">status / score</text><text x="442" y="84">seconds / attempts</text><text x="442" y="98">UNIQUE(child,lesson)</text>
+          <rect x="430" y="158" width="150" height="112" rx="9" fill="#fff" stroke="#ddd"/><text x="442" y="178" font-weight="700">plans / plan_items</text><text x="442" y="194">child_id / status</text><text x="442" y="208">dates / days_per_week</text><text x="442" y="222">item status / lesson_id</text><text x="442" y="236">reminders / adjustments</text>
+          <rect x="430" y="296" width="150" height="128" rx="9" fill="#fff" stroke="#ddd"/><text x="442" y="316" font-weight="700">agent_*</text><text x="442" y="332">sessions / messages</text><text x="442" y="346">memory / workspace_files</text><text x="442" y="360">runs / sandbox_executions</text><text x="442" y="374">model_configs</text>
+          <rect x="430" y="440" width="150" height="40" rx="9" fill="#eef0ff" stroke="#c7d2fe"/><text x="442" y="459" font-weight="700">ai_usage</text><text x="442" y="472">household / kind</text>
+
+          <rect x="625" y="20" width="170" height="112" rx="9" fill="#fff" stroke="#ddd"/><text x="637" y="40" font-weight="700">community_posts</text><text x="637" y="56">type / title / content</text><text x="637" y="70">status / score / reasons</text><text x="637" y="84">course_ref / published_at</text>
+          <rect x="625" y="158" width="170" height="112" rx="9" fill="#fff" stroke="#ddd"/><text x="637" y="178" font-weight="700">experts / skills</text><text x="637" y="194">owner / household</text><text x="637" y="208">status / visibility</text><text x="637" y="222">system_prompt / definition</text>
+          <rect x="625" y="296" width="170" height="112" rx="9" fill="#fff" stroke="#ddd"/><text x="637" y="316" font-weight="700">connectors</text><text x="637" y="332">kind / base_url</text><text x="637" y="346">tools / secret_enc</text><text x="637" y="360">status / visibility</text><text x="637" y="374">connector_invocations</text>
+          <rect x="625" y="430" width="170" height="72" rx="9" fill="#fff" stroke="#ddd"/><text x="637" y="450" font-weight="700">devices / pushes</text><text x="637" y="466">snapshots / learning_sessions</text><text x="637" y="482">token_hash / consent</text>
+        </g>
+        <g stroke="#9aa0ae" fill="none" marker-end="url(#m)">
+          <line x1="170" y1="64" x2="215" y2="64"/><line x1="170" y1="295" x2="215" y2="295"/><line x1="170" y1="185" x2="430" y2="185"/>
+          <line x1="385" y1="76" x2="430" y2="76"/><line x1="385" y1="204" x2="430" y2="204"/><line x1="385" y1="332" x2="430" y2="332"/>
+          <line x1="170" y1="75" x2="430" y2="75" stroke-dasharray="3 3"/><line x1="580" y1="76" x2="625" y2="76"/><line x1="580" y1="220" x2="625" y2="220"/>
+        </g>
+      </svg>
+      <div class="caption">完整表 ~40 张；关键不变量：progress 唯一 (child, lesson)；plan_items 带 household_id 便于隔离查询；course_packs 唯一 (source, code, version)。</div>
+    </div>
+    <h3>关键不变量</h3>
+    <ul>
+      <li>所有家庭资源表都带 <code>household_id</code>（或可通过 child / plan / session 推导），服务层每次访问都校验。</li>
+      <li>设备令牌只绑定一个 household；照片表与文件均记录 device / child；读取时校验 child 归属。</li>
+      <li>课程发布需 <code>is_published=1</code>；隔离中的课程包对应课时为 0；审批后原子置 1。</li>
+      <li>计划项状态只允许 <code>pending / done / skipped / missed / moved</code>；改变状态与写调整在同一事务。</li>
+      <li>会话 / 记忆 / 工作区均以 household 为边界；工作区路径禁止 <code>..</code>、绝对路径与特殊字符。</li>
+      <li>审核状态迁移由服务端状态机控制，作者不能自审；编辑已通过内容会回到 pending。</li>
+    </ul>
+
+    <h3>伙伴域新增表（迁移 v4）</h3>
+    <table>
+      <thead><tr><th>表</th><th>关键字段</th><th>不变量</th></tr></thead>
+      <tbody>
+        <tr><td><code>pets</code></td><td>child_id UNIQUE, species, level, exp, hunger, happiness, energy, bond, mood, equipped, last_decay_at</td><td>每个孩子最多一只；属性 0–100，离线衰减封顶且下限 30–38</td></tr>
+        <tr><td><code>wallets</code></td><td>child_id PK, coins, total_earned</td><td>余额由服务端条件扣减，不允许负值</td></tr>
+        <tr><td><code>shop_items</code></td><td>code PK, kind food|clothing|toy|decor, price, effect JSON</td><td>价格与效果只读种子，客户端不可改价</td></tr>
+        <tr><td><code>pet_inventory</code></td><td>pet_id + item_code UNIQUE, qty, equipped</td><td>衣服唯一；食用扣减，数量为 0 即删除</td></tr>
+        <tr><td><code>reward_events</code></td><td>child_id + source_type + source_id UNIQUE, coins, exp, stars</td><td>首通/单元/计划只发一次，重放幂等</td></tr>
+        <tr><td><code>pet_interactions</code></td><td>pet_id, action, item_code, coins_spent, created_at</td><td>互动冷却、审计与每日任务依据</td></tr>
+      </tbody>
+    </table>
+    <h2 id="api"><span class="num">08 / API</span>API 参考（节选）</h2>
+    <p>统一响应：<code>{ ok: true, data }</code> / <code>{ ok: false, error: { code, message, details? } }</code>。除 <code>/api/health</code>、<code>/api/meta</code>、<code>/api/auth/*</code>、<code>/api/device/pair</code> 外均需 Bearer Token。</p>
+    <table>
+      <thead><tr><th>领域</th><th>端点</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td>认证</td><td class="api">POST /api/auth/register · login · logout<br>GET /api/auth/me<br>POST /api/auth/change-password</td><td>注册即建家庭；登出吊销会话；改密吊销全部旧会话</td></tr>
+        <tr><td>家庭 / 孩子</td><td class="api">GET/POST /api/children<br>PATCH/DELETE /api/children/:id<br>GET /api/children/:id/consents<br>PUT /api/children/:id/consents/:kind</td><td>三类授权：camera / ai_processing / analytics；删除需 confirm</td></tr>
+        <tr><td>课程</td><td class="api">GET /api/curriculum/overview<br>GET /api/curriculum/frameworks<br>GET /api/curriculum/frameworks/:id<br>GET /api/curriculum/lessons/:id<br>POST /api/curriculum/lessons/:id/progress<br>GET /api/curriculum/search</td><td>全部校验孩子归属；课时返回 blocks 与来源</td></tr>
+        <tr><td>计划</td><td class="api">GET/POST /api/plans<br>POST /api/plans/generate<br>POST /api/plans/manual<br>GET /api/plans/:id<br>PATCH /api/plans/:id<br>POST /api/plans/:id/activate<br>POST /api/plans/:id/correct<br>PATCH /api/plans/:id/items/:itemId</td><td>生成即落草稿；纠正策略 shift / skip；提醒自动生成</td></tr>
+        <tr><td>提醒</td><td class="api">GET /api/reminders/upcoming · due</td><td>due 读取即标记 sent，幂等消费</td></tr>
+        <tr><td>看板 / 报告</td><td class="api">GET /api/analytics/dashboard<br>GET/POST /api/analytics/reports</td><td>真实聚合；报告按 child + period + period_key 唯一</td></tr>
+        <tr><td>智能体</td><td class="api">GET/POST /api/agent/sessions<br>GET/DELETE /api/agent/sessions/:id<br>POST /api/agent/sessions/:id/messages<br>GET/PUT/DELETE .../files<br>GET /api/agent/memory · DELETE /:id<br>GET /api/agent/models<br>POST /api/agent/sandbox</td><td>工具最多 3 轮；会话 / 记忆 / 文件均按家庭隔离</td></tr>
+        <tr><td>生态</td><td class="api">GET/POST /api/registry/experts · skills · connectors<br>POST /api/registry/:type/:id/install<br>POST /api/registry/connectors/:id/invoke<br>GET /api/registry/connectors/invocations</td><td>公开资源审核；连接器白名单 + 审计</td></tr>
+        <tr><td>社区</td><td class="api">GET /api/community/feed · mine<br>POST /api/community/posts<br>GET/PATCH/DELETE /api/community/posts/:id<br>POST .../like · comments · report</td><td>feed 仅 approved；编辑回到 pending</td></tr>
+        <tr><td>温度文案</td><td class="api">GET /api/warmth?audience=parent|child&amp;context=home|lesson|plan|child&amp;fresh=1&amp;exclude=...<br>GET /api/device/warmth</td><td>每日稳定语气；fresh 只换句不换 kind；exclude 避免短期重复；家长接口校验孩子归属</td></tr>
+        <tr><td>伙伴 / 奖励</td><td class="api">GET /api/pet?childId<br>POST /api/pet/adopt · interact · shop/buy · equip</td><td>状态 + 钱包 + 背包 + 商店 + 每日任务；服务端校验孩子归属、金币与商品</td></tr>
+        <tr><td>设备</td><td class="api">POST /api/devices/pairing-code<br>POST /api/device/pair (public)<br>GET /api/device/inbox · events (SSE)<br>POST /api/device/pushes/:id/ack<br>GET /api/device/plans/:id · lessons/:id<br>POST /api/device/progress<br>POST /api/device/snapshots</td><td>设备令牌独立；SSE 支持 query token；拍照二次同意</td></tr>
+        <tr><td>治理</td><td class="api">GET /api/admin/overview · users · audit · packs<br>POST /api/admin/sources/sync · packs/:id/approve<br>POST /api/admin/models<br>GET/POST /api/admin/community/queue · registry/queue</td><td>管理员；全部写审计；不能自审</td></tr>
+      </tbody>
+    </table>
+    <p class="small muted">完整端点以 <code>src/routes/*.ts</code> 为准；测试覆盖了主要成功与失败路径。</p>
+
+    <h2 id="auth"><span class="num">09 / AUTH</span>认证与授权</h2>
+    <div class="flow">
+      <div class="step"><span class="n">01</span><strong>口令</strong><small>scrypt + 16B salt；强密码 8–72 位且含字母数字</small></div>
+      <div class="step"><span class="n">02</span><strong>会话</strong><small>JWT HS256 7d + sessions(jti) 可吊销；改密 / 停用全吊销</small></div>
+      <div class="step"><span class="n">03</span><strong>请求</strong><small>Bearer 解析 → 用户状态 / 会话 / 家庭验证</small></div>
+      <div class="step"><span class="n">04</span><strong>路由</strong><small>public / user / staff / admin / device 五级</small></div>
+      <div class="step"><span class="n">05</span><strong>资源</strong><small>服务层再校验 household、child、plan、device 归属</small></div>
+    </div>
+    <table>
+      <thead><tr><th>能力</th><th>parent</th><th>teacher</th><th>admin</th><th>device</th></tr></thead>
+      <tbody>
+        <tr><td>本家庭课程 / 计划 / 看板 / 社区发布</td><td>✓</td><td>✓</td><td>✓</td><td>只读计划 / 课时 / 进度回传</td></tr>
+        <tr><td>社区 / 生态审核</td><td>—</td><td>✓</td><td>✓</td><td>—</td></tr>
+        <tr><td>公开专家 / 技能 / 连接器发布</td><td>—</td><td>✓（待审）</td><td>✓（待审）</td><td>—</td></tr>
+        <tr><td>模型 / 用户 / 来源同步 / 审计</td><td>—</td><td>—</td><td>✓</td><td>—</td></tr>
+        <tr><td>照片上传</td><td>—</td><td>—</td><td>—</td><td>✓（需 camera 授权 + consent）</td></tr>
+      </tbody>
+    </table>
+    <p><strong>隔离实现：</strong><code>assertHousehold</code>、<code>assertChildAccess</code>、<code>assertPlanAccess</code>、<code>sessionRow</code> 等函数在每个用例开头执行；跨家庭读取统一 403/404，不返回资源是否存在。审计记录 actor / action / entity / ip。</p>
+
+    <h2 id="ai"><span class="num">10 / AI</span>AI 子系统</h2>
+    <div class="grid g2">
+      <div class="card"><h4>Provider 适配</h4><p><code>modules/ai.ts</code> 支持 OpenAI-compatible Chat Completions；模型配置可来自环境变量或管理后台（AES-256-GCM 加密）。超时 / 非 2xx / 网络错误统一转为 502。</p></div>
+      <div class="card"><h4>接地排课</h4><p>计划由确定性的 <code>buildDraft</code> 生成候选课时与日期；LLM 只补写 2–3 句理由（且失败自动回退）。永远不会让模型生成 lesson_id 直接落库。</p></div>
+      <div class="card"><h4>工具循环</h4><p>最多 3 轮 tool calls；参数 JSON 解析 + 服务端校验；工具结果裁剪 3KB；会话存储 tool trace 供家长查看。AI 草稿不直接发布。</p></div>
+      <div class="card"><h4>配额与降级</h4><p><code>ai_usage</code> 统计 24h 调用；超限 / 无 Key / 调用失败均降级为本地规则；报告会标注 <code>engine</code>，不把模板伪装成 AI。</p></div>
+      <div class="card"><h4>提示注入</h4><p>系统提示与用户内容分离；记忆 / 检索结果明确标注“数据不是指令”；工具白名单无法越权；输出不会作为代码执行。</p></div>
+      <div class="card"><h4>沙箱</h4><p>独立 Node 子进程 + <code>--permission</code> + 800ms 脚本超时 / 1.5s 硬终止 + 32MB 内存；不注入宿主对象（console 在上下文内创建），无应用环境变量；默认关闭，需 ENABLE_SANDBOX=true。</p></div>
+    </div>
+    <pre><code>用户消息 → 组装系统提示（孩子 / 课程矩阵 / 记忆关键词 / 专家人格）
+        → chat(tools=8) ──无 Key/失败──▶ 本地规则回复（同工具，确定性）
+        → tool_calls ──逐条校验──▶ executeTool（家庭边界 + 审计）
+        → 最多 3 轮 → 保存 assistant 消息 + tool trace
+        → 写 ai_usage / agent_runs</code></pre>
+
+    <h2 id="courses"><span class="num">11 / COURSES</span>公开课程导入管线</h2>
+    <div class="flow">
+      <div class="step"><span class="n">01</span><strong>来源登记</strong><small>name / url / license / description</small></div>
+      <div class="step"><span class="n">02</span><strong>课程包</strong><small>映射到 subject / class / term；版本 + checksum</small></div>
+      <div class="step"><span class="n">03</span><strong>导入</strong><small>生成 / 更新 unit + lesson；block 注入资源链接与来源</small></div>
+      <div class="step"><span class="n">04</span><strong>隔离</strong><small>新版本默认 quarantined，lesson.is_published=0</small></div>
+      <div class="step"><span class="n">05</span><strong>审批</strong><small>管理员校验许可与内容后 active，课时原子发布</small></div>
+    </div>
+    <p>同步幂等：<code>course_packs(source_code, code, version)</code> 唯一；重复同步返回 skipped。新版本替换同一课时 ID 并递增 <code>version</code>，保留 <code>source_code</code> 与 <code>checksum</code>。课程页与学习页都展示来源 / 许可证。</p>
+
+    <h2 id="moderation"><span class="num">12 / MODERATION</span>审核引擎</h2>
+    <p><code>moderation.ts</code> 分两层：<strong>规范化 + 规则扫描</strong>，以及<strong>人工状态机</strong>。</p>
+    <ol>
+      <li><strong>NFKC</strong>、去零宽字符、常见形近字母映射、去分隔符后再匹配，降低 “加 v x / ｗｅｉｘｉｎ” 绕过。</li>
+      <li>阻断级：色情、赌博、毒品、暴力 / 自伤、儿童侵害、体罚、联系方式、手机号、身份证 → 422，不落库。</li>
+      <li>复核级：站外链接、医疗建议、主题不相关 → 允许 pending，但标记原因与分数，人工决定。</li>
+      <li>课程贴必须引用已发布课时；否则 422。发布后编辑 → 重回 pending。</li>
+      <li>审核人不能是作者；拒绝必须写原因；每次决定写 <code>post_reviews</code> + <code>audit_logs</code>；举报可隐藏内容。</li>
+      <li>评论在同一规范化引擎下过滤；命中阻断直接 422。</li>
+    </ol>
+    <p>专家 / 技能 / 连接器共用“公开 → pending_review → 管理员 approve/reject”的治理模型；家庭私有资源即时可用。</p>
+
+    <h2 id="device"><span class="num">13 / DEVICE</span>多端与照片时序</h2>
+    <div class="diagram">
+      <svg viewBox="0 0 900 330" role="img" aria-label="设备配对与照片时序">
+        <g font-size="11" fill="#374151">
+          <text x="60" y="26" font-weight="700">家长手机</text><text x="390" y="26" font-weight="700">星芽学堂 API</text><text x="740" y="26" font-weight="700">平板 / Mac</text>
+          <line x1="95" y1="40" x2="95" y2="310" stroke="#ddd"/><line x1="430" y1="40" x2="430" y2="310" stroke="#ddd"/><line x1="775" y1="40" x2="775" y2="310" stroke="#ddd"/>
+          <line x1="95" y1="70" x2="430" y2="70" stroke="#9aa0ae" marker-end="url(#m)"/><text x="115" y="62">生成 6 位配对码（10min / 一次）</text>
+          <line x1="430" y1="100" x2="775" y2="100" stroke="#9aa0ae" marker-end="url(#m)"/><text x="450" y="92">输入配对码 → 设备令牌</text>
+          <line x1="95" y1="135" x2="430" y2="135" stroke="#9aa0ae" marker-end="url(#m)"/><text x="115" y="127">推送计划 + 附言</text>
+          <line x1="430" y1="165" x2="775" y2="165" stroke="#9aa0ae" marker-end="url(#m)"/><text x="450" y="157">SSE push / 轮询兜底</text>
+          <line x1="775" y1="200" x2="430" y2="200" stroke="#9aa0ae" marker-end="url(#m)"/><text x="450" y="192">开始学习 / 打开课时</text>
+          <line x1="775" y1="235" x2="430" y2="235" stroke="#9aa0ae" marker-end="url(#m)"/><text x="450" y="227">完成 → 进度 + 计划项 done</text>
+          <line x1="95" y1="270" x2="430" y2="270" stroke="#9aa0ae" marker-end="url(#m)"/><text x="115" y="262">请求拍照（需 camera 授权）</text>
+          <line x1="430" y1="295" x2="775" y2="295" stroke="#9aa0ae" marker-end="url(#m)"/><text x="450" y="287">拍照邀请 → 用户同意 → 上传</text>
+        </g>
+      </svg>
+      <div class="caption">设备令牌 365 天但哈希落库、可撤销；SSE 断线自动重连，前端 30s 轮询兜底。照片文件 0600，读取必须携带家长令牌。</div>
+    </div>
+    <p>安全要点：配对码一次性、过期即失效；设备只能访问本设备与家庭资源；<code>/api/device/progress</code> 与 <code>/snapshots</code> 均校验 child 归属；照片写入前校验 magic bytes（JPEG/PNG/WebP）与大小；服务端不信任客户端“已同意”，仍检查 <code>guardian_consents.camera</code>。照片保留期任务在启动与每日执行。</p>
+
+    <h2 id="companion"><span class="num">14 / COMPANION</span>伙伴与奖励运行时</h2>
+    <div class="grid g2">
+      <div class="card"><h4>模型与不变量</h4><p><code>src/modules/pet.ts</code> 负责伙伴、钱包、小铺、互动与奖励；<code>scoring.ts</code> 只根据课时 blocks 的答案键判分。奖励事件以 <code>(child_id, source_type, source_id)</code> 唯一约束保证首通/单元/计划只发一次；金币加总与宠物经验在同一事务内完成。</p></div>
+      <div class="card"><h4>反刷与防越权</h4><p>客户端 <code>score</code> 仅做范围校验，不参与发币；课时完成用 <code>answers[]</code> 服务端判分，无答案按中性 80。计划金币要求 ≥3 项且跨 ≥3 天；小铺购买用条件 UPDATE 防止并发透支；衣服唯一；所有孩子/家庭二次校验。</p></div>
+    </div>
+    <div class="flow">
+      <div class="step"><span class="n">01</span><strong>完成课时</strong><small>answers → scoreLesson → stars / coins / exp；写入 reward_events（幂等）</small></div>
+      <div class="step"><span class="n">02</span><strong>单元 / 计划检查</strong><small>全部课时完成或全部 plan_items done/skipped → 一次性里程碑</small></div>
+      <div class="step"><span class="n">03</span><strong>伙伴反馈</strong><small>exp / happiness / mood 更新；等级与庆祝由前端呈现</small></div>
+      <div class="step"><span class="n">04</span><strong>小铺 / 衣橱</strong><small>金币条件扣减 → 背包 → 喂食 / 穿衣；基础小饼干免费</small></div>
+    </div>
+    <table>
+      <thead><tr><th>风险</th><th>处理</th></tr></thead>
+      <tbody>
+        <tr><td>伪造分数 / 刷金币</td><td>服务端按题目答案判分；客户端 score 不采信；首通唯一约束；计划最低 3 项 3 天；重学提示「复习完成」</td></tr>
+        <tr><td>并发重复购买 / 负余额</td><td>事务内 <code>UPDATE ... WHERE coins &gt;= ?</code>，变更 0 行即 422；衣服唯一；SQLite 写串行</td></tr>
+        <tr><td>离线愧疚 / 宠物死亡</td><td>衰减最多 18/14/12 点、下限 35/38/30，≥24h 进入「想你」状态；基础食物免费；无排行榜、无死亡、无学习权限惩罚</td></tr>
+        <tr><td>XSS / SVG 注入</td><td>伙伴 SVG 由内部 species / mood / equipped 白名单生成；用户名字与文案走 <code>esc()</code>；CSP 无内联脚本；庆祝层焦点陷阱</td></tr>
+        <tr><td>数据删除 / 导出</td><td>宠物、钱包、背包、奖励纳入孩子 JSON 导出；删除孩子/家庭由 FK 级联清理；名称为社区同一套规范化检测</td></tr>
+        <tr><td>可访问性 / 动效</td><td>庆祝层 role=dialog、焦点陷阱、Esc、关闭恢复焦点；<code>prefers-reduced-motion</code> 跳过彩纸；移动端 390/320px 无横向滚动</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="warmth"><span class="num">15 / WARMTH</span>温度层与儿童空间</h2>
+    <div class="grid g2">
+      <div class="card"><h4>两套 HMI，一套数据</h4><p>家长路由与儿童路由共享课程、计划、进度、伙伴与奖励，只改变信息密度、语言和视觉：家长端保留可执行数据，儿童端隐藏报告、联系方式和家长设置；儿童路由通过 <code>kid-mode</code> 隐藏侧栏/顶栏，并提供始终可见的「回家长空间」。</p></div>
+      <div class="card"><h4>文案是产品资产</h4><p><code>src/infra/warmth-data.ts</code> 是可审校的原创文案池；<code>warmth.ts</code> 按日期 + 受众 + 场景 + 孩子哈希选择语气，刷新只换句、不换语气；<code>exclude</code> 过滤近期重复，前端每日最多换 2 次。无第三方引用、无自动轮播。</p></div>
+    </div>
+    <div class="flow">
+      <div class="step"><span class="n">01</span><strong>场景决定语气</strong><small>home / child / lesson / report / device；lesson 按分数选 praise 或 retry</small></div>
+      <div class="step"><span class="n">02</span><strong>每日稳定</strong><small>同一孩子同一天返回同一 kind；刷新仅换同 kind 的句子</small></div>
+      <div class="step"><span class="n">03</span><strong>安全注入</strong><small>所有文案经 esc()；儿童空间使用内部 SVG；CSP 不放开内联脚本</small></div>
+      <div class="step"><span class="n">04</span><strong>不打断</strong><small>卡片/气泡/庆祝层内的一行；无自动弹窗、无自动轮播、无声音</small></div>
+    </div>
+    <table>
+      <thead><tr><th>风险</th><th>处理</th></tr></thead>
+      <tbody>
+        <tr><td>情绪操纵 / 愧疚</td><td>文案池禁用「不努力就对不起」「别人都在学」；基础照顾免费；不排名、不惩罚缺席</td></tr>
+        <tr><td>鸡汤过度 / 打扰</td><td>每日默认一条；家长首页最多手动换 2 次；儿童端只在空间/完成/设备首屏出现；不自动轮播</td></tr>
+        <tr><td>幽默不适龄</td><td>儿童端只用温和情境幽默；低分/失败场景禁用 humor；设备端只取 child_warm / child_brave</td></tr>
+        <tr><td>越权 / XSS</td><td>家长接口校验 childId 归属；文案转义；儿童页不含家长 API 数据与设置入口</td></tr>
+        <tr><td>可访问性</td><td>aria-live 单行播报、焦点陷阱、Esc、reduced-motion、儿童主要按钮 ≥48–56px、320/390px 无横向滚动</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="security"><span class="num">16 / SECURITY</span>威胁模型与缓解</h2>
+    <table>
+      <thead><tr><th>威胁</th><th>场景</th><th>缓解</th></tr></thead>
+      <tbody>
+        <tr><td>越权访问</td><td>改 childId / planId / sessionId 读取他人数据</td><td>household 守卫 + 资源归属校验 + 403/404；测试覆盖跨家庭</td></tr>
+        <tr><td>会话劫持</td><td>旧 token 在改密 / 停用后继续使用</td><td>jti 会话表 + revoked_at；登录只接受未吊销会话</td></tr>
+        <tr><td>设备滥用</td><td>令牌泄露 / 设备丢失</td><td>家长撤销 → token_hash 清空；设备仅限设备端点</td></tr>
+        <tr><td>XSS</td><td>社区内容 / 专家简介注入脚本</td><td>前端统一 esc / textContent；CSP 禁止内联脚本；Markdown 只允许粗体与代码</td></tr>
+        <tr><td>SSRF</td><td>连接器访问内网 / 云元数据</td><td>域名白名单 + DNS 私网拦截 + 禁重定向 + 超时 + 响应截断</td></tr>
+        <tr><td>审核绕过</td><td>自审、编辑后广告、评论导流</td><td>作者≠审核者；编辑回 pending；评论过滤；举报可隐藏</td></tr>
+        <tr><td>AI 注入</td><td>课程 / 帖子内容诱导工具越权</td><td>工具白名单 + 参数校验 + 家庭边界 + 内容视为数据；草稿不直接发布</td></tr>
+        <tr><td>儿童隐私</td><td>照片外泄 / 静默监控</td><td>三类 consent；设备二次确认；鉴权读取；保留期；导出不含原图；可删除</td></tr>
+        <tr><td>暴力破解</td><td>撞库 / 批量注册</td><td>按 IP 固定窗口限流；scrypt 成本；demo 模式显式关闭</td></tr>
+        <tr><td>演示后门</td><td>生产暴露 demo 账号</td><td>生产默认不 seed；必须显式 DEMO_MODE=true 才展示；生产清单要求关闭</td></tr>
+        <tr><td>沙箱逃逸</td><td>执行恶意代码</td><td>默认关闭；独立子进程 + Node 权限模型 + 超时 + 内存；文档声明非虚拟机级</td></tr>
+      </tbody>
+    </table>
+    <h3>安全响应头</h3>
+    <p><code>CSP default-src 'self'; script-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'</code>、<code>X-Content-Type-Options: nosniff</code>、<code>X-Frame-Options: DENY</code>、<code>Permissions-Policy: camera=(self), microphone=(self)</code>、<code>Referrer-Policy</code>、请求 ID。JSON 请求体上限 8MB；照片上限 2.5MB；列表默认限 50。</p>
+
+    <h2 id="testing"><span class="num">17 / TESTING</span>测试与质量门禁</h2>
+    <div class="grid g3">
+      <div class="card"><h4>83 / 83 通过</h4><p>9 个测试套件（含 pet/warmth/seed）；真实 HTTP + 临时 SQLite + 随机端口；并行执行约 2s。</p></div>
+      <div class="card"><h4>严格类型</h4><p><code>tsc --noEmit</code> 开启 strict + erasableSyntaxOnly；CI 可同时跑测试与类型检查。</p></div>
+      <div class="card"><h4>浏览器 E2E</h4><p>Chrome 157 + CDP 实测：登录、首页、课程、课时、计划、智能体、社区、设备配对、学习完成、照片、移动端、审核台、管理后台。</p></div>
+    </div>
+    <table>
+      <thead><tr><th>层</th><th>策略</th><th>例子</th></tr></thead>
+      <tbody>
+        <tr><td>领域规则</td><td>通过服务 API 断言结果</td><td>纠偏只移动逾期项；自审 403；SSRF 403；沙箱 timeout</td></tr>
+        <tr><td>HTTP 契约</td><td>真实 fetch + 状态码 + envelope</td><td>401 / 403 / 404 / 422 / 429；跨家庭不泄露</td></tr>
+        <tr><td>数据不变量</td><td>直接查 DB 断言</td><td>进度唯一、计划项状态、审计记录、待审队列</td></tr>
+        <tr><td>前端</td><td>浏览器手动 / CDP 验证</td><td>响应式、无 JS 异常、图片鉴权、移动端</td></tr>
+        <tr><td>部署</td><td>smoke.sh</td><td>健康 → 登录 → 课程 → 生成计划 → 配对 → 收件箱</td></tr>
+      </tbody>
+    </table>
+    <p class="small muted">详见 <a href="/docs/qa.html">测试与验收报告</a>。测试模式 (<code>NODE_ENV=test</code>) 关闭限流；生产限流生效，登录 10 次 / 5 分钟。</p>
+
+    <h2 id="ops"><span class="num">18 / OPS</span>部署与运维</h2>
+    <h3>启动</h3>
+    <pre><code># 本机（Node 24+，无需 npm install）
+./scripts/start.sh
+
+# Docker
+docker compose up -d
+
+# 生产（示例）
+NODE_ENV=production SEED_DEMO=false DEMO_MODE=false \
+APP_SECRET=$(openssl rand -base64 48) \
+TLS_CERT=./data/certs/cert.pem TLS_KEY=./data/certs/key.pem \
+node src/server.ts</code></pre>
+    <h3>备份 / 恢复</h3>
+    <pre><code>./scripts/backup.sh /backups/2026-11-25     # VACUUM INTO + snapshots.tar.gz + env
+# 恢复：停止服务 → 解压数据库与照片 → 恢复 .env → 启动
+cp /backups/2026-11-25/starsprout.db data/</code></pre>
+    <h3>保留期与清理</h3>
+    <p>启动时与每 24h 清理 <code>SNAPSHOT_RETENTION_DAYS</code> 之前的照片（DB + 文件）。管理员也可按孩子批量删除。审计日志默认保留；生产可按合规要求归档。</p>
+    <h3>健康与日志</h3>
+    <p><code>GET /api/health</code> 返回 DB、课时数、AI 模式；日志为 JSON line（请求 ID、状态、耗时、错误栈摘要），不记录 token / 密码 / 照片内容。请求日志级别可用 <code>LOG_LEVEL</code> 调整。</p>
+    <h3>HTTPS / 摄像头 / PWA</h3>
+    <p>浏览器只在 <code>https</code> 或 <code>localhost</code> 开放摄像头、麦克风、Service Worker 与安装。局域网平板请用 <code>scripts/gen-cert.sh</code>，在平板信任证书后访问 <code>https://&lt;ip&gt;:8080/device</code>。HTTP 场景下学习仍可用，拍照退化为相册上传并提示安全上下文。</p>
+
+    <h2 id="scale"><span class="num">19 / SCALE</span>性能与演进</h2>
+    <table>
+      <thead><tr><th>维度</th><th>当前</th><th>瓶颈 / 演进</th></tr></thead>
+      <tbody>
+        <tr><td>数据规模</td><td>单家庭到小型园所；192 课时；SQLite 单文件</td><td>写并发有限；多实例换 Postgres；读取加索引</td></tr>
+        <tr><td>请求</td><td>单 Node 事件循环；同步 SQLite 快</td><td>AI / 连接器 IO 异步；长任务可外置队列</td></tr>
+        <tr><td>实时</td><td>SSE 内存 Map；30s 轮询兜底</td><td>多实例用 Redis Pub/Sub 或 Web Push</td></tr>
+        <tr><td>照片</td><td>本地文件系统 + 鉴权读取</td><td>对象存储 + 签名 URL（仍需权限校验）</td></tr>
+        <tr><td>AI</td><td>同步请求 + 超时 + 配额</td><td>流式输出、任务队列、成本预算</td></tr>
+        <tr><td>部署</td><td>单容器 + volume</td><td>水平扩展需外部会话 / 限流 / 存储</td></tr>
+      </tbody>
+    </table>
+    <p><strong>演进原则：</strong>repo 边界已隔离 SQL；AI 有 provider 抽象；照片读取集中在一个服务函数；SSE 有独立注册表。替换存储 / 推送 / 模型时不需要改路由与产品流程。</p>
+
+    <h2 id="tradeoffs"><span class="num">20 / TRADEOFFS</span>取舍与已知限制</h2>
+    <ul>
+      <li><strong>无前端框架：</strong>减少构建与依赖，但复杂页面需要自律的模块拆分；已通过 view 文件、ui 设计系统与 esc 规则控制。</li>
+      <li><strong>SQLite：</strong>部署极简、备份容易；不适合高并发写入与多实例。家庭 / 小园所规模足够。</li>
+      <li><strong>同步 AI 调用：</strong>实现简单、可测；长回答可能等待。已设置 45s 超时与本地降级，未来可流式。</li>
+      <li><strong>沙箱非硬边界：</strong>默认关闭；子进程权限模型 + 无宿主对象注入；如需强隔离需容器 / gVisor / isolated-vm。</li>
+      <li><strong>语音仅本地识别：</strong>不做发音评分；隐私优先。发音评估作为可选路线图。</li>
+      <li><strong>摄像头依赖 HTTPS：</strong>局域网部署需要证书；已提供脚本与相册兜底，但仍是使用门槛。</li>
+      <li><strong>教师无园所组织树：</strong>当前是平台级审核者；园所多租户是下一阶段。</li>
+      <li><strong>内容版权：</strong>公开包带来源与许可，但商用前仍需逐条复核原始资源许可。</li>
+    </ul>
+
+    <h2 id="reviews"><span class="num">21 / REVIEWS</span>评审门禁与修复</h2>
+    <p>项目按四个门禁推进，每个阶段由独立 reviewer 产出书面结论；P0 必须修复后才进入下一阶段。</p>
+    <table>
+      <thead><tr><th>门禁</th><th>关注</th><th>产出</th></tr></thead>
+      <tbody>
+        <tr><td>G1 设计评审</td><td>需求覆盖、隐私、演示后门、摄像头 / PWA、沙箱</td><td><a href="/docs/reviews/01-design-review.md">01-design-review.md</a></td></tr>
+        <tr><td>G2 代码 / 安全评审</td><td>隔离、审核绕过、SSRF、AI 注入、部署</td><td><a href="/docs/reviews/02-code-security-review.md">02-code-security-review.md</a></td></tr>
+        <tr><td>G3 修复记录</td><td>P0 / P1 逐项关闭与验证</td><td><a href="/docs/reviews/04-fix-log.md">04-fix-log.md</a></td></tr>
+        <tr><td>G4 验收评审</td><td>11 项需求 + TDD + 文档 + 可部署</td><td><a href="/docs/reviews/03-acceptance-review.md">03-acceptance-review.md</a> · <a href="/docs/reviews/03a-post-fix-verification.md">03a 复核 PASS</a></td></tr>
+        <tr><td>G5 伙伴 UX 评审</td><td>儿童情绪安全、奖励伦理、导航与仪式分级</td><td><a href="/docs/reviews/05-ux-pet-review.md">05-ux-pet-review.md</a></td></tr>
+        <tr><td>G6 伙伴代码 / 安全评审</td><td>奖励完整性、并发、XSS、可访问性、回归</td><td><a href="/docs/reviews/06-pet-code-review.md">06-pet-code-review.md</a></td></tr>
+        <tr><td>G7 最终验收</td><td>伙伴 / 奖励 + 全量回归</td><td><a href="/docs/reviews/07-final-acceptance.md">07-final-acceptance.md</a></td></tr>
+        <tr><td>G8 温度 UX</td><td>共情 vs 操纵、家长负担、儿童空间、文案频率</td><td><a href="/docs/reviews/08-warmth-ux-review.md">08-warmth-ux-review.md</a></td></tr>
+        <tr><td>G9 温度代码</td><td>文案注入、越权、轮换、a11y、家长边界</td><td><a href="/docs/reviews/09-warmth-code-review.md">09-warmth-code-review.md</a></td></tr>
+        <tr><td>G10 最终验收</td><td>温度 HMI + 儿童空间 + 文案系统</td><td><a href="/docs/reviews/10-warmth-final-acceptance.md">10-warmth-final-acceptance.md</a></td></tr>
+      </tbody>
+    </table>
+    <div class="callout mint"><strong>工程结论：</strong>在“零依赖 + 单机 + 低 token 成本”的约束下，用清晰的限界上下文、可验证的测试与显式的安全取舍，交付了完整可运行的产品，而不是演示页面。</div>
+
+    <div class="footer"><span>星芽学堂 · Architecture &amp; Engineering v1.3 · 2026</span><span>Source: src/, test/, docs/. All data in screenshots is demo data.</span></div>
+  </main>
+</div>
+</body>
+</html>

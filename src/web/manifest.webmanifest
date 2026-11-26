@@ -1,0 +1,21 @@
+{
+  "name": "星芽学堂 · 幼儿园体系化学习",
+  "short_name": "星芽学堂",
+  "description": "体系化课程、AI 学习计划、专家智能体、家园社区与多端联动。",
+  "lang": "zh-CN",
+  "start_url": "/#/home",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f8f5ee",
+  "theme_color": "#4f46e5",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "今日首页", "url": "/#/home" },
+    { "name": "学习计划", "url": "/#/plans" },
+    { "name": "和智能体聊聊", "url": "/#/agent" }
+  ]
+}

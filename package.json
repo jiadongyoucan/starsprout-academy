@@ -1,0 +1,19 @@
+{
+  "name": "starsprout-academy",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "星芽学堂 · 幼儿园体系化儿童教育平台（课程 / 计划 / AI 智能体 / 专家技能 / 社区 / 家校联动）",
+  "engines": { "node": ">=24.0.0" },
+  "scripts": {
+    "start": "node src/server.ts",
+    "dev": "node --watch src/server.ts",
+    "test": "NODE_ENV=test node --test test/*.test.ts",
+    "typecheck": "tsc --noEmit",
+    "smoke": "bash scripts/smoke.sh"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.7.0"
+  }
+}
